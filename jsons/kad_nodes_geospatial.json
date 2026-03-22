@@ -1,0 +1,1178 @@
+[
+    {
+        "id": "d952ac8c9a159ab454727b4f778c70f7",
+        "lat": 37.448608,
+        "lng": 116.292503,
+        "city": "Dezhou",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "c036bd8c92f619e1193a81e66eac4f7d",
+        "lat": 34.746479,
+        "lng": -92.289589,
+        "city": "Little Rock",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "9b0bbc8c020a29994d421f38992f5dc6",
+        "lat": 35.243061,
+        "lng": 115.441109,
+        "city": "Heze",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "bf40b28ce6dc46d3a286efbe0f9d297c",
+        "lat": 47.604309,
+        "lng": -122.329842,
+        "city": "Seattle",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "dc6db48c3f66aeddc6ecdaf108441ef9",
+        "lat": -30.033028,
+        "lng": -51.229687,
+        "city": "Porto Alegre",
+        "country": "Brazil",
+        "size": 0.01
+    },
+    {
+        "id": "e4ab9a8ca209f3503afc2040e134d4dc",
+        "lat": 3.141301,
+        "lng": 101.686623,
+        "city": "Kuala Lumpur",
+        "country": "Malaysia",
+        "size": 0.01
+    },
+    {
+        "id": "3237c18ce0221898144298d4fe0542fb",
+        "lat": 5.3378,
+        "lng": 116.160202,
+        "city": "Keningau",
+        "country": "Malaysia",
+        "size": 0.01
+    },
+    {
+        "id": "9186fb86de3d8210ed33ee31a2f98558",
+        "lat": 52.210197,
+        "lng": 5.96949,
+        "city": "Apeldoorn",
+        "country": "Netherlands (Kingdom of the)",
+        "size": 0.01
+    },
+    {
+        "id": "8010fe86420b94b2e2491020313e4244",
+        "lat": 47.604309,
+        "lng": -122.329842,
+        "city": "Seattle",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "e269ea8695bfa98b41426cf48bfe2c64",
+        "lat": 51.50853,
+        "lng": -0.12574,
+        "city": "London",
+        "country": "United Kingdom of Great Britain and Northern Ireland",
+        "size": 0.01
+    },
+    {
+        "id": "80241c860133e760fbefb5cf2bfcf726",
+        "lat": 35.689499,
+        "lng": 139.692322,
+        "city": "Tokyo",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "203bc386f73026974b83a8000eb22424",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "dd16ae87bdc59f3cb62b11f09170b4fc",
+        "lat": 55.675941,
+        "lng": 12.56553,
+        "city": "Copenhagen",
+        "country": "Denmark",
+        "size": 0.01
+    },
+    {
+        "id": "060fe287743e4e6702d2064d246c70f4",
+        "lat": 50.850849,
+        "lng": 4.34878,
+        "city": "Brussels",
+        "country": "Belgium",
+        "size": 0.01
+    },
+    {
+        "id": "cf32eb9faacfda39d286500ab3d772e2",
+        "lat": 35.084492,
+        "lng": -106.651138,
+        "city": "Albuquerque",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "c7b8e19f05fb3574156303a85f39c59c",
+        "lat": 31.224333,
+        "lng": 121.468948,
+        "city": "Shanghai",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "bb2ae19fb20b2f1281ae48243b1b5c4d",
+        "lat": 48.208889,
+        "lng": 16.37208,
+        "city": "Vienna",
+        "country": "Austria",
+        "size": 0.01
+    },
+    {
+        "id": "fb43b39f489eabff8465683d43f99088",
+        "lat": 22.285521,
+        "lng": 114.157692,
+        "city": "Hong Kong",
+        "country": "Hong Kong",
+        "size": 0.01
+    },
+    {
+        "id": "1d0ae29e0f5edbdae46a4354d82c19e5",
+        "lat": 35.689499,
+        "lng": 139.692322,
+        "city": "Tokyo",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "ec5aff9fc9738d09f9a4456d996dbe4b",
+        "lat": 28.666668,
+        "lng": 121.349998,
+        "city": "Taizhou",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "7161f89fc1a58ecee31496ab1a0498c8",
+        "lat": 40.713192,
+        "lng": -74.006065,
+        "city": "New York City",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "c2d2f69f4b3249c3dd6de577ce515873",
+        "lat": 37.566311,
+        "lng": 126.977203,
+        "city": "Seoul",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "ca92f69f59cdd5c0ff1bf9e2c0704ce6",
+        "lat": 35.689499,
+        "lng": 139.692322,
+        "city": "Tokyo",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "e7ba2f97804360c025d713d63f090623",
+        "lat": 45.52346,
+        "lng": -122.676468,
+        "city": "Portland",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "4a9c289763ee5651301cc942b653f56c",
+        "lat": 35.689499,
+        "lng": 139.692322,
+        "city": "Tokyo",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "a9b1299793785eefc2ee51acd876eb5e",
+        "lat": 34.716877,
+        "lng": 136.499924,
+        "city": "Tsu",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "5a99e194a91e393c8000f9982c220501",
+        "lat": 61.499111,
+        "lng": 23.787121,
+        "city": "Tampere",
+        "country": "Finland",
+        "size": 0.01
+    },
+    {
+        "id": "3e77fa94c3064770d0f57545d3551a59",
+        "lat": -31.950001,
+        "lng": 115.800003,
+        "city": "Subiaco",
+        "country": "Australia",
+        "size": 0.01
+    },
+    {
+        "id": "44224496d093fc352382b30d51f8d0c2",
+        "lat": 42.375111,
+        "lng": -71.105743,
+        "city": "Cambridge",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "d5aa56965d0f628e5a0a7010d3c7a446",
+        "lat": 45.464336,
+        "lng": 9.188547,
+        "city": "Milan",
+        "country": "Italy",
+        "size": 0.01
+    },
+    {
+        "id": "b08505966ee8f798a44998b613b23d39",
+        "lat": 36.74773,
+        "lng": -119.772369,
+        "city": "Fresno",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "056500ab4d3caf4d3384b2120f526e34",
+        "lat": -22.466599,
+        "lng": -68.933311,
+        "city": "Calama",
+        "country": "Chile",
+        "size": 0.01
+    },
+    {
+        "id": "809069aae57dfdfc6f3ea014631e95fe",
+        "lat": 32.783058,
+        "lng": -96.806503,
+        "city": "Dallas",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "c988d4ab4989d7bb514dc6907d245768",
+        "lat": 45.464336,
+        "lng": 9.188547,
+        "city": "Milan",
+        "country": "Italy",
+        "size": 0.01
+    },
+    {
+        "id": "d1cf0dabb595d558b2da31d9986d3d8e",
+        "lat": 52.223091,
+        "lng": 5.176179,
+        "city": "Hilversum",
+        "country": "Netherlands (Kingdom of the)",
+        "size": 0.01
+    },
+    {
+        "id": "c4f813ab29c5c7b5b8094b03a10d24d3",
+        "lat": -35.283459,
+        "lng": 149.128067,
+        "city": "Canberra",
+        "country": "Australia",
+        "size": 0.01
+    },
+    {
+        "id": "197006ab4f300dc97f97455397d2ecd4",
+        "lat": 52.396427,
+        "lng": 13.057829,
+        "city": "Potsdam",
+        "country": "Germany",
+        "size": 0.01
+    },
+    {
+        "id": "bac456a48fd0012d3d6269adaf765b85",
+        "lat": 51.50853,
+        "lng": -0.12574,
+        "city": "London",
+        "country": "United Kingdom of Great Britain and Northern Ireland",
+        "size": 0.01
+    },
+    {
+        "id": "2dd57aa4942cb2197ed26e271e3c52ad",
+        "lat": 47.613819,
+        "lng": -122.203918,
+        "city": "Bellevue",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "cd867fa4d966d62826979b599994c966",
+        "lat": 22.990889,
+        "lng": 120.21283,
+        "city": "Tainan",
+        "country": "Taiwan (Province of China)",
+        "size": 0.01
+    },
+    {
+        "id": "53b8a0a585536a354217bb61228dd63b",
+        "lat": 37.444057,
+        "lng": -122.160225,
+        "city": "Palo Alto",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "63d244a49a9f7819c005e67519b315fe",
+        "lat": 39.907501,
+        "lng": 116.397102,
+        "city": "Beijing",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "5e363cba32cba838628915fdd019cc60",
+        "lat": 50.110882,
+        "lng": 8.681996,
+        "city": "Frankfurt am Main",
+        "country": "Germany",
+        "size": 0.01
+    },
+    {
+        "id": "51643fba2946c792c38c764831b5d054",
+        "lat": 37.566311,
+        "lng": 126.977203,
+        "city": "Seoul",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "ca9b33ba4ba058ec037382c35869bab2",
+        "lat": 39.290379,
+        "lng": -76.61219,
+        "city": "Baltimore",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "f41e8dbbdc53f61c6204a001eabe6dc5",
+        "lat": 33.748795,
+        "lng": -84.387543,
+        "city": "Atlanta",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "ce77ecb0c22b938f6f76d57a2d1b1ecd",
+        "lat": 26.06139,
+        "lng": 119.306107,
+        "city": "Fuzhou",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "4dd291b085c62af91968b89f417c5586",
+        "lat": 47.604309,
+        "lng": -122.329842,
+        "city": "Seattle",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "d4c798b053b5ebd9b3fa75ee778abea0",
+        "lat": 37.533329,
+        "lng": 121.400002,
+        "city": "Yantai",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "a3cd98b08c2944cd03ed44dfc122f87b",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "2285a0b02e27e9a61b8fbf3947d39ccb",
+        "lat": 47.664589,
+        "lng": 3.73501,
+        "city": "Vermenton",
+        "country": "France",
+        "size": 0.01
+    },
+    {
+        "id": "9b52bbb0a5a47fd0359a7eefe96cfd36",
+        "lat": 24.9,
+        "lng": 114.783333,
+        "city": "Longnan",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "020d7eb1d1a6ef7fe5b2623b17aec5d8",
+        "lat": 46.583328,
+        "lng": 0.33333,
+        "city": "Poitiers",
+        "country": "France",
+        "size": 0.01
+    },
+    {
+        "id": "8afac6b470c28274eb610af409fa99de",
+        "lat": 23.709463,
+        "lng": 120.543159,
+        "city": "Douliu",
+        "country": "Taiwan (Province of China)",
+        "size": 0.01
+    },
+    {
+        "id": "5cbdc7b4621bece6cc6e06549c5eed69",
+        "lat": 48.782536,
+        "lng": 9.176995,
+        "city": "Stuttgart",
+        "country": "Germany",
+        "size": 0.01
+    },
+    {
+        "id": "1a329dcff0df0556660b4b74a1a1658e",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "7ea867ce64cef86a2267a2876074c084",
+        "lat": 46.22168,
+        "lng": 6.10814,
+        "city": "Les Avanchets",
+        "country": "Switzerland",
+        "size": 0.01
+    },
+    {
+        "id": "b277eec976335c8f2d3aad292e705a25",
+        "lat": 35.994034,
+        "lng": -78.898926,
+        "city": "Durham",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "8599eccea9c4212087753e46e33cf6c2",
+        "lat": 23.127361,
+        "lng": 113.264572,
+        "city": "Guangzhou",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "1437e1c945c7f1e86d3ab47a63c8a5f8",
+        "lat": 45.464336,
+        "lng": 9.188547,
+        "city": "Milan",
+        "country": "Italy",
+        "size": 0.01
+    },
+    {
+        "id": "0161ffc83c42f9636dbd44d555f65358",
+        "lat": 47.604309,
+        "lng": -122.329842,
+        "city": "Seattle",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "1d5310cfd69e4f774cc7474178133824",
+        "lat": 45.52346,
+        "lng": -122.676468,
+        "city": "Portland",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "4123edc97ad415ff7944064425776e3d",
+        "lat": -18.85111,
+        "lng": -41.94944,
+        "city": "Governador Valadares",
+        "country": "Brazil",
+        "size": 0.01
+    },
+    {
+        "id": "8fe3cac3b137adc158c49ce26cd38abb",
+        "lat": 25.038172,
+        "lng": 121.563599,
+        "city": "Taipei",
+        "country": "Taiwan (Province of China)",
+        "size": 0.01
+    },
+    {
+        "id": "7098d7c2041116c995f9b3a86ff65aeb",
+        "lat": 39.039474,
+        "lng": -77.491806,
+        "city": "Ashburn",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "a622a4c08698a00477632bc6907cbdf7",
+        "lat": 50.110882,
+        "lng": 8.681996,
+        "city": "Frankfurt am Main",
+        "country": "Germany",
+        "size": 0.01
+    },
+    {
+        "id": "f6c6b1c1b978000281b18aaf8fa66437",
+        "lat": 51.67207,
+        "lng": 39.18425,
+        "city": "Voronezh",
+        "country": "Russian Federation",
+        "size": 0.01
+    },
+    {
+        "id": "50c68ad611b283cc72adb59b08deda56",
+        "lat": 37.566311,
+        "lng": 126.977203,
+        "city": "Seoul",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "c95bc7d7a90bc40792a03b2ef59a404f",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "50de97d35749d938384e79211e70e9e3",
+        "lat": 45.464336,
+        "lng": 9.188547,
+        "city": "Milan",
+        "country": "Italy",
+        "size": 0.01
+    },
+    {
+        "id": "aa25a1d3dc1dca6eea2d6f9fe3c1903d",
+        "lat": 52.302601,
+        "lng": 4.688763,
+        "city": "Hoofddorp",
+        "country": "Netherlands (Kingdom of the)",
+        "size": 0.01
+    },
+    {
+        "id": "e87f87d736498e6e199e0ac30e46bfb1",
+        "lat": 37.566311,
+        "lng": 126.977203,
+        "city": "Seoul",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "07ffa4d04eee49172318eb5de9771255",
+        "lat": 34.05257,
+        "lng": -118.243904,
+        "city": "Los Angeles",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "f6899cd0e3495faffee3ce8035739600",
+        "lat": 59.360306,
+        "lng": 18.001247,
+        "city": "Solna",
+        "country": "Sweden",
+        "size": 0.01
+    },
+    {
+        "id": "13f854d40da35e48a38339e10af18e25",
+        "lat": 39.907501,
+        "lng": 116.397102,
+        "city": "Beijing",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "f64361d63b1d8d1b14ce3f39d64b9588",
+        "lat": 47.604309,
+        "lng": -122.329842,
+        "city": "Seattle",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "da88d4d7eccfa84d548bbb98cc29a87a",
+        "lat": 39.768505,
+        "lng": -86.157181,
+        "city": "Indianapolis",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "c913bce6944ab6dcfc196f5196a9d780",
+        "lat": 37.420624,
+        "lng": 127.126717,
+        "city": "Seongnam",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "faefa1e1a66ef7bb3517aa894a1fd823",
+        "lat": 19.413647,
+        "lng": -99.033127,
+        "city": "Ciudad Nezahualcoyotl",
+        "country": "Mexico",
+        "size": 0.01
+    },
+    {
+        "id": "cb9acfe1d09e46d5010d8fbe4cc86334",
+        "lat": 44.797268,
+        "lng": -106.956184,
+        "city": "Sheridan",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "a2e8c9e1241635fa1bbbb2816e191023",
+        "lat": -12.043333,
+        "lng": -77.028336,
+        "city": "Lima",
+        "country": "Peru",
+        "size": 0.01
+    },
+    {
+        "id": "4fc1cbe19d1225984d4b55727ede55fa",
+        "lat": 51.50853,
+        "lng": -0.12574,
+        "city": "London",
+        "country": "United Kingdom of Great Britain and Northern Ireland",
+        "size": 0.01
+    },
+    {
+        "id": "aba5e1e1b89edd38c83d42df45be27b4",
+        "lat": 41.12648,
+        "lng": -73.71402,
+        "city": "Armonk",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "7e9422e778facee0fba561f424056a90",
+        "lat": 29.763029,
+        "lng": -95.362061,
+        "city": "Houston",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "17d38ae672ba848b695008f41f3dda01",
+        "lat": 39.907501,
+        "lng": 116.397102,
+        "city": "Beijing",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "41d0a1e627c8fa73575ad35eca19efbe",
+        "lat": 42.375111,
+        "lng": -71.105743,
+        "city": "Cambridge",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "cd5b55f5f73bd101073ca8d4e5ff09ec",
+        "lat": 51.231091,
+        "lng": 5.31322,
+        "city": "Lommel",
+        "country": "Belgium",
+        "size": 0.01
+    },
+    {
+        "id": "511b4bf39b191493d16816be4c30abd6",
+        "lat": 30.267151,
+        "lng": -97.743134,
+        "city": "Austin",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "f9f529f7884421a34502ecbea832ccd1",
+        "lat": 35.689499,
+        "lng": 139.692322,
+        "city": "Tokyo",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "5bda34f9337bc89aaeaac8beda83c9db",
+        "lat": 13.087898,
+        "lng": 80.278481,
+        "city": "Chennai",
+        "country": "India",
+        "size": 0.01
+    },
+    {
+        "id": "0defb8f4618daacbde992286e3ecc5b2",
+        "lat": 38.716751,
+        "lng": -9.133368,
+        "city": "Lisbon",
+        "country": "Portugal",
+        "size": 0.01
+    },
+    {
+        "id": "e63f57f4e01d1b9f156b8fed623f11c3",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "b7c67c00c833b5d67f68cfe6825908dc",
+        "lat": 41.917698,
+        "lng": -87.895615,
+        "city": "Northlake",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "f57f0c0753be5995ff5ef717abb68067",
+        "lat": 50.264755,
+        "lng": 28.676746,
+        "city": "Zhytomyr",
+        "country": "Ukraine",
+        "size": 0.01
+    },
+    {
+        "id": "6a887d004e0fca2e0ebaebefc70102ce",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "0d136d0014ec384c44d367c5197b03c3",
+        "lat": 38.713848,
+        "lng": -78.159439,
+        "city": "Washington",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "85fe74005376d45d3c40bbc69747a0ad",
+        "lat": 34.983002,
+        "lng": 138.382996,
+        "city": "Shizuoka",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "abe9750006b168367c5b2f4dcc29b0cd",
+        "lat": 41.557259,
+        "lng": -87.665604,
+        "city": "Homewood",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "24c37f17f21cb6bc8b236f4cba33c6bb",
+        "lat": 51.50853,
+        "lng": -0.12574,
+        "city": "London",
+        "country": "United Kingdom of Great Britain and Northern Ireland",
+        "size": 0.01
+    },
+    {
+        "id": "5ae6a41679cc48d6ae3ccbed1dfcc24f",
+        "lat": 51.50853,
+        "lng": -0.12574,
+        "city": "London",
+        "country": "United Kingdom of Great Britain and Northern Ireland",
+        "size": 0.01
+    },
+    {
+        "id": "d44e1317f562bbb0946851bbd4bf1abe",
+        "lat": 35.689499,
+        "lng": 139.692322,
+        "city": "Tokyo",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "cdfe1813d3cc75d6be67d40e62535f9a",
+        "lat": 37.69231,
+        "lng": -97.338211,
+        "city": "Wichita",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "9a22301341c43d184d9826ea5c662dbf",
+        "lat": 52.378502,
+        "lng": 4.89998,
+        "city": "Amsterdam",
+        "country": "Netherlands (Kingdom of the)",
+        "size": 0.01
+    },
+    {
+        "id": "99b3de150c7b6a99f79958f0b6e39042",
+        "lat": -27.467541,
+        "lng": 153.028091,
+        "city": "Brisbane",
+        "country": "Australia",
+        "size": 0.01
+    },
+    {
+        "id": "b98a6314f2195b51307061fe429a33ed",
+        "lat": 36.668331,
+        "lng": 116.997223,
+        "city": "Jinan",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "18717b176864a5f51336ed5723b867f7",
+        "lat": 37.420624,
+        "lng": 127.126717,
+        "city": "Seongnam",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "0ac0592e20ca9a21d5d923cb1de6537f",
+        "lat": 51.456249,
+        "lng": -0.97113,
+        "city": "Reading",
+        "country": "United Kingdom of Great Britain and Northern Ireland",
+        "size": 0.01
+    },
+    {
+        "id": "86e97b2642f2dab5f0d76c32eb2f4c15",
+        "lat": -6.208678,
+        "lng": 106.84549,
+        "city": "Jakarta",
+        "country": "Indonesia",
+        "size": 0.01
+    },
+    {
+        "id": "54887b264a87351302c11210cbda269e",
+        "lat": 39.161999,
+        "lng": -84.456886,
+        "city": "Cincinnati",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "8389f626a4534458c32a4954c2d504d8",
+        "lat": 23.479225,
+        "lng": 120.448524,
+        "city": "Chiayi",
+        "country": "Taiwan (Province of China)",
+        "size": 0.01
+    },
+    {
+        "id": "3e5e702dfd779c8346ec953cb43568ae",
+        "lat": 60.169521,
+        "lng": 24.93545,
+        "city": "Helsinki",
+        "country": "Finland",
+        "size": 0.01
+    },
+    {
+        "id": "71634b28d81b8a67122efbbf52dd4770",
+        "lat": 48.859077,
+        "lng": 2.293486,
+        "city": "Paris",
+        "country": "France",
+        "size": 0.01
+    },
+    {
+        "id": "92de6b2e114b98ca032fa292ac6f12b7",
+        "lat": 41.875771,
+        "lng": -87.620605,
+        "city": "Chicago",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "e71c7f2e24ccb923e45f81487edf6035",
+        "lat": 55.752258,
+        "lng": 37.615471,
+        "city": "Moscow",
+        "country": "Russian Federation",
+        "size": 0.01
+    },
+    {
+        "id": "113bc93f9f7a628fa67a184868864e0b",
+        "lat": 37.869438,
+        "lng": 112.561508,
+        "city": "Taiyuan",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "0ca34b34cc029aebd7b805b1c89e9fa7",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "79ed3432d6095148dae5fa009a4c5ab0",
+        "lat": 36.974125,
+        "lng": -122.030968,
+        "city": "Santa Cruz",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "9d380a3442ddfa0dbc52379f38ee10b8",
+        "lat": 33.195999,
+        "lng": -80.013138,
+        "city": "Moncks Corner",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "0c3e0334bb5269235f677f7a70d742d6",
+        "lat": 42.31086,
+        "lng": -83.214828,
+        "city": "Dearborn",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "2136d43f59c8b1646bce6117d049df21",
+        "lat": 37.323002,
+        "lng": -122.032181,
+        "city": "Cupertino",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "45b73e3d2391324253ea2259fdf31dad",
+        "lat": 22.890846,
+        "lng": -109.912529,
+        "city": "Cabo San Lucas",
+        "country": "Mexico",
+        "size": 0.01
+    },
+    {
+        "id": "6ecae14081020ff2c0e53b38d489fa49",
+        "lat": 37.566311,
+        "lng": 126.977203,
+        "city": "Seoul",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "cff69f4222c56d7134bbf3957bb4604f",
+        "lat": 33.640862,
+        "lng": -117.603104,
+        "city": "Rancho Santa Margarita",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "20244b4083d617e53353223f274c7f58",
+        "lat": 25.774269,
+        "lng": -80.193604,
+        "city": "Miami",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "973d48406cdfc11b8ff54c1e94a9c4e8",
+        "lat": 42.31086,
+        "lng": -83.214828,
+        "city": "Dearborn",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "f6104d40302d62e9b443eedf28a0e2f6",
+        "lat": 48.208889,
+        "lng": 16.37208,
+        "city": "Vienna",
+        "country": "Austria",
+        "size": 0.01
+    },
+    {
+        "id": "a00c5140dd4d93d8d08af681129ea554",
+        "lat": 16.816187,
+        "lng": 107.100342,
+        "city": "Dong Ha",
+        "country": "Viet Nam",
+        "size": 0.01
+    },
+    {
+        "id": "3eaa60407427435731a275d3e4d15d3a",
+        "lat": 25.038172,
+        "lng": 121.563599,
+        "city": "Taipei",
+        "country": "Taiwan (Province of China)",
+        "size": 0.01
+    },
+    {
+        "id": "a31f4547bebd3243446277934f56a425",
+        "lat": 31.551184,
+        "lng": -110.348335,
+        "city": "Fort Huachuca",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "3fa0a14dfa7038337e8001fada36a065",
+        "lat": 39.039474,
+        "lng": -77.491806,
+        "city": "Ashburn",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "c5e0fc417a6b9db2a45ca8474bd6633c",
+        "lat": 35.234257,
+        "lng": 128.881454,
+        "city": "Gimhae",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "971f61565e9e0a45758e3d3dd4b90821",
+        "lat": -15.90453,
+        "lng": -47.807869,
+        "city": "Papuda",
+        "country": "Brazil",
+        "size": 0.01
+    },
+    {
+        "id": "b2c22354ea87afcd350a91a27fa55470",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "6aad035ecbcaf5fba2a18d62515a86a4",
+        "lat": 36.600559,
+        "lng": 114.467781,
+        "city": "Handan",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "964ef75e5710b5729675e4545833e875",
+        "lat": 36.296974,
+        "lng": 59.606331,
+        "city": "Mashhad",
+        "country": "Iran (Islamic Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "5293125ebf92166042f19f9a8fcd95db",
+        "lat": 34.147835,
+        "lng": -118.144302,
+        "city": "Pasadena",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "35e1ad567f8cbb005ebceb77f111701c",
+        "lat": 42.01667,
+        "lng": -4.53333,
+        "city": "Palencia",
+        "country": "Spain",
+        "size": 0.01
+    },
+    {
+        "id": "fd933764890a9779b69800f5ee930fd0",
+        "lat": 40.732277,
+        "lng": -74.173576,
+        "city": "Newark",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "8bd0bc64983a52c5595d512aafcf1e51",
+        "lat": 39.96138,
+        "lng": -82.997749,
+        "city": "Columbus",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "6d308d64446acb0e73c3a8ddeb1a48ac",
+        "lat": 40.44062,
+        "lng": -79.995888,
+        "city": "Pittsburgh",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "af9d406781fafd7d630208f77e60f691",
+        "lat": 37.420624,
+        "lng": 127.126717,
+        "city": "Seongnam",
+        "country": "Korea (the Republic of)",
+        "size": 0.01
+    },
+    {
+        "id": "30ca33602894d32f2750f0810bfeebc8",
+        "lat": 35.689499,
+        "lng": 139.692322,
+        "city": "Tokyo",
+        "country": "Japan",
+        "size": 0.01
+    },
+    {
+        "id": "8066d0671ac3f1cc14c5697d41e0190a",
+        "lat": 28.666668,
+        "lng": 121.349998,
+        "city": "Taizhou",
+        "country": "China",
+        "size": 0.01
+    },
+    {
+        "id": "4d8877677f641b7bdc1ff027e331d770",
+        "lat": 38.881008,
+        "lng": -77.104279,
+        "city": "Arlington",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "9259a264590f64ef33560682704e47a3",
+        "lat": 30.332134,
+        "lng": -81.65567,
+        "city": "Jacksonville",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "ff67ad766675cd4ac606ab766fe428ed",
+        "lat": 47.604309,
+        "lng": -122.329842,
+        "city": "Seattle",
+        "country": "United States of America",
+        "size": 0.01
+    },
+    {
+        "id": "14227a7746cd7b6128262f4c61b33279",
+        "lat": 35.689499,
+        "lng": 139.692322,
+        "city": "Tokyo",
+        "country": "Japan",
+        "size": 0.01
+    }
+]
