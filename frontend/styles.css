@@ -261,6 +261,70 @@ body {
     box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
 }
 
+/* Tooltip Premium para el Mapa Térmico */
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background: rgba(10, 15, 30, 0.98); /* Un poco más opaco */
+    backdrop-filter: blur(8px);
+    
+    /* RESET DE HERENCIA DEL H1 */
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    background-clip: border-box !important;
+    -webkit-background-clip: border-box !important;
+    
+    text-align: left;
+    border-radius: 10px;
+    padding: 12px;
+    position: absolute;
+    z-index: 1000;
+    top: 140%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateY(-10px);
+    border: 1px solid rgba(79, 172, 254, 0.5);
+    font-size: 11px;
+    line-height: 1.5;
+    pointer-events: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    font-weight: 400;
+    text-transform: none;
+    white-space: pre-line; /* Permite que el legend de colores se vea en varias líneas */
+}
+
+.tooltip-text b {
+    color: #4facfe;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Triángulo del tooltip (ahora apuntando hacia arriba) */
+.tooltip-text::after {
+    content: "";
+    position: absolute;
+    bottom: 100%; /* Delante del tooltip */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent rgba(79, 172, 254, 0.5) transparent;
+}
+
 /* Panel Amarillo para el Vecindario XOR */
 .xor-panel {
     position: absolute;

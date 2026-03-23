@@ -22,12 +22,26 @@
     <div id="statsPanel" class="glass-panel">
         <h1 style="display: flex; justify-content: space-between; align-items: center;">
             KadGlobe
-            <button id="langToggle" class="lang-btn">EN</button>
+            <div style="display: flex; align-items: center;">
+                <div class="tooltip-container">
+                    <button id="heatMapToggle" class="lang-btn" data-i18n="heatmap_btn">Mapa Térmico</button>
+                    <span class="tooltip-text" id="heatmapTooltip">
+                        <b data-i18n="heatmap_tool_title">Salud de Red</b>
+                        <span data-i18n="heatmap_tool_desc">Mide la latencia real mediante ráfagas ICMP (Ping). Colorea los nodos según su tiempo de respuesta.</span>
+                    </span>
+                </div>
+                <button id="langToggle" class="lang-btn">EN</button>
+            </div>
         </h1>
-
+        
         <div class="stat-item">
-            <span class="stat-label" data-i18n="net_status">Estado de Red:</span>
+            <span class="stat-label" data-i18n="net_status">Estado de Red (Kad):</span>
             <span class="stat-value" id="kadStatus">Cargando...</span>
+        </div>
+
+        <div class="stat-item" id="kadIdRow" style="display: none;">
+            <span class="stat-label" data-i18n="id_status">Estatus ID:</span>
+            <span class="stat-value" id="kadId">-</span>
         </div>
 
         <div class="stat-item">
@@ -41,6 +55,28 @@
         <div class="stat-item">
             <span class="stat-label" data-i18n="searches">Búsquedas Activas:</span>
             <span class="stat-value" id="kadSearches">-</span>
+        </div>
+
+        <!-- Métricas reales desde /stats -->
+        <div class="stat-item" id="kadOverheadRow" style="display: none;">
+            <span class="stat-label" data-i18n="overhead">Tráfico Kad (session):</span>
+            <span class="stat-value" id="kadOverhead">-</span>
+        </div>
+
+        <div class="stat-item" id="kadFirewallRow" style="display: none;">
+            <span class="stat-label" data-i18n="firewalled">Firewalled (UDP/TCP):</span>
+            <div>
+                <span class="stat-value" id="kadFwUdp">-</span>
+                <span style="font-size: 10px; color: #aaa;">%</span>
+                <span style="margin: 0 5px; color: #4facfe;">/</span>
+                <span class="stat-value" id="kadFwTcp">-</span>
+                <span style="font-size: 10px; color: #aaa;">%</span>
+            </div>
+        </div>
+
+        <div class="stat-item" id="kadSourcesRow" style="display: none;">
+            <span class="stat-label" data-i18n="kad_sources">Fuentes vía Kad:</span>
+            <span class="stat-value" id="kadSources">-</span>
         </div>
 
         <div class="stat-item">

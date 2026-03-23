@@ -1,5 +1,12 @@
 {
-    "contacts": "442",
-    "current_searches": "0",
-    "status": "Connected"
+    "status": "Connected",
+    "id_type": "ID Alta (Abierto)",
+    "contacts": "262",
+    "active_searches": "2",
+    "kad_overhead_session_pkts": "162",
+    "kad_overhead_total_pkts": "854.71 k",
+    "kad_clients_pct": "100.0",
+    "kad_firewalled_udp_pct": "17.6",
+    "kad_firewalled_tcp_pct": "17.6",
+    "kad_sources_found": "8"
 }

@@ -1,0 +1,39 @@
+eMule 0.70b x64 - Web Interface
+Web Interface
+Transfer
+Kad
+Servers
+Search
+Shared Files
+Statistics
+Graphs
+Options
+Admin Menu
+My Info
+Log
+Server Info
+Debug Log
+Connection:
+Status:
+Disconnected (
+Connect To Any Server
+)   (
+0
+0)
+Connected (
+Disconnect
+)
+Download: 405.0 (450)
+Upload: 80.0 (80)
+Active connections: 11.0 (300)
+Users: 0 (0)
+eD2K Links
+Kad
+Status
+Connected
+Disconnect
+Statistics
+Contacts
+Current Searches
+513
+0

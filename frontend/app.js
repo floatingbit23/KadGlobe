@@ -8,18 +8,35 @@ const elCountryList = document.getElementById('countryList');
 const elXorNeighborsPanel = document.getElementById('xorNeighborsPanel');
 const elXorNeighborsList = document.getElementById('xorNeighborsList');
 
+// Nuevas referencias para estadísticas avanzadas
+const elIdRow = document.getElementById('kadIdRow');
+const elId = document.getElementById('kadId');
+const elOverheadRow = document.getElementById('kadOverheadRow');
+const elOverhead = document.getElementById('kadOverhead');
+const elFirewallRow = document.getElementById('kadFirewallRow');
+const elFwUdp = document.getElementById('kadFwUdp');
+const elFwTcp = document.getElementById('kadFwTcp');
+const elSourcesRow = document.getElementById('kadSourcesRow');
+const elSources = document.getElementById('kadSources');
+
 // --- DICCIONARIO i18n ---
 let currentLang = 'es';
 
 const i18n = {
     es: {
-        "net_status": "Estado de Red:",
+        "net_status": "Estado de Red de Kademlia:",
         "loading": "Cargando...",
         "contacts": "Contactos Kad:",
-        "searches": "Búsquedas Activas:",
         "mapped": "Nodos Georreferenciados:",
         "ranking_title": "Nodos por país",
         "xor_neighbors_title": "Top 10 Vecindario XOR",
+        "heatmap_btn": "Mapa Térmico",
+        "heatmap_tool_title": "Salud de Red (RTT)",
+        "heatmap_tool_desc": `Mide la latencia real mediante ráfagas ICMP (Ping). Colorea los nodos según su tiempo de respuesta:
+🟢: < 150ms (Fibra / Excelente)
+🟡: < 500ms (Medio / Saturado)
+🔴: > 500ms (Lento / Crítico)
+⚪: Sin respuesta (Bloqueado/Offline)`,
         "modal_title": "Información del Nodo",
         "modal_xor": "● Proyectando Vecindario Kad (XOR)",
         "modal_loc": "Ubicación:",
@@ -27,16 +44,26 @@ const i18n = {
         "unknown_f": "Desconocida",
         "status_connected": "Conectado",
         "status_disconnected": "Desconectado",
-        "status_firewalled": "Tras Cortafuego"
+        "status_firewalled": "Tras Cortafuego",
+        "id_status": "Estatus ID:",
+        "overhead": "Tráfico Kad (session):",
+        "firewalled": "Firewalled (UDP/TCP):",
+        "kad_sources": "Fuentes vía Kad:"
     },
     en: {
-        "net_status": "Network Status:",
+        "net_status": "Kademlia Network Status:",
         "loading": "Loading...",
         "contacts": "Kad Contacts:",
-        "searches": "Active Searches:",
         "mapped": "Georeferenced Nodes:",
         "ranking_title": "Nodes by country",
         "xor_neighbors_title": "Top 10 XOR Neighborhood",
+        "heatmap_btn": "Heat Map",
+        "heatmap_tool_title": "Network Health (RTT)",
+        "heatmap_tool_desc": `Measures real-time latency using ICMP (Ping) bursts. Colors nodes based on response time:
+🟢: < 150ms (Fiber / Excellent)
+🟡: < 500ms (Medium / Saturated)
+🔴: > 500ms (Slow / Critical)
+⚪: No response (Blocked/Offline)`,
         "modal_title": "Node Information",
         "modal_xor": "● Projecting Kad Neighborhood (XOR)",
         "modal_loc": "Location:",
@@ -44,7 +71,11 @@ const i18n = {
         "unknown_f": "Unknown",
         "status_connected": "Connected",
         "status_disconnected": "Disconnected",
-        "status_firewalled": "Firewalled"
+        "status_firewalled": "Firewalled",
+        "id_status": "ID Status:",
+        "overhead": "Kad Traffic (session):",
+        "firewalled": "Firewalled (UDP/TCP):",
+        "kad_sources": "Sources via Kad:"
     }
 };
 
@@ -69,6 +100,56 @@ if (langToggle) {
         updateKadNodes();
     });
 }
+
+// --- LOGICA DE RENDER TÉRMICO ---
+let heatMapMode = false;
+let latestLatencies = {};
+
+function getPointColor(node) {
+    if (!heatMapMode) {
+        return '#00f2fe'; // Azul brillante estático blindado (Clásico)
+    }
+
+    // MODO TÉRMICO (Semáforo UDP UDP RTT)
+    const ms = latestLatencies[node.ip];
+    if (ms === undefined) {
+        return 'rgba(255, 255, 255, 0.9)'; // Gris carbón oscuro (Nodo mudo / ICMP bloqueado)
+    }
+
+    if (ms < 150) return '#00ff00';      // Verde brillante (Fibra / Excelente)
+    if (ms < 500) return '#ffcc00';      // Amarillo (Aceptable / Transoceánico / Saturado)
+    return '#ff3333';                    // Rojo (Saturación extrema / Lento)
+}
+
+const heatMapToggle = document.getElementById('heatMapToggle');
+if (heatMapToggle) {
+    heatMapToggle.addEventListener('click', () => {
+        heatMapMode = !heatMapMode;
+        if (heatMapMode) {
+            heatMapToggle.style.background = 'rgba(255, 204, 0, 0.4)';
+            heatMapToggle.style.borderColor = '#ffcc00';
+            heatMapToggle.style.color = '#ffcc00';
+            heatMapToggle.style.boxShadow = '0 0 10px rgba(255, 204, 0, 0.5)';
+        } else {
+            heatMapToggle.style.background = '';
+            heatMapToggle.style.borderColor = '';
+            heatMapToggle.style.color = '';
+            heatMapToggle.style.boxShadow = '';
+        }
+
+        // Repintar todos los puntos usando la lógica del color inmediatamente
+        if (typeof renderGlobe !== 'undefined') {
+            renderGlobe.pointColor(getPointColor);
+
+            // Si activamos el mapa térmico, limpiamos arcos/anillos inmediatamente
+            if (heatMapMode) {
+                renderGlobe.arcsData([]).ringsData([]);
+            }
+
+            renderGlobe.pointsData([...globalNodesArray]); // Forzamos recompilación de materiales en WebGL
+        }
+    });
+}
 // ------------------------
 
 // 1. Configuración de Globe.gl y Three.js
@@ -84,7 +165,7 @@ const renderGlobe = Globe()
     .pointLng('lng')
     .pointAltitude('size')      // Utilizamos el "size" extraído de la BD
     .pointRadius(0.2)           // Ancho del radio del pilar
-    .pointColor(() => '#00f2fe') // Azul brillante estático blindado
+    .pointColor(getPointColor)  // Color atado la evaluación dinámica en caliente
 
 
     // Tarjeta emergente (Tooltip) que aparece al pasar el ratón por los nodos
@@ -144,7 +225,7 @@ function openNodeModal(node) {
         li.innerHTML = `<span>#${index + 1}</span> <span>${neighbor.obj.ip}</span>`;
         elXorNeighborsList.appendChild(li);
     });
-    
+
     elXorNeighborsPanel.classList.remove('modal-hidden');
     // -----------------
 
@@ -170,7 +251,7 @@ document.getElementById('closeModal').addEventListener('click', () => {
     document.getElementById('nodeModal').classList.add('modal-hidden');
     elXorNeighborsPanel.classList.add('modal-hidden');
     selectedNode = null;
-    
+
     // Al cerrar el modal borramos los arcos matemáticos estáticos
     renderGlobe.arcsData([]);
     // Y retomamos la simulación visual natural en background
@@ -243,7 +324,7 @@ async function updateKadStats() {
             }
             previousContacts = currentContacts; // Actualizamos la memoria
 
-            elSearches.textContent = data.current_searches || '0'; // Default numeric fallback
+            elSearches.textContent = data.active_searches || '0'; // Default numeric fallback
 
             // Gestión de estilos dinámicos según el estado (Connected, Disconnected, Firewalled)
             elStatus.classList.remove('status-connected', 'status-disconnected', 'status-firewalled');
@@ -251,13 +332,32 @@ async function updateKadStats() {
             if (data.status) {
                 const statusLower = data.status.toLowerCase();
                 // Importante: Chequear 'disconnect' ANTES que 'connect' porque 'disconnected' contiene ambos
-                if (statusLower.includes('disconnect')) {
+                if (statusLower.includes('disconnect') || statusLower.includes('desconectado')) {
                     elStatus.classList.add('status-disconnected');
-                } else if (statusLower.includes('connect')) {
-                    elStatus.classList.add('status-connected');
-                } else if (statusLower.includes('firewall')) {
+                } else if (statusLower.includes('firewall') || statusLower.includes('cortafuego')) {
                     elStatus.classList.add('status-firewalled');
+                } else if (statusLower.includes('connect') || statusLower.includes('conectado')) {
+                    elStatus.classList.add('status-connected');
                 }
+            }
+
+            // Inyectamos las nuevas estadísticas enriquecidas (Phase 13+14)
+            if (data.id_type) {
+                elId.textContent = data.id_type;
+                elIdRow.style.display = 'flex';
+            }
+            if (data.kad_overhead_session_pkts !== undefined) {
+                elOverhead.textContent = data.kad_overhead_session_pkts;
+                elOverheadRow.style.display = 'flex';
+            }
+            if (data.kad_firewalled_udp_pct !== undefined) {
+                elFwUdp.textContent = data.kad_firewalled_udp_pct;
+                elFwTcp.textContent = data.kad_firewalled_tcp_pct;
+                elFirewallRow.style.display = 'flex';
+            }
+            if (data.kad_sources_found !== undefined) {
+                elSources.textContent = data.kad_sources_found;
+                elSourcesRow.style.display = 'flex';
             }
         } else {
             elStatus.textContent = `Error HTTP: ${response.status}`;
@@ -286,6 +386,19 @@ async function updateKadNodes() {
 
         if (response.ok) {
             const newNodesArray = await response.json();
+
+            // Recoger latencias asíncronas elaboradas por el backend pinger
+            try {
+                const latRes = await fetch('/jsons/kad_responsive_nodes.json?t=' + Date.now());
+                if (latRes.ok) {
+                    const responsiveArray = await latRes.json();
+                    latestLatencies = {};
+                    // El nuevo backend devuelve un Array de objetos con todo el payload parseado
+                    responsiveArray.forEach(rn => {
+                        latestLatencies[rn.ip] = rn.rtt;
+                    });
+                }
+            } catch (e) { }
 
             globalNodesArray = newNodesArray; // Volcamos al caché global para que actúe JS al hacer Click
 
@@ -353,9 +466,9 @@ function simulateKadActivity(nodes) {
     if (simulationInterval) clearInterval(simulationInterval);
 
     simulationInterval = setInterval(() => {
-        // Validación obligatoria: Si la red Kad está desconectada, no hay tráfico que simular
-        const currentStatus = elStatus.textContent.toLowerCase();
-        if (currentStatus.includes('disconnect')) {
+        // 1. Si el Mapa Térmico está activo, desactivamos el tráfico simulado para no ensuciar la visualización RTT
+        // 2. Si la red Kad está desconectada, tampoco hay tráfico
+        if (heatMapMode || elStatus.classList.contains('status-disconnected')) {
             // Purgamos los arcos y anillos que pudieran quedar en pantalla
             renderGlobe.arcsData([]).ringsData([]);
             return;

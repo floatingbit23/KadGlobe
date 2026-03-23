@@ -3,4 +3,6 @@ backend/__pycache__
 backend/.env
 *.bin
 *.dat
+
 KadGlobe.md
+KadHandshake.md

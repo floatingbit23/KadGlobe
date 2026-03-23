@@ -1,0 +1,1200 @@
+<!DOCTYPE html SYSTEM>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="PRAGMA" content="no-cache">
+<link rel="icon" href="favicon.ico">
+<title>eMule 0.70b x64 - Web Interface</title>
+<style>
+img
+{
+border:0px;
+}
+img.link
+{
+cursor:pointer;
+}
+form
+{
+display:inline;
+}
+a:active, a:link, a:visited
+{
+color:white;
+text-decoration:none;
+}
+a:hover
+{
+color:#FFC412;
+text-decoration:none;
+}
+.down-line-downloading a:hover
+{
+color:#FFC412;
+text-decoration:none;
+}
+.down-header, .down-header-left, .down-header-right,
+.down-line-hashing, .down-line-hashing-left, .down-line-hashing-right,
+.down-line-waitinghash, .down-line-waitinghash-left, .down-line-waitinghash-right,
+.down-line-error, .down-line-error-left, .down-line-error-right,
+.down-line-stalled, .down-line-stalled-left, .down-line-stalled-right,
+.down-line-complete, .down-line-complete-left, .down-line-complete-right,
+.down-line-completing, .down-line-completing-left, .down-line-completing-right,
+.down-line-waiting, .down-line-waiting-left, .down-line-waiting-right,
+.down-line-paused, .down-line-paused-left, .down-line-paused-right,
+.down-line-stopped, .down-line-stopped-left, .down-line-stopped-right,
+.down-line-downloading, .down-line-downloading-left, .down-line-downloading-right,
+.up-header, .up-header-left,
+.up-line-uploading, .up-line-uploading-left,
+.up-line-connecting, .up-line-connecting-left,
+.server-header, .server-header-left,
+.server-line-disconnected, .server-line-disconnected-left,
+.server-line-high, .server-line-high-left,
+.server-line-low, .server-line-low-left,
+.server-line-connecting, .server-line-connecting-left,
+.server-line-failed, .server-line-failed-left,
+.shared-header, .shared-header-left,
+.shared-line-file, .shared-line-file-left,
+.shared-line-filedown, .shared-line-filedown-left,
+.header, .smallheader, .commontext,
+.upqueue-header, .upqueue-header-left,
+.upqueue-none-line, .upqueue-none-line-left,
+.upqueue-banned-line, .upqueue-banned-line-left,
+.upqueue-friend-line, .upqueue-friend-line-left,
+.upqueue-credit-line, .upqueue-credit-line-left,
+.upqueue-next-line, .upqueue-next-line-left,
+.search-header, .search-header-left, .search-header-right, .search-main, .search-line, .search-line-left, .search-line-right,
+.addserver-header, .addserver-line
+{
+font-family:Tahoma;
+font-size:8pt;
+}
+.tabs
+{
+font-family:Tahoma;
+font-size:8pt;
+background-color:#1F76A5;
+}
+.tabs_two
+{
+font-family:Tahoma;
+font-size:8pt;
+background-color:#0075B3;
+}
+.tabs_three
+{
+font-family:Tahoma;
+font-size:10pt;
+font-weight:bold;
+}
+.tabs_four
+{
+font-family:Tahoma;
+font-size:8pt;
+}
+.tabs_five
+{
+font-family:Tahoma;
+font-size:8pt;
+background-color:#005784;
+}
+.down-header, .down-line-hashing, .down-line-waitinghash, .down-line-error, .down-line-stalled, .down-line-complete, .down-line-completing, .down-line-waiting, .down-line-paused, .down-line-stopped, .down-line-downloading,
+.up-header, .up-line-connecting, .up-line-uploading,
+.server-header, .server-line-disconnected, .server-line-high, .server-line-low, .server-line-connecting, .server-line-failed,
+.shared-header, .shared-line-file, .shared-line-filedown,
+.upqueue-header, .upqueue-none-line, .upqueue-banned-line, .upqueue-friend-line, .upqueue-credit-line, .upqueue-next-line,
+.search-header, .search-line, .addserver-header, .addserver-line
+{
+text-align:center;
+}
+.down-header-left, .down-line-hashing-left, .down-line-waitinghash-left, .down-line-error-left, .down-line-stalled-left, .down-line-complete-left, .down-line-completing-left, .down-line-waiting-left, .down-line-paused-left, .down-line-stopped-left, .down-line-downloading-left,
+.up-header-left, .upqueue-header-left, .up-line-uploading-left, .up-line-connecting-left,
+.server-header-left, .server-line-disconnected-left, .server-line-high-left, .server-line-low-left, .server-line-connecting-left, .server-line-failed-left, .shared-header-left,
+.shared-line-file-left, .shared-line-filedown-left,
+.upqueue-none-line-left, .upqueue-banned-line-left, .upqueue-friend-line-left, .upqueue-credit-line-left, .upqueue-next-line-left,
+.search-line-left, .search-header-left, .search-main
+{
+text-align:left;
+}
+.down-header-right, .down-line-hashing-right, .down-line-waitinghash-right, .down-line-error-right, .down-line-stalled-right, .down-line-complete-right, .down-line-completing-right, .down-line-waiting-right, .down-line-paused-right, .down-line-stopped-right, .down-line-downloading-right, .search-line-right, .search-header-right
+{
+text-align:right;
+}
+.down-header, .down-header-left, .down-header-right,
+.up-header, .up-header-left, .server-header, .server-header-left,
+.shared-header, .shared-header-left, .upqueue-header, .upqueue-header-left,
+.addserver-header, .search-header, .search-header-left, .search-header-right
+{
+background-color:#005784;
+}
+.search-main
+{
+background-color:#000000;
+}
+.header
+{
+background-color:#0046AC;
+}
+.smallheader
+{
+background-color:#003C6E;
+color:#FFFFFF;
+}
+.commontext
+{
+background-color:#FFFFFF;
+color:#000000;
+}
+.down-line-hashing, .down-line-waitinghash, .down-line-error, .down-line-stalled, .down-line-complete, .down-line-completing, .down-line-waiting, .down-line-paused, .down-line-stopped, .down-line-downloading,
+.down-line-hashing-left, .down-line-waitinghash-left, .down-line-error-left, .down-line-stalled-left, .down-line-complete-left, .down-line-completing-left, .down-line-waiting-left, .down-line-paused-left, .down-line-stopped-left, .down-line-downloading-left,
+.down-line-hashing-right, .down-line-waitinghash-right, .down-line-error-right, .down-line-stalled-right, .down-line-complete-right, .down-line-completing-right, .down-line-waiting-right, .down-line-paused-right, .down-line-stopped-right, .down-line-downloading-right,
+.up-line-connecting, .up-line-connecting-left, .up-line-uploading, .up-line-uploading-left,
+.server-line-disconnected, .server-line-disconnected-left,
+.server-line-high, .server-line-high-left,
+.server-line-low, .server-line-low-left,
+.server-line-connecting, .server-line-connecting-left,
+.server-line-failed, .server-line-failed-left,
+.shared-line-file, .shared-line-file-left,
+.shared-line-filedown, .shared-line-filedown-left,
+.upqueue-none-line, .upqueue-none-line-left,
+.upqueue-banned-line, .upqueue-banned-line-left,
+.upqueue-friend-line, .upqueue-friend-line-left,
+.upqueue-credit-line, .upqueue-credit-line-left,
+.upqueue-next-line, .upqueue-next-line-left,
+.search-line, .search-line-left, .search-line-right, .addserver-line
+{
+background-color:#1F76A5;
+}
+.down-line-waiting a:active, .down-line-waiting a:link, .down-line-waiting a:visited,
+.shared-line-file a:active, .shared-line-file a:link, .shared-line-file a:visited,
+.server-line-disconnected a:active, .server-line-disconnected a:link, .server-line-disconnected a:visited
+{
+color:#ffffff;
+}
+.server-line-high, .server-line-high-left, .server-line-high a:active, .server-line-high a:link, .server-line-high a:visited,
+.upqueue-friend-line, .upqueue-friend-line-left,
+.up-line-uploading, .up-line-uploading-left,
+.down-line-downloading, .down-line-downloading-left, .down-line-downloading-right, .down-line-downloading a:link, .down-line-downloading a:active, .down-line-downloading a:visited
+{
+color:#00ff00;
+}
+.server-line-low, .server-line-low-left, .server-line-low a:active, .server-line-low a:link, .server-line-low a:visited,
+.upqueue-credit-line, .upqueue-credit-line-left,
+.down-line-hashing, .down-line-hashing-left, .down-line-hashing-right, .down-line-hashing a:active, .down-line-hashing a:link, .down-line-hashing a:visited
+{
+color:#ffff00;
+}
+.down-line-waitinghash, .down-line-waitinghash-left, .down-line-waitinghash-right, .down-line-waitinghash a:active, .down-line-waitinghash a:link, .down-line-waitinghash a:visited
+{
+color:#feff89;
+}
+.server-line-connecting, .server-line-connecting-left, .server-line-connecting a:active, .server-line-connecting a:link, .server-line-connecting a:visited,
+.down-line-complete, .down-line-complete-left, .down-line-complete-right, .down-line-complete a:active, .down-line-complete a:link, .down-line-complete a:visited
+{
+color:#1D3445;
+}
+.down-line-completing, .down-line-completing-left, .down-line-completing-right, .down-line-completing a:active, .down-line-completing a:link, .down-line-completing a:visited
+{
+color:#2D4F69;
+}
+.upqueue-banned-line, .upqueue-banned-line-left,
+.down-line-error, .down-line-error-left, .down-line-error-right, .down-line-error a:active, .down-line-error a:link, .down-line-error a:visited
+{
+color:#FF4040;
+}
+.upqueue-next-line, .upqueue-next-line-left,
+.down-line-stalled, .down-line-stalled-left, .down-line-stalled-right, .down-line-stalled a:active, .down-line-stalled a:link, .down-line-stalled a:visited
+{
+color:#FFC412;
+}
+.down-line-paused, .down-line-paused-left, .down-line-paused-right, .down-line-paused a:active, .down-line-paused a:link, .down-line-paused a:visited,
+.shared-line-filedown, .shared-line-filedown-left, .shared-line-filedown a:active, .shared-line-filedown a:link, .shared-line-filedown a:visited,
+.server-line-failed, .server-line-failed-left,  .server-line-failed a:active, .server-line-failed a:link, .server-line-failed a:visited
+{
+color:#C1C1C1;
+}
+.down-line-stopped, .down-line-stopped-left, .down-line-stopped-right, .down-line-stopped a:active, .down-line-stopped a:link, .down-line-stopped a:visited
+{
+color:#A0A0A0;
+}
+.percent_table
+{
+border:0px solid #000000;
+border-collapse:collapse;
+}
+.message
+{
+font-family:Tahoma;
+font-size:8pt;
+font-weight:bold;
+color:#FFFFFF;
+background-color:#005784;
+}
+.dinput
+{
+border-width:1px;
+border-color:black;
+border-style:dotted;
+}
+.fdown
+{
+font-weight:bold;
+color:#CC0000;
+}
+.fok
+{
+font-weight:bold;
+color:#CCFFCC;
+}
+.menuskin
+{
+position:absolute;
+background-color:#005784;
+border:1px solid black;
+line-height:18px;
+font:normal 12px Tahoma;
+z-index:100;
+visibility:hidden;
+}
+.menuskin a
+{
+text-decoration:none;
+color:white;
+}
+.menuimages
+{
+background-color:#003C6E;
+border:2px #003C6E solid;
+vertical-align:middle;
+}
+.menuchecked
+{
+background-color:#005784;
+border:2px #005784 solid;
+vertical-align:middle;
+}
+#mouseoverstyle
+{
+background-color:#003C6E;
+}
+#mouseoverstyle .menuchecked
+{
+background-color:#003C6E;
+border:2px #003C6E solid;
+}
+/* Tooltip customization */
+div#tipDiv
+{
+position:absolute; visibility:hidden; left:0; top:0; z-index:10000;
+background-color:#005784; border:1px solid #000000;
+width:400px; padding:4px;
+font-family:Tahoma, Verdana, Arial;
+color:#FFFFFF; font-size:8pt; line-height:1.2;
+}
+</style>
+
+
+<script Language="JavaScript">
+<!--
+/*************************************************************************
+	Pop-it menu - By Dynamic Drive
+	For full source code and more DHTML scripts, visit
+	http://www.dynamicdrive.com
+	This credit MUST stay intact for use
+*************************************************************************/
+var ie4=document.all
+var ns6=document.getElementById&&!document.all
+var ns4=document.layers
+var ed2kinfo;
+var iteminfo;
+var removeconfirm;
+var confirmclose;
+var confirmreboot;
+var confirmshutdown;
+
+function downmenu(event,admin,finfo,ed2k,downstate,isgetflc,fname,session,filehash,commentinfo,downloadable)
+{
+	var code = new Array()
+	ed2kinfo = ed2k
+	iteminfo = finfo
+	cmts = commentinfo
+	removeconfirm = 'Are you sure that you want to cancel and delete this file?\n' + fname
+
+	if(downstate == "hashing" || downstate == "waitinghash")
+		code = '<div class="menuitems"><img class="menuimages" src="l_hasherror.gif"><img class="menuchecked" src="checked_no.gif">Hashing&nbsp;<\/div>'
+	else if(downstate == "error")
+		code = '<div class="menuitems"><img class="menuimages" src="l_hasherror.gif"><img class="menuchecked" src="checked_no.gif">Erroneous&nbsp;<\/div>'
+	else if(downstate == "completing")
+		code = '<div class="menuitems"><img class="menuimages" src="l_hasherror.gif"><img class="menuchecked" src="checked_no.gif">Completing&nbsp;<\/div>'
+	else
+	{
+		code = '';
+
+		if(admin == "admin")
+		{
+			if(downstate == "complete") {
+				if (downloadable=="yes")
+					code += '<a href="?ses=' + session + '&amp;w=getfile&amp;filehash=' + filehash +'"><div class="menuitems"><img class="menuimages" src="downloading.gif"><img class="menuchecked" src="checked_no.gif">Download&nbsp;<\/div><\/a>'
+				code += '<a href="?ses=' + session + '&amp;w=transfer&amp;clearcompleted=' + filehash +'"><div class="menuitems"><img class="menuimages" src="l_clear.gif"><img class="menuchecked" src="checked_no.gif">Clear Completed&nbsp;<\/div><\/a>'
+			} else {
+				if(downstate == "paused" || downstate == "stopped")
+					code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=resume&amp;file=' + filehash + '"><div class="menuitems"><img class="menuimages" src="l_resume.gif"><img class="menuchecked" src="checked_no.gif">Resume&nbsp;<\/div><\/a>'
+				if(downstate != "stopped")
+					code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=stop&amp;file=' + filehash + '"><div class="menuitems"><img class="menuimages" src="l_stop.gif"><img class="menuchecked" src="checked_no.gif">Stop&nbsp;<\/div><\/a>'
+				if(downstate != "paused")
+					code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=pause&amp;file=' + filehash + '"><div class="menuitems"><img class="menuimages" src="l_pause.gif"><img class="menuchecked" src="checked_no.gif">Pause&nbsp;<\/div><\/a>'
+				code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=cancel&amp;file=' + filehash + '" onclick="return confirm(removeconfirm)"><div class="menuitems"><img class="menuimages" src="l_cancel.gif"><img class="menuchecked" src="checked_no.gif">Cancel&nbsp;<\/div><\/a>'
+				code += '<a href="javascript:filerename(\'' + session + '\',\'' + filehash + '\',\'' + fname + '\')"><div class="menuitems"><img class="menuimages" src="l_rename.gif"><img class="menuchecked" src="checked_no.gif">Rename&nbsp;<\/div><\/a>'
+
+        if(isgetflc == "enabled")
+					code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=getflc&amp;file=' + filehash + '"><div class="menuitems"><img class="menuimages" src="l_getflc.gif"><img class="menuchecked" src="checked.gif">Try to download preview chunks first&nbsp;<\/div><\/a>'
+        else if(isgetflc == "disabled")
+					code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=getflc&amp;file=' + filehash + '"><div class="menuitems"><img class="menuimages" src="l_getflc.gif"><img class="menuchecked" src="checked_no.gif">Try to download preview chunks first&nbsp;<\/div><\/a>'
+			}
+		}
+
+		if (cmts=="yes") {
+			code += '<a href="?ses=' + session + '&amp;w=commentlist&amp;filehash=' + filehash+'" target="_blank"><div class="menuitems"><img class="menuimages" src="l_comments.gif"><img class="menuchecked" src="checked_no.gif">Comments...&nbsp;<\/div><\/a>'
+		}
+
+		code += '<a href="javascript:alert(iteminfo);"><div class="menuitems"><img class="menuimages" src="l_info.gif"><img class="menuchecked" src="checked_no.gif">File Details&nbsp;<\/div><\/a>'
+		code += '<a href="javascript:ToClipboard(ed2kinfo);"><div class="menuitems"><img class="menuimages" src="l_ed2klink.gif"><img class="menuchecked" src="checked_no.gif">eD2K Links&nbsp;<\/div><\/a>'
+	}
+
+	showmenu(event,code)
+}
+
+function filerename(session,filehash,fname)
+{
+	var newname = prompt("Rename", fname);
+
+	if (newname != fname && newname != null)
+	        window.location='/?ses=' + session + '&amp;w=transfer&amp;op=rename&amp;name=' + escape(newname) + '&amp;file=' + filehash;
+}
+
+function servermenu(event,admin,ed2k,session,ip,port,isstatic)
+{
+	var code = new Array()
+	ed2kinfo = ed2k
+
+	code = '<a href="javascript:ToClipboard(ed2kinfo);"><div class="menuitems"><img class="menuimages" src="l_ed2klink.gif"><img class="menuchecked" src="checked_no.gif">eD2K Links&nbsp;<\/div><\/a>'
+
+	if(admin == "admin")
+	{
+		code += '<a href="?ses=' + session + '&amp;w=server&amp;c=connect&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuimages" src="l_connect.gif"><img class="menuchecked" src="checked_no.gif">Connect&nbsp;<\/div><\/a>'
+		code += '<a href="?ses=' + session + '&amp;w=server&amp;c=remove&amp;ip=' + ip + '&amp;port=' + port + '" onclick="return confirm(\'Are you sure to remove this server from list?\')' + '"><div class="menuitems"><img class="menuimages" src="l_cancel.gif"><img class="menuchecked" src="checked_no.gif">Remove&nbsp;<\/div><\/a>'
+		if(isstatic)
+			code += '<a href="?ses=' + session + '&amp;w=server&amp;c=removefromstatic&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuimages" src="l_static.gif"><img class="menuchecked" src="checked.gif">Static&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=server&amp;c=addtostatic&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuimages" src="l_static.gif"><img class="menuchecked" src="checked_no.gif">Static&nbsp;<\/div><\/a>'
+	}
+
+	showmenu(event,code)
+}
+
+function sharedmenu(event,admin,ed2k,session,hash,fname,filestate,downloadable)
+{
+	var code = new Array()
+	ed2kinfo = ed2k
+
+	code = '<a href="javascript:ToClipboard(ed2kinfo);"><div class="menuitems"><img class="menuimages" src="l_ed2klink.gif"><img class="menuchecked" src="checked_no.gif">eD2K Links&nbsp;<\/div><\/a>'
+	if (downloadable=="yes")
+		code += '<a href="?ses=' + session + '&amp;w=getfile&amp;filehash=' + hash +'"><div class="menuitems"><img class="menuimages" src="downloading.gif"><img class="menuchecked" src="checked_no.gif">Download&nbsp;<\/div><\/a>'
+
+	showmenu(event,code)
+}
+
+function adminmenu(event,admin)
+{
+	var code = new Array()
+
+	confirmclose = 'Do you really want to exit eMule?'
+	confirmreboot = 'Do you really want the system to reboot?'
+	confirmshutdown = 'Do you really want the system to shutdown?'
+
+	code = '<a href="javascript:ShowHide(' + "'" + 'ed2k_open' + "'" + ');"><div class="menuitems"><img class="menuimages" src="l_ed2klink.gif" alt="eD2K Links"><img class="menuchecked" src="checked_no.gif">eD2K Links&nbsp;<\/div><\/a>'
+	code += '<a href="?ses=6980&amp;w=logout"><div class="menuitems"><img class="menuimages" src="l_logout.gif" alt="Logout"><img class="menuchecked" src="checked_no.gif">Logout&nbsp;<\/div><\/a>'
+
+	if(admin == "admin")
+	{
+	  code += '<div class="menuitems">&nbsp;<\/div><\/a>'
+		code += '<a href="?ses=6980&amp;w=close" onclick="return confirm(confirmclose)"><div class="menuitems"><img class="menuimages" src="l_close.gif" alt="Shutdown eMule"><img class="menuchecked" src="checked_no.gif">Shutdown eMule&nbsp;<\/div><\/a>'
+		code += '<a href="?ses=6980&amp;w=reboot" onclick="return confirm(confirmreboot)"><div class="menuitems"><img class="menuimages" src="l_reboot.gif" alt="Reboot system"><img class="menuchecked" src="checked_no.gif">Reboot system&nbsp;<\/div><\/a>'
+		code += '<a href="?ses=6980&amp;w=shutdown" onclick="return confirm(confirmshutdown)"><div class="menuitems"><img class="menuimages" src="l_shutdown.gif" alt="Shutdown system"><img class="menuchecked" src="checked_no.gif">Shutdown system&nbsp;<\/div><\/a>'
+	}
+
+	showmenu(event,code)
+}
+
+function linkmenu(event)
+{
+	var code = new Array()
+
+
+	code = '<a href="https://vcheck.emule-project.net/en/version_check.php?version=1803&language=1033&mod=1" target="_blank"><div class="menuitems"><img class="menuimages" src="l_version.gif" alt="Version"><img class="menuchecked" src="checked_no.gif">eMule Version Check&nbsp;<\/div><\/a>'
+	code += '<a href="https://emule-project.net" target="_blank"><div class="menuitems"><img class="menuimages" src="l_homepage.gif"><img class="menuchecked" src="checked_no.gif">eMule Homepage&nbsp;<\/div><\/a>'
+	code += '<a href="https://forum.emule-project.net" target="_blank"><div class="menuitems"><img class="menuimages" src="l_forum.gif"><img class="menuchecked" src="checked_no.gif">eMule Forum&nbsp;<\/div><\/a>'
+	code += '<a href="https://www.emule-project.net/home/perl/help.cgi" target="_blank"><div class="menuitems"><img class="menuimages" src="l_info.gif"><img class="menuchecked" src="checked_no.gif">eMule Doc,FAQ&nbsp;<\/div><\/a>'
+
+	showmenu(event,code)
+}
+
+function upmenu(event,admin,clientextra,userhash)
+{
+	var code = new Array()
+
+	if(admin == "admin")
+	{
+		if(clientextra == "friend")
+			code = '<a href="?ses=6980&amp;w=transfer&amp;op=removefriend&amp;userhash=' + userhash + '"><div class="menuitems"><img class="menuimages" src="l_friend.gif" alt="Friends"><img class="menuchecked" src="checked.gif">Friends&nbsp;<\/div><\/a>'
+		else
+			code = '<a href="?ses=6980&amp;w=transfer&amp;op=addfriend&amp;userhash=' + userhash + '"><div class="menuitems"><img class="menuimages" src="l_friend.gif" alt="Friends"><img class="menuchecked" src="checked_no.gif">Friends&nbsp;<\/div><\/a>'
+
+		showmenu(event,code)
+	}
+}
+
+function searchmenu(event,ed2k)
+{
+	var code = new Array()
+
+	code = '<a href="' + ed2k + '"><div class="menuitems"><img class="menuimages" src="l_ed2klink.gif" alt="eD2K Links"><img class="menuchecked" src="checked_no.gif">eD2K Links&nbsp;<\/div><\/a>'
+
+	showmenu(event,code)
+}
+
+function columnmenu(event,tab,menu, m1,e1,m2,e2,m3,e3,m4,e4,m5,e5,m6,e6,m7,e7,m8,e8,m9,e9,m10,e10,m11,e11)
+{
+	var code = new Array();
+	code = "";
+
+	for (i=1; i<=11; i++)
+	{
+		try
+		{
+			var e = eval('e'+i);
+			var m = eval('m'+i);
+			var j = i - 1;
+
+			if(e != "") { code += '<a href="?ses=6980&amp;w='+tab+'&amp;c='+menu+'&amp;m='+j+'&amp;v=1"><div class="menuitems"><img class="menuchecked" src="checked.gif">'+m+'&nbsp;<\/div><\/a>' }
+			else if(m != "") { code += '<a href="?ses=6980&amp;w='+tab+'&amp;c='+menu+'&amp;m='+j+'&amp;v=0"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">'+m+'&nbsp;<\/div><\/a>' }
+		}
+		catch(e)
+		{
+			// Doesn't exist that variable
+		}
+	}
+
+	showmenu(event,code);
+}
+
+function catpriomenu(event,admin,session)
+{
+	var code = new Array()
+
+	if(admin == "admin")
+	{
+		code = '<a href="?ses=' + session + '&amp;w=transfer&amp;c=menuprio&amp;p=low"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Low&nbsp;<\/div><\/a>'
+		code += '<a href="?ses=' + session + '&amp;w=transfer&amp;c=menuprio&amp;p=normal"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Normal&nbsp;<\/div><\/a>'
+		code += '<a href="?ses=' + session + '&amp;w=transfer&amp;c=menuprio&amp;p=high"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">High&nbsp;<\/div><\/a>'
+		code += '<a href="?ses=' + session + '&amp;w=transfer&amp;c=menuprio&amp;p=auto"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Auto&nbsp;<\/div><\/a>'
+
+		showmenu(event,code)
+	}
+}
+
+function serverpriomenu(event,admin,session,ip,port,priority)
+{
+	var code = new Array()
+
+	if(admin == "admin")
+	{
+		if(priority == "Low")
+			code = '<a href="?ses=' + session + '&amp;w=server&amp;c=priolow&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Low&nbsp;<\/div><\/a>'
+		else
+			code = '<a href="?ses=' + session + '&amp;w=server&amp;c=priolow&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Low&nbsp;<\/div><\/a>'
+		if(priority == "Normal")
+			code += '<a href="?ses=' + session + '&amp;w=server&amp;c=prionormal&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Normal&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=server&amp;c=prionormal&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Normal&nbsp;<\/div><\/a>'
+		if(priority == "High")
+			code += '<a href="?ses=' + session + '&amp;w=server&amp;c=priohigh&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">High&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=server&amp;c=priohigh&amp;ip=' + ip + '&amp;port=' + port + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">High&nbsp;<\/div><\/a>'
+
+		showmenu(event,code)
+	}
+}
+
+function downpriomenu(event,admin,session,filehash,priority,downstate)
+{
+	var code = new Array()
+
+	if(downstate == "complete" || downstate == "completing")
+		return;
+
+	if(admin == "admin")
+	{
+		if(priority == "Low")
+			code = '<a href="?ses=' + session + '&amp;w=transfer&amp;op=priolow&amp;file=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Low&nbsp;<\/div><\/a>'
+		else
+			code = '<a href="?ses=' + session + '&amp;w=transfer&amp;op=priolow&amp;file=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Low&nbsp;<\/div><\/a>'
+		if(priority == "Normal")
+			code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=prionormal&amp;file=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Normal&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=prionormal&amp;file=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Normal&nbsp;<\/div><\/a>'
+		if(priority == "High")
+			code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=priohigh&amp;file=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">High&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=priohigh&amp;file=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">High&nbsp;<\/div><\/a>'
+		if(priority == "Auto")
+			code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=prioauto&amp;file=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Auto&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=transfer&amp;op=prioauto&amp;file=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Auto&nbsp;<\/div><\/a>'
+
+		showmenu(event,code)
+	}
+}
+
+function sharedpriomenu(event,admin,session,filehash,priority)
+{
+	var code = new Array()
+
+	if(admin == "admin")
+	{
+		if(priority == "VeryLow")
+			code = '<a href="?ses=' + session + '&amp;w=shared&amp;prio=verylow&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Very Low&nbsp;<\/div><\/a>'
+		else
+			code = '<a href="?ses=' + session + '&amp;w=shared&amp;prio=verylow&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Very Low&nbsp;<\/div><\/a>'
+		if(priority == "Low")
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=low&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Low&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=low&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Low&nbsp;<\/div><\/a>'
+		if(priority == "Normal")
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=normal&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Normal&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=normal&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Normal&nbsp;<\/div><\/a>'
+		if(priority == "High")
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=high&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">High&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=high&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">High&nbsp;<\/div><\/a>'
+		if(priority == "Release")
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=release&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Release&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=release&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Release&nbsp;<\/div><\/a>'
+		if(priority == "Auto")
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=auto&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked.gif">Auto&nbsp;<\/div><\/a>'
+		else
+			code += '<a href="?ses=' + session + '&amp;w=shared&amp;prio=auto&amp;hash=' + filehash + '"><div class="menuitems"><img class="menuchecked" src="checked_no.gif">Auto&nbsp;<\/div><\/a>'
+
+		showmenu(event,code)
+	}
+}
+
+function showmenu(e,code,downstate)
+{
+	if (!document.all&&!document.getElementById&&!document.layers)
+		return;
+
+	if(downstate == "complete" || downstate == "completing")
+		return;
+
+	clearhidemenu()
+
+	menuobj=ie4? document.all.popmenu : ns6? document.getElementById("popmenu") : ns4? document.popmenu : ""
+	menuobj.thestyle=(ie4||ns6)? menuobj.style : menuobj
+
+	if (ie4||ns6)
+		menuobj.innerHTML=code
+	else
+	{
+		menuobj.document.write('<layer name=gui bgColor=#E6E6E6 onMouseover="clearhidemenu()" onMouseout="hidemenu()">' + code + '<\/layer>')
+		menuobj.document.close()
+	}
+
+	menuobj.contentwidth=(ie4||ns6)? menuobj.offsetWidth : menuobj.document.gui.document.width
+	menuobj.contentheight=(ie4||ns6)? menuobj.offsetHeight : menuobj.document.gui.document.height
+	eventX=ie4? event.clientX+5 : ns6? e.clientX+5 : e.x+5
+	eventY=ie4? event.clientY : ns6? e.clientY : e.y
+
+	var rightedge=ie4? document.body.clientWidth-eventX : window.innerWidth-eventX
+	var bottomedge=ie4? document.body.clientHeight-eventY : window.innerHeight-eventY
+
+	if (rightedge<menuobj.contentwidth)
+		menuobj.thestyle.left=ie4? document.body.scrollLeft+eventX-menuobj.contentwidth : ns6? window.pageXOffset+eventX-menuobj.contentwidth : eventX-menuobj.contentwidth
+	else
+		menuobj.thestyle.left=ie4? document.body.scrollLeft+eventX : ns6? window.pageXOffset+eventX : eventX
+
+	if (bottomedge>=menuobj.contentheight)
+		menuobj.thestyle.top=eventY + (ie4? document.body.scrollTop : ns6? window.pageYOffset : 0)
+	else if (eventY>menuobj.contentheight)
+		menuobj.thestyle.top=eventY + (ie4? document.body.scrollTop-menuobj.contentheight : ns6? window.pageYOffset-menuobj.contentheight : -menuobj.contentheight)
+	else
+		menuobj.thestyle.top=ie4? document.body.scrollTop : ns6? window.pageYOffset : 0
+
+	menuobj.thestyle.visibility="visible"
+
+	return false
+}
+
+function contains_ns6(a, b)
+{
+	if (b == null)
+		return false;
+	//Determines if 1 element in contained in another- by Brainjar.com
+	while (b.parentNode)
+		if ((b = b.parentNode) == a)
+			return true;
+	return false;
+}
+
+function hidemenu()
+{
+	if (window.menuobj)
+		menuobj.thestyle.visibility=(ie4||ns6)? "hidden" : "hide"
+}
+
+function dynamichide(e)
+{
+	if (ie4&&!menuobj.contains(e.toElement))
+		hidemenu()
+	else if (ns6&&e.currentTarget!= e.relatedTarget&& !contains_ns6(e.currentTarget, e.relatedTarget))
+		hidemenu()
+}
+
+function delayhidemenu()
+{
+	if (ie4||ns6||ns4)
+		delayhide=setTimeout("hidemenu()",500)
+}
+
+function clearhidemenu()
+{
+	if (window.delayhide)
+		clearTimeout(delayhide)
+}
+
+function highlightmenu(e,state)
+{
+	if (document.all)
+		source_el=event.srcElement
+	else if (document.getElementById)
+		source_el=e.target
+
+	if (source_el.className=="menuitems")
+	{
+		source_el.id=(state=="on")? "mouseoverstyle" : ""
+	}
+	else
+	{
+		while(source_el.id!="popmenu")
+		{
+			source_el=document.getElementById? source_el.parentNode : source_el.parentElement
+			if (source_el.className=="menuitems")
+			{
+				source_el.id=(state=="on")? "mouseoverstyle" : ""
+			}
+		}
+	}
+}
+
+if (ie4||ns6)
+	document.onclick=hidemenu
+
+function ToClipboard(txt)
+{
+	if(window.clipboardData) {
+		window.clipboardData.clearData();
+		window.clipboardData.setData("Text", txt);
+	} else if(navigator.userAgent.indexOf("Opera")!=-1)
+		window.location=txt;
+	else if (window.netscape) {
+		try {
+			netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+		} catch (e) {
+			alert("Permission denied! Browse to 'about:config' in your browser\nand set 'signed.applets.codebase_principal_support' to true");
+		}
+		var clip = Components.classes['@mozilla.org/widget/clipboard;1'].createInstance(Components.interfaces.nsIClipboard);
+		if (!clip)
+			return;
+		var trans = Components.classes['@mozilla.org/widget/transferable;1'].createInstance(Components.interfaces.nsITransferable);
+		if (!trans)
+			return;
+		trans.addDataFlavor('text/unicode');
+		var str = new Object();
+		var len = new Object();
+		var str = Components.classes["@mozilla.org/supports-string;1"].createInstance(Components.interfaces.nsISupportsString);
+		var copytext=txt;
+		str.data=copytext;
+		trans.setTransferData("text/unicode",str,copytext.length*2);
+		var clipid=Components.interfaces.nsIClipboard;
+		if (!clip)
+			return false;
+		clip.setData(trans,null,clipid.kGlobalClipboard);
+	}
+}
+var timeoutID;
+var timeout = 120000;
+
+function RefreshPage()
+{
+    location.href = "?ses=6980&amp;w=kad&amp;cat=&amp;dummy=13961";
+}
+
+function ToggleTimer()
+{
+    if (timeoutID)
+    {
+        clearTimeout(timeoutID);
+        timeoutID = null;
+        document.images['ImgToggleTimer'].src = 'l_timer_off.gif';
+    }
+    else
+    {
+        SetTimer();
+        if (timeoutID)
+	        document.images['ImgToggleTimer'].src = 'l_timer.gif';
+		else
+	        document.images['ImgToggleTimer'].src = 'l_timer_off.gif';
+    }
+}
+
+function SetTimer()
+{
+    if (timeout != 0)
+        timeoutID = setTimeout("RefreshPage()", timeout);
+}
+
+if (document.all||document.getElementById)
+    SetTimer();
+else
+    window.onload=SetTimer;
+//-->
+</script>
+
+</head>
+<body background="main_bg.gif" text=white link="#2184B5" vlink="#2184B5" alink="#2184B5" marginwidth=0 marginheight=0 topmargin=0 leftmargin=0 style="margin:0px">
+ <div id="popmenu" class="menuskin" onMouseover="clearhidemenu();highlightmenu(event,'on')" onMouseout="highlightmenu(event,'off');dynamichide(event)"></div>
+ <table border="0" cellpadding="4" cellspacing="0" width="100%" background="main_menubg.gif" class="tabs_three">
+  <tr>
+   <td width="5">&nbsp;</td>
+   <td width="95" nowrap>
+    <a href="#" onMouseover="linkmenu(event)" onMouseout="delayhidemenu()"><img src="h_emule.gif" alt="eMule | Web Interface"><br>
+			Web Interface</a>
+   </td>
+   <td width="5">&nbsp;</td>
+   <td width="9%" align="center" valign="top"><br>
+	<a href="?ses=6980&amp;w=transfer">
+			<img src="h_transfer.gif"><br>
+			Transfer
+    </a>
+   </td>
+   <td width="9%" align="center" valign="top"><br>
+	<a href="?ses=6980&amp;w=kad">
+			<img src="h_kad.gif"><br>
+			Kad
+	</a>
+   </td>
+   <td width="9%" align="center" valign="top"><br>
+	<a href="?ses=6980&amp;w=server">
+			<img src="h_server.gif"><br>
+			Servers
+	</a>
+   </td>
+   <td width="9%" align="center" valign="top"><br>
+	<a href="?ses=6980&amp;w=search">
+			<img src="h_search.gif"><br>
+			Search
+	</a>
+   </td>
+   <td width="9%" align="center" valign="top"><br>
+	<a href="?ses=6980&amp;w=shared">
+			<img src="h_shared.gif"><br>
+			Shared Files
+	</a>
+   </td>
+   <td width="9%" align="center" valign="top"><br>
+	<a href="?ses=6980&amp;w=stats">
+			<img src="h_statistic.gif"><br>
+			Statistics
+	</a>
+   </td>
+   <td width="9%" align="center" valign="top"><br>
+    <a href="?ses=6980&amp;w=graphs">
+			<img src="h_graph.gif"><br>
+			Graphs
+    </a>
+   </td>
+   <td width="9%" align="center" valign="top"><br>
+	<a href="?ses=6980&amp;w=options">
+			<img src="h_preferences.gif"><br>
+			Options
+	</a>
+   </td>
+
+   <td width="20">&nbsp;</td>
+
+   <td width="9%" align="center" valign="top"><br>
+	<a href="javascript:void(0)" onMouseover="adminmenu(event,'admin')" onMouseout="delayhidemenu()"><img src="l_options.gif" align="middle"><br>Admin Menu</a>
+   </td>
+
+   <td>&nbsp;</td>
+   <td width="100" nowrap>
+	<img src="l_info.gif" align="middle"><a href="?ses=6980&amp;w=myinfo">&nbsp;&nbsp;My Info</a><br>
+	<img src="h_log.gif" align="middle"><a href="?ses=6980&amp;w=log#end">&nbsp;&nbsp;Log</a><br>
+	<img src="h_log.gif" align="middle"><a href="?ses=6980&amp;w=sinfo#end">&nbsp;&nbsp;Server Info</a><br>
+	<img src="h_log.gif" align="middle"><a href="?ses=6980&amp;w=debuglog#end">&nbsp;&nbsp;Debug Log</a>
+   </td>
+  </tr>
+ </table>
+
+<table border="0" cellpadding="2" cellspacing="0" width="100%" height="64">
+ <tr>
+  <td background="main_topbardarker.gif">
+   <table class="tabs_four" border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr><td rowspan="2">&nbsp;</td>
+    <td nowrap height="25"><b>Connection:</b></td></tr>
+    <tr><td nowrap height="25"><b>Status:</b></td></tr>
+   </table>
+  </td>
+  <td background="main_topbarseparator.gif" width="7">&nbsp;</td>
+
+  <td background="main_topbar.gif">
+   <table class="tabs_four" border="0" cellpadding="1" cellspacing="0" width="100%">
+    <tr>
+     <td><img src="disconnected.gif" align="left"> Disconnected (<a href="?ses=6980&amp;w=server&amp;c=connect">Connect To Any Server</a>) &nbsp;&nbsp;(<img src="l_users.gif" align="middle"> 0&nbsp;&nbsp;<img src="filetype_other.gif" align="middle"> 0)</td>
+     <td width="25%" nowrap><img src="h_kad.gif" width="16" height="16" align="left"> Connected (<a href="?ses=6980&amp;w=kad&amp;c=disconnect">Disconnect</a>)</td>
+     <td width="1%"></td>
+     <td width="14%" nowrap><img src="l_calendar.gif" align="middle">
+      <script language="javascript">
+       <!--
+        var d = new Date();
+        s = (d.getDate() < 10 ? "0" : "") + d.getDate() + "." + ((d.getMonth() + 1) < 10 ? "0" : "") + (d.getMonth() + 1) + "." + d.getFullYear()
+          + '<td width="14%" nowrap><img src="l_clock.gif" align="middle"> ' + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes() + ":" + (d.getSeconds() < 10 ? "0" : "") + d.getSeconds() + "<\/td>";
+        document.write(s);
+       //-->
+      </script>
+     </td>
+     <td></td>
+
+     <td width="17" align="right">
+      <script language="javascript">
+	   <!--
+	    if (timeoutID && timeout != 0)
+	      document.write('<img id="ImgToggleTimer" class="link" align="middle" src="l_timer.gif" onclick="ToggleTimer();">');
+	    else
+	      document.write('<img id="ImgToggleTimer" class="link" align="middle" src="l_timer_off.gif" onclick="ToggleTimer();">');
+	   //-->
+      </script>
+     </td>
+
+    </tr>
+   </table>
+   <table class="tabs_four" border="0" cellpadding="1" cellspacing="0" width="100%">
+    <tr>
+	 <td style="font-size:8pt">
+	  <img src="arrow_down.gif" align="left" hspace="3" vspace="4"> Download: 405.0 (450)
+	  <table width="125" border=1 class="percent_table" cellpadding=0 cellspacing=0 bordercolor="#005784" bgcolor="#99CCFF"><tr><td><img src="qs_down.jpg" width="90%" height="8"></td></tr></table>
+	 </td>
+	 <td style="font-size:8pt">
+	  <img src="arrow_up.gif" align="left" hspace="3" vspace="4"> Upload: 80.0 (80)
+	  <table width="125" border=1 class="percent_table" cellpadding=0 cellspacing=0 bordercolor="#005784" bgcolor="#99CCFF"><tr><td><img src="qs_up.jpg" width="100%" height="8"></td></tr></table>
+	 </td>
+	 <td style="font-size:8pt">
+	  <img src="l_con.gif" align="left" hspace="3" vspace="4"> Active connections: 11.0 (300)
+	  <table width="125" border=1 class="percent_table" cellpadding=0 cellspacing=0 bordercolor="#005784" bgcolor="#99CCFF"><tr><td><img src="qs_con.jpg" width="4%" height="8"></td></tr></table>
+	 </td>
+	 <td style="font-size:8pt">
+	  <img src="l_users.gif" align="left" hspace="3" vspace="4"> Users: 0 (0)
+	  <table width="125" border=1 class="percent_table" cellpadding=0 cellspacing=0 bordercolor="#005784" bgcolor="#99CCFF"><tr><td><img src="qs_user.jpg" width="0%" height="8"></td></tr></table>
+	 </td>
+	 <td></td>
+    </tr>
+   </table>
+
+  </td>
+ </tr>
+</table>
+
+<script language="javascript">
+<!--
+/*************************************************************************
+	dw_tooltip.js
+	version date: Nov 2003
+	requires: dw_event.js and dw_viewport.js
+
+	This code is from Dynamic Web Coding at http://www.dyn-web.com/
+	Copyright 2003 by Sharon Paine
+	See Terms of Use at http://www.dyn-web.com/bus/terms.html
+	regarding conditions under which you may use this code.
+	This notice must be retained in the code as is!
+*************************************************************************/
+
+var Tooltip = {
+	followMouse:true,
+	offX:8,
+	offY:12,
+
+	ready:false,
+	t1:null,
+	t2:null,
+	tipID:"tipDiv",
+	tip:null,
+
+	init: function() {
+		if ( document.createElement && document.body && typeof document.body.appendChild != "undefined" ) {
+			var el = document.createElement("DIV");
+			el.className = "tooltip";
+			el.id = this.tipID;
+			document.body.appendChild(el);
+			this.ready = true;
+		}
+	},
+
+	show: function(e, msg) {
+		if (this.t1) clearTimeout(this.t1);
+		if (this.t2) clearTimeout(this.t2);
+		this.tip = document.getElementById( this.tipID );
+		// set up mousemove
+		if (this.followMouse)
+			dw_event.add( document, "mousemove", this.trackMouse, true );
+		this.writeTip("");  // for mac ie
+		this.writeTip(msg);
+		viewport.getAll();
+		this.positionTip(e);
+		this.t1 = setTimeout("document.getElementById('" + Tooltip.tipID + "').style.visibility = 'visible'",200);
+	},
+
+	writeTip: function(msg) {
+		if ( this.tip && typeof this.tip.innerHTML != "undefined" ) this.tip.innerHTML = msg;
+	},
+
+	positionTip: function(e) {
+		var x = e.pageX? e.pageX: e.clientX + viewport.scrollX;
+		var y = e.pageY? e.pageY: e.clientY + viewport.scrollY;
+
+		if ( x + this.tip.offsetWidth + this.offX > viewport.width + viewport.scrollX )
+			x = x - this.tip.offsetWidth - this.offX;
+		else
+			x = x + this.offX;
+		if ( y + this.tip.offsetHeight + this.offY > viewport.height + viewport.scrollY )
+			y = ( y - this.tip.offsetHeight - this.offY > viewport.scrollY )? y - this.tip.offsetHeight - this.offY : viewport.height + viewport.scrollY - this.tip.offsetHeight;
+		else
+			y = y + this.offY;
+		this.tip.style.left = x + "px"; this.tip.style.top = y + "px";
+	},
+
+	hide: function() {
+		if (this.t1) clearTimeout(this.t1);
+		if (this.t2) clearTimeout(this.t2);
+			this.t2 = setTimeout("document.getElementById('" + this.tipID + "').style.visibility = 'hidden'",200);
+		// release mousemove
+		if (this.followMouse)
+			dw_event.remove( document, "mousemove", this.trackMouse, true );
+		this.tip = null;
+	},
+
+	trackMouse: function(e) {
+		e = dw_event.DOMit(e);
+		Tooltip.positionTip(e);
+	}
+}
+
+Tooltip.init();
+
+/*************************************************************************
+	dw_event.js (version date Feb 2004)
+*************************************************************************/
+var dw_event = {
+	add: function(obj, etype, fp, cap) {
+		cap = cap || false;
+		if (obj.addEventListener) obj.addEventListener(etype, fp, cap);
+		else if (obj.attachEvent) obj.attachEvent("on" + etype, fp);
+	},
+
+	remove: function(obj, etype, fp, cap) {
+		cap = cap || false;
+		if (obj.removeEventListener) obj.removeEventListener(etype, fp, cap);
+		else if (obj.detachEvent) obj.detachEvent("on" + etype, fp);
+	},
+
+	DOMit: function(e) {
+		e = e? e: window.event;
+		e.tgt = e.srcElement? e.srcElement: e.target;
+
+		if (!e.preventDefault) e.preventDefault = function () { return false; }
+		if (!e.stopPropagation) e.stopPropagation = function () { if (window.event) window.event.cancelBubble = true; }
+
+		return e;
+	}
+}
+/*************************************************************************
+	dw_viewport.js (version date Nov 2003)
+*************************************************************************/
+viewport = {
+	getWinWidth: function () {
+		this.width = 0;
+		if (window.innerWidth)
+			this.width = window.innerWidth - 18;
+		else if (document.documentElement && document.documentElement.clientWidth)
+			this.width = document.documentElement.clientWidth;
+		else if (document.body && document.body.clientWidth)
+			this.width = document.body.clientWidth;
+	},
+
+	getWinHeight: function () {
+		this.height = 0;
+		if (window.innerHeight)
+			this.height = window.innerHeight - 18;
+		else if (document.documentElement && document.documentElement.clientHeight)
+			this.height = document.documentElement.clientHeight;
+		else if (document.body && document.body.clientHeight)
+			this.height = document.body.clientHeight;
+	},
+
+	getScrollX: function () {
+		this.scrollX = 0;
+		if (typeof window.pageXOffset == "number")
+			this.scrollX = window.pageXOffset;
+		else if (document.documentElement && document.documentElement.scrollLeft)
+			this.scrollX = document.documentElement.scrollLeft;
+		else if (document.body && document.body.scrollLeft)
+			this.scrollX = document.body.scrollLeft;
+		else if (window.scrollX) this.scrollX = window.scrollX;
+	},
+
+	getScrollY: function () {
+		this.scrollY = 0;
+		if (typeof window.pageYOffset == "number")
+			this.scrollY = window.pageYOffset;
+		else if (document.documentElement && document.documentElement.scrollTop)
+			this.scrollY = document.documentElement.scrollTop;
+		else if (document.body && document.body.scrollTop)
+			this.scrollY = document.body.scrollTop;
+		else if (window.scrollY)
+			this.scrollY = window.scrollY;
+	},
+
+	getAll: function () {
+		this.getWinWidth();
+		this.getWinHeight();
+		this.getScrollX();
+		this.getScrollY();
+	}
+}
+//-->
+</script>
+
+<script language="javascript">
+/*************************************************************************
+	This code is from Dynamic Web Coding at http://www.dyn-web.com/
+	Copyright 2003 by Sharon Paine
+	See Terms of Use at http://www.dyn-web.com/bus/terms.html
+	regarding conditions under which you may use this code.
+	This notice must be retained in the code as is!
+*************************************************************************/
+function doTooltip(e, msg) {
+	if ( typeof Tooltip != "undefined" && Tooltip.ready )
+		Tooltip.show(e, msg);
+}
+
+function hideTip() {
+	if ( typeof Tooltip != "undefined" && Tooltip.ready )
+		Tooltip.hide();
+}
+</script>
+
+<script language="javascript">
+<!--
+function ShowHide(id)
+{
+	var itm = null;
+	if (document.getElementById) {
+		itm = document.getElementById(id);
+	} else if (document.all) {
+		itm = document.all[id];
+	} else if (document.layers) {
+		itm = document.layers[id];
+	}
+
+	if (!itm) {
+		// do nothing
+	} else if (itm.style) {
+		if (itm.style.display == "none") {
+			itm.style.display = "";
+		} else {
+			itm.style.display = "none";
+		}
+	} else {
+		itm.visibility = "show";
+	}
+}
+//-->
+</script>
+
+<div id=ed2k_open style="DISPLAY:none; Z-INDEX:2">
+<table align=center border=0 cellpadding=4 cellspacing=0 width="80%">
+ <tr>
+  <td align=center class="shared-header" style="background-color:#000000">
+   <p><font face="Tahoma" style="font-size:8pt;"><b>eD2K Links</b></font></p>
+  </td>
+ </tr>
+ <tr>
+  <td align=center valign=top class=tabs>
+   <br>
+   <form action="" method="GET">
+     <input type="hidden" name="ses" value="6980">
+     <input type="hidden" name="w" value="transfer">
+     <textarea name="ed2k" cols="94" rows="7" class="dinput"></textarea>
+     <br><br><input type="submit" value="Start">
+   </form>
+   <br><br>
+  </td>
+ </tr>
+</table>
+</div><br><br>
+
+<table border=0 align=center cellpadding=4 cellspacing=0 width="30%">
+ <tr>
+  <td class="search-main" colspan="3"><b>Kad</b></td>
+ </tr>
+ <tr>
+  <td bgcolor="#2184B5">
+   <font face="Tahoma" style="font-size:9pt;"><b>Status</b></font>
+  </td>
+  <td align=left valign=middle bgcolor="#2184B5">
+   <font face="Tahoma" style="font-size:9pt;">
+    <b>Connected<br></b>
+   </font>
+  </td>
+
+  <td align=left valign=middle bgcolor="#2184B5">
+   <font face="Tahoma" style="font-size:8pt;"><a href="?ses=6980&amp;w=kad&amp;c=disconnect">Disconnect</a></font>
+  </td>
+ </tr>
+</table>
+
+<br>
+
+	
+
+<table border=0 align=center cellpadding=4 cellspacing=0 width="30%">
+ <tr>
+  <td align=left class="search-main" colspan="3"><b>Statistics</b><br></td>
+ </tr>
+
+ <tr>
+  <td bgcolor="#2184B5">
+   <font face="Tahoma" style="font-size:8pt;">
+ 	Contacts<br>Current Searches
+   </font>
+  </td>
+  <td colspan="2" bgcolor="#2184B5">
+   <font face="Tahoma" style="font-size:8pt;">
+ 	513<br>0
+   </font>
+  </td>
+ </tr>
+</table>
+</body>
+</html>

@@ -11,6 +11,16 @@ import json
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
+import builtins
+_orig_print = builtins.print
+def _color_print(*args, **kwargs):
+    text = " ".join(map(str, args))
+    if text.lstrip().startswith("[!]"):
+        _orig_print(f"\033[91m{text}\033[0m", **kwargs)
+    else:
+        _orig_print(f"\033[92m{text}\033[0m", **kwargs)
+builtins.print = _color_print
+
 # Cargo las variables de nuestro archivo .env al os.environ para poder utilizarlas
 load_dotenv()
  
@@ -60,108 +70,140 @@ class EMuleWebScraper:
             print(f"[!] Ha ocurrido un error de conexión durante el login: {e}")
             return False
 
-    # Método para extraer las estadísticas de Kad
+    # Método para extraer las estadísticas de Kad (página /kad)
     def fetch_kad_stats(self):
-
         """
         Navego hacia la página de Kad y extraigo el estado actual de la conexión Kad
-        y sus estadísticas generales de uso.
+        y sus estadísticas detalladas de forma robusta.
         """
-
-        if not self.session_id: # Si no tengo una sesión válida, no puedo proceder a extraer las estadísticas
+        if not self.session_id:
             print("[!] No puedo proceder a extraer las estadísticas sin tener una sesión válida.")
             return None
             
-        target_url = f"{self.base_url}/?ses={self.session_id}&w=kad" # URL de la página de Kad
+        target_url = f"{self.base_url}/?ses={self.session_id}&w=kad"
         
-        try: # Intento acceder a la página de Kad
+        try:
+            response = self.session.get(target_url, timeout=5)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            full_text = soup.get_text(separator=' ', strip=True)
+            
+            # 1. Estado de Conexión (específico de Kad)
+            match_status = re.search(r'Kad\s+Status\s+([A-Za-z]+)', full_text, re.IGNORECASE)
+            status = match_status.group(1).strip() if match_status else "Desconectado"
+            
+            # 2. Contacts / Current Searches (formato "Etiqueta Etiqueta Valor Valor")
+            match_cs = re.search(r'Contacts\s+Current\s+Searches\s+(\d+)\s+(\d+)', full_text, re.IGNORECASE)
+            nodes_count = match_cs.group(1) if match_cs else "0"
+            active_searches = match_cs.group(2) if match_cs else "0"
 
-            response = self.session.get(target_url, timeout=5) 
-            soup = BeautifulSoup(response.text, 'html.parser') # Parseo el HTML de la página de Kad
-            
-            # El archivo eMule.tmpl utiliza la estructura <font face="Tahoma" style="font-size:9pt;"><b>[KADSTATUS]<br></b></font>
-            # Puedo localizar el contexto de "KADSTATUS" examinando de forma iterativa las etiquetas td
-            tds = soup.find_all('td')
-            
-            kad_status = "Desconocido"
-            contacts = "0"
-            current_searches = "0"
-            
-            for index, td in enumerate(tds): # Recorro todas las etiquetas td
-                text = td.get_text(strip=True) # Obtengo el texto de la etiqueta td
-                
-                # En la WebUI estándar, el estado de Kad suele mostrarse posicionado junto a una etiqueta genérica STATUS
-                if "STATUS" in text.upper():
+            id_type = "ID Baja (Firewalled)" if "firewall" in status.lower() or "cortafuego" in status.lower() else "ID Alta (Abierto)"
 
-                    # El estado real se suele encontrar guardado en la siguiente o la segunda siguiente etiqueta td
-                    if index + 1 < len(tds):
-                        possible_status = tds[index+1].get_text(strip=True) # Obtengo el texto de la siguiente etiqueta td
+            # 3. Métricas adicionales enriquecidas desde /stats
+            extra = self.fetch_stats_kad_data()
 
-                        if possible_status: # Si he encontrado el estado de Kad, lo guardo
-                            kad_status = possible_status
-                            
-                # Extraigo el número de contactos y búsquedas activas de la tabla de estadísticas
-                if "CONTACTS" in text.upper() and "CURRENT SEARCHES" in text.upper():
-                    if index + 1 < len(tds):
-                        # Uso un separador para poder dividir los valores que vienen dentro de la misma celda separados por <br>
-                        values_text = tds[index+1].get_text(separator='|', strip=True)
-                        vals = [v.strip() for v in values_text.split('|')]
-                        if len(vals) >= 1: contacts = vals[0]
-                        if len(vals) >= 2: current_searches = vals[1]
+            result = {
+                "status": status,
+                "id_type": id_type,
+                "contacts": nodes_count,
+                "active_searches": active_searches,
+            }
+            result.update(extra)
+            return result
+
+        except requests.exceptions.RequestException as e:
+            print(f"[!] Problema de conexión al extraer información de Kad: {e}")
+            return None
+
+    # Método para extraer métricas Kad reales desde la página de Statistics
+    def fetch_stats_kad_data(self):
+        """
+        Scrapeo la página /stats para extraer métricas de red Kad que no aparecen en /kad:
+        - Tráfico UDP Kad (paquetes session y acumulado)
+        - Porcentaje de nodos Firewalled (UDP / TCP)
+        - Clientes descubiertos vía Kad
+        - Fuentes encontradas vía Kad en descarga activa
+        """
+        defaults = {
+            "kad_overhead_session_pkts": "0",
+            "kad_overhead_total_pkts": "0",
+            "kad_clients_pct": "0",
+            "kad_firewalled_udp_pct": "0",
+            "kad_firewalled_tcp_pct": "0",
+            "kad_sources_found": "0",
+        }
+
+        if not self.session_id:
+            return defaults
+
+        target_url = f"{self.base_url}/?ses={self.session_id}&w=stats"
+        try:
+            response = self.session.get(target_url, timeout=5)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            # Separador newline para que los patrones multilinea sean más precisos
+            lines = soup.get_text(separator='\n', strip=True)
+
+            def find(pattern, text=lines):
+                m = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
+                return m.group(1).strip() if m else "0"
+
+            # Tráfico Kad (Session): "Kad Overhead (Packets): 796.52 KB (11.44 k)"
+            # Cogemos el número de paquetes (dentro del paréntesis al final)
+            kad_session = find(r'Kad Overhead \(Packets\):\s*[\d.,]+\s*\w+\s*\(([\d.,]+\s*\w*)\)', lines)
             
-            # Devuelvo un diccionario con la información estructurada que he extraído
+            # Tráfico Kad Acumulado (aparece por segunda vez en el bloque Cumulative)
+            all_matches = re.findall(r'Kad Overhead \(Packets\):\s*[\d.,]+\s*\w+\s*\(([\d.,]+\s*\w*)\)', lines, re.IGNORECASE)
+            kad_total = all_matches[1].strip() if len(all_matches) >= 2 else kad_session
+
+            # Clientes conectados vía Kad: "Kad: 19 (86.4%)"
+            kad_clients_pct = find(r'^Kad:\s*\d+\s*\(([\d.]+)%\)')
+
+            # Firewalled: "UDP: 26.4%"  y "TCP: 28.2%" dentro del bloque "Firewalled (Kad)"
+            fw_block = re.search(r'Firewalled \(Kad\)(.*?)Low ID', lines, re.IGNORECASE | re.DOTALL)
+            fw_text = fw_block.group(1) if fw_block else ""
+            fw_udp = find(r'UDP:\s*([\d.]+)%', fw_text) if fw_text else "0"
+            fw_tcp = find(r'TCP:\s*([\d.]+)%', fw_text) if fw_text else "0"
+
+            # Fuentes encontradas vía Kad en descarga activa: "via Kad: 13"
+            kad_sources = find(r'via Kad:\s*(\d+)')
+
             return {
-                "status": kad_status,
-                "contacts": contacts,
-                "current_searches": current_searches,
-                "raw_html": response.text
+                "kad_overhead_session_pkts": kad_session,
+                "kad_overhead_total_pkts": kad_total,
+                "kad_clients_pct": kad_clients_pct,
+                "kad_firewalled_udp_pct": fw_udp,
+                "kad_firewalled_tcp_pct": fw_tcp,
+                "kad_sources_found": kad_sources,
             }
 
         except requests.exceptions.RequestException as e:
-            print(f"[!] He sufrido un problema de conexión al extraer información de la página Kad: {e}")
-            return None
+            print(f"[!] Problema al scrapear /stats: {e}")
+            return defaults
+
 
 if __name__ == "__main__":
-
-    # Realizo una pequeña prueba local a la WebUI usando la contraseña proveída a través del entorno
-    print("\n--- Scraper de WebUI KadGlobe para eMule ---")
+    print("\n--- Scraper Avanzado KadGlobe para eMule ---")
     
-    admin_pass = os.getenv("ADMIN_PASS", "") # Obtengo la contraseña de la interfaz web de eMule
-    ip_address = os.getenv("IP_ADDRESS", "") # Obtengo la dirección IP de la máquina con eMule
+    admin_pass = os.getenv("ADMIN_PASS", "")
+    ip_address = os.getenv("IP_ADDRESS", "127.0.0.1")
 
-    if not admin_pass: # Si no tengo una contraseña válida, no puedo proceder a extraer las estadísticas
-        print("[!] Advertencia: He detectado que ADMIN_PASS no está declarada ni en tu entorno ni en tu archivo .env.")
-        
-    scraper = EMuleWebScraper(host=ip_address, port=4711, password=admin_pass) # Inicializo el scraper con los valores por defecto
+    scraper = EMuleWebScraper(host=ip_address, port=4711, password=admin_pass)
 
-    if scraper.login(): # Si he iniciado sesión correctamente
+    if scraper.login():
+        stats = scraper.fetch_kad_stats()
 
-        stats = scraper.fetch_kad_stats() # Extraigo las estadísticas de Kad
+        if stats:
+            print("\n[+] Estadísticas Avanzadas extraídas:")
+            for k, v in stats.items():
+                print(f"    - {k.replace('_', ' ').title()}: {v}")
 
-        if stats: # Si he extraído las estadísticas de Kad
-            print("\n[+] He extraído las estadísticas de Kad exitosamente.")
-            print(f"    - Estado: {stats['status']}")
-            print(f"    - Contactos: {stats['contacts']}")
-            print(f"    - Búsquedas actuales: {stats['current_searches']}")
-            
-
-            # Preparo los datos filtrados para guardarlos en un archivo JSON
-            json_data = {
-                "contacts": stats["contacts"],
-                "current_searches": stats["current_searches"],
-                "status": stats["status"]
-            }
-            
-            # Guardo la información en kad_stats.json en la subcarpeta jsons/
+            # Guardo la información enriquecida en kad_stats.json
             try:
-                # Nos aseguramos de que el directorio exista (por si acaso se borra)
                 output_path = "../jsons/kad_stats.json"
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-                with open(output_path, "w", encoding="utf-8") as f: # Abro el archivo kad_stats.json en modo escritura (write)
-                    json.dump(json_data, f, indent=4, ensure_ascii=False) # Escribo los datos en el archivo JSON con una indentación de 4 espacios y sin caracteres especiales
+                with open(output_path, "w", encoding="utf-8") as f:
+                    json.dump(stats, f, indent=4, ensure_ascii=False)
 
-                print(f"[+] He guardado los datos en '{output_path}'.")
-
-            except Exception as e: # Si ha ocurrido un error al intentar guardar el archivo JSON
-                print(f"[!] Error al intentar guardar el archivo JSON: {e}")
+                print(f"\n[+] Datos guardados en '{output_path}'.")
+            except Exception as e:
+                print(f"[!] Error al guardar JSON: {e}")

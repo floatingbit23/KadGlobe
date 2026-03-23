@@ -7,6 +7,16 @@ import json
 import IP2Location # 
 from dotenv import load_dotenv
 
+import builtins
+_orig_print = builtins.print
+def _color_print(*args, **kwargs):
+    text = " ".join(map(str, args))
+    if text.lstrip().startswith("[!]"):
+        _orig_print(f"\033[91m{text}\033[0m", **kwargs)
+    else:
+        _orig_print(f"\033[92m{text}\033[0m", **kwargs)
+builtins.print = _color_print
+
 # Importo el parseador que ya construimos para obtener los nodos
 from nodes_dat_parser import parse_nodes_dat
 
@@ -97,6 +107,7 @@ class KadGeolocator:
                     "city": loc['city'], # Ciudad de la IP
                     "country": loc['country'], # País de la IP
                     "country_code": loc.get('country_code', 'unknown'), # Código ISO de 2 letras
+                    "udp_port": node.get('udp_port', 4672), # Puerto vital para los Handshakes UDP
                     "size": 0.01  # Tamaño por defecto para la representación en el globo terráqueo
                 })
             
@@ -109,7 +120,7 @@ class KadGeolocator:
                 json.dump(geospatial_nodes, f, indent=4, ensure_ascii=False) # Guardo los nodos en el archivo JSON
             
             print(f"\n[+] ¡Éxito! Se han guardado {len(geospatial_nodes)} nodos geolocalizados en '{output_file}'.")
-            print(f"[!] Se han descartado {wasted_nodes} nodos.")
+            print(f"[!] Se han descartado {wasted_nodes} nodos.\n")
         
         except Exception as e: 
             print(f"[!] Error al guardar el archivo JSON: {e}")
