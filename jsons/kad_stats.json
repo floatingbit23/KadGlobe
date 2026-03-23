@@ -1,13 +1,13 @@
 {
     "status": "Connected",
     "kad_status": "Abierto (Open)",
-    "contacts": "244",
-    "active_searches": "2",
-    "local_id": "0400000014cdc269fca7f58bab6d4199",
-    "kad_overhead_session_pkts": "371",
-    "kad_overhead_total_pkts": "863.42 k",
+    "contacts": "483",
+    "active_searches": "0",
+    "local_id": "0400000039d6c269fca7f58bab6d4199",
+    "kad_overhead_session_pkts": "5.15 k",
+    "kad_overhead_total_pkts": "868.20 k",
     "kad_clients_pct": "0.0",
-    "kad_firewalled_udp_pct": "28.1",
-    "kad_firewalled_tcp_pct": "31.3",
+    "kad_firewalled_udp_pct": "7.6",
+    "kad_firewalled_tcp_pct": "8.2",
     "kad_sources_found": "0"
 }

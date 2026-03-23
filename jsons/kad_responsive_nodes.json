@@ -7,7 +7,7 @@
         "lat": 25.774269,
         "lng": -80.193604,
         "country": "United States of America",
-        "rtt": 144
+        "rtt": 138
     },
     {
         "ip": "18.65.141.61",
@@ -17,7 +17,7 @@
         "lat": 34.694218,
         "lng": 135.502228,
         "country": "Japan",
-        "rtt": 277
+        "rtt": 271
     },
     {
         "ip": "73.153.72.84",
@@ -27,7 +27,7 @@
         "lat": 40.585266,
         "lng": -105.08429,
         "country": "United States of America",
-        "rtt": 156
+        "rtt": 155
     },
     {
         "ip": "211.185.56.81",
@@ -37,7 +37,7 @@
         "lat": 37.420624,
         "lng": 127.126717,
         "country": "Korea (the Republic of)",
-        "rtt": 316
+        "rtt": 313
     },
     {
         "ip": "76.17.0.146",
@@ -47,7 +47,7 @@
         "lat": 33.748795,
         "lng": -84.387543,
         "country": "United States of America",
-        "rtt": 134
+        "rtt": 129
     },
     {
         "ip": "112.249.236.2",
@@ -57,7 +57,7 @@
         "lat": 37.533329,
         "lng": 121.400002,
         "country": "China",
-        "rtt": 355
+        "rtt": 354
     },
     {
         "ip": "62.235.229.77",
@@ -67,7 +67,7 @@
         "lat": 50.411396,
         "lng": 4.444489,
         "country": "Belgium",
-        "rtt": 53
+        "rtt": 55
     },
     {
         "ip": "38.55.117.79",
@@ -77,7 +77,7 @@
         "lat": 34.05257,
         "lng": -118.243904,
         "country": "United States of America",
-        "rtt": 206
+        "rtt": 203
     },
     {
         "ip": "201.106.86.116",
@@ -97,7 +97,7 @@
         "lat": 39.573139,
         "lng": -78.849739,
         "country": "United States of America",
-        "rtt": 130
+        "rtt": 131
     },
     {
         "ip": "213.49.28.151",
@@ -107,7 +107,7 @@
         "lat": 51.231091,
         "lng": 5.31322,
         "country": "Belgium",
-        "rtt": 52
+        "rtt": 53
     },
     {
         "ip": "149.102.148.116",
@@ -117,7 +117,7 @@
         "lat": 50.798988,
         "lng": -1.09125,
         "country": "United Kingdom of Great Britain and Northern Ireland",
-        "rtt": 45
+        "rtt": 53
     },
     {
         "ip": "183.86.56.81",
@@ -127,7 +127,7 @@
         "lat": 34.983002,
         "lng": 138.382996,
         "country": "Japan",
-        "rtt": 298
+        "rtt": 289
     },
     {
         "ip": "73.8.66.82",
@@ -137,7 +137,7 @@
         "lat": 41.557259,
         "lng": -87.665604,
         "country": "United States of America",
-        "rtt": 138
+        "rtt": 140
     },
     {
         "ip": "119.186.50.82",
@@ -147,7 +147,7 @@
         "lat": 36.668331,
         "lng": 116.997223,
         "country": "China",
-        "rtt": 428
+        "rtt": 345
     },
     {
         "ip": "77.251.38.81",
@@ -157,7 +157,7 @@
         "lat": 52.378502,
         "lng": 4.89998,
         "country": "Netherlands (Kingdom of the)",
-        "rtt": 56
+        "rtt": 57
     },
     {
         "ip": "203.54.158.185",
@@ -167,7 +167,7 @@
         "lat": -27.467541,
         "lng": 153.028091,
         "country": "Australia",
-        "rtt": 358
+        "rtt": 352
     },
     {
         "ip": "84.112.117.79",
@@ -177,7 +177,7 @@
         "lat": 48.208889,
         "lng": 16.37208,
         "country": "Austria",
-        "rtt": 109
+        "rtt": 107
     },
     {
         "ip": "66.22.23.88",
@@ -187,7 +187,7 @@
         "lat": 39.039474,
         "lng": -77.491806,
         "country": "United States of America",
-        "rtt": 126
+        "rtt": 139
     },
     {
         "ip": "39.122.76.83",
@@ -197,7 +197,7 @@
         "lat": 35.234257,
         "lng": 128.881454,
         "country": "Korea (the Republic of)",
-        "rtt": 287
+        "rtt": 299
     },
     {
         "ip": "154.3.85.176",
@@ -207,7 +207,7 @@
         "lat": 34.147835,
         "lng": -118.144302,
         "country": "United States of America",
-        "rtt": 335
+        "rtt": 338
     },
     {
         "ip": "123.153.25.130",
@@ -217,7 +217,7 @@
         "lat": 28.666668,
         "lng": 121.349998,
         "country": "China",
-        "rtt": 369
+        "rtt": 375
     },
     {
         "ip": "150.66.115.109",
@@ -227,6 +227,6 @@
         "lat": 34.694218,
         "lng": 135.502228,
         "country": "Japan",
-        "rtt": 806
+        "rtt": 362
     }
 ]
