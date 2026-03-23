@@ -1,6 +1,7 @@
 """
-Este módulo actúa como un web scraper para la interfaz web por defecto de eMule.
-Su objetivo principal es acceder al estado general de la red Kad.
+Este módulo es mi 'recolector de datos' o scraper.
+Su misión es entrar en la interfaz web de eMule, navegar por sus páginas 
+y extraer toda la información que eMule no guarda en archivos fáciles de leer.
 """
 
 import requests
@@ -8,9 +9,11 @@ import re
 import urllib.parse
 import os
 import json
+import binascii
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
+# Configuro mi sistema de impresión con colores para que los logs sean legibles.
 import builtins
 _orig_print = builtins.print
 def _color_print(*args, **kwargs):
@@ -21,107 +24,143 @@ def _color_print(*args, **kwargs):
         _orig_print(f"\033[92m{text}\033[0m", **kwargs)
 builtins.print = _color_print
 
-# Cargo las variables de nuestro archivo .env al os.environ para poder utilizarlas
+
+# Cargo mi archivo .env para leer la contraseña de la WebUI y las rutas de los archivos.
 load_dotenv()
  
+
 class EMuleWebScraper:
 
-    # Constructor de la clase
-    def __init__(self, host="127.0.0.1", port=4711, password=""): # Inicializo el scraper con los valores por defecto
-        self.host = host # Dirección IP de la máquina con eMule
-        self.port = port # Puerto de la interfaz web de eMule
-        self.password = password # Contraseña de la interfaz web de eMule
-        self.base_url = f"http://{host}:{port}" # URL base de la interfaz web de eMule
-        self.session_id = None # ID de sesión
-        self.session = requests.Session() # Sesión de requests
+    def __init__(self, host="127.0.0.1", port=4711, password=""):
+        # Inicializo mi scraper con la dirección donde eMule está escuchando.
+        self.host = host
+        self.port = port
+        self.password = password
+        self.base_url = f"http://{host}:{port}"
+        self.session_id = None # Aquí guardaré el token de sesión una vez me loguee.
+        self.session = requests.Session() # Uso una sesión de requests para mantener las cookies.
 
-    # Método para iniciar sesión en la interfaz web de eMule
+
     def login(self):
+
         """
-        Me autentico en la interfaz web de eMule para obtener el Session ID.
+        Este es mi primer paso obligatorio. Envío mi contraseña a eMule 
+        y trato de cazar el 'ses_id' de la URL de respuesta.
         """
 
-        print(f"\n[*] Iniciando sesión en la WebUI de eMule en {self.base_url}...")
+        print(f"\n[*] Estoy intentando entrar en tu eMule WebUI en {self.base_url}...")
 
         try:
-            # En eMule.tmpl, el formulario de inicio de sesión envía 'p' (password) y 'w=password' 
             payload = {
                 "w": "password",
                 "p": self.password
             }
 
-            # Envío la solicitud POST a la URL base de la interfaz web de eMule
+            # Lanzo la petición POST para autenticarme.
             response = self.session.post(self.base_url + "/", data=payload, timeout=5)
             
-            # eMule habitualmente responde con una etiqueta meta refresh que contiene el identificador de sesión:
-            # <meta http-equiv="refresh" content="0;URL=/?ses=12345678">
+            # eMule redirige usando un meta-refresh con el ID de sesión. Lo extraigo con esta regex.
             match = re.search(r'\?ses=([A-Za-z0-9_]+)', response.text)
 
-            # Si he encontrado el Session ID, lo guardo y muestro un mensaje de éxito
-            if match:
-                self.session_id = match.group(1)
-                print(f"[+] He iniciado sesión correctamente. El Session ID es: {self.session_id}")
+            if match: # Si se encuentra el ID de sesión...
+                self.session_id = match.group(1) # Capturo el ID de sesión.
+                print(f"[+] ¡Logueado perfectamente! Mi ID de sesión es: {self.session_id}") 
                 return True
             else:
-                print("[!] He fallado al intentar iniciar sesión. No he encontrado el Session ID en la respuesta. Por favor, comprueba que la contraseña sea correcta o el estado de la WebUI.")
+                print("[!] No he podido entrar. Revisa si tu contraseña en el .env es correcta.")
                 return False
                 
-        except requests.exceptions.RequestException as e: # Si ha ocurrido un error de conexión durante el login
-            print(f"[!] Ha ocurrido un error de conexión durante el login: {e}")
+        except requests.exceptions.RequestException as e: # Si hay un error de conexión...
+            print(f"[!] No he podido ni conectar con eMule: {e}")
             return False
 
-    # Método para extraer las estadísticas de Kad (página /kad)
     def fetch_kad_stats(self):
+
         """
-        Navego hacia la página de Kad y extraigo el estado actual de la conexión Kad
-        y sus estadísticas detalladas de forma robusta.
+        Esta función entra en la sección Kad de eMule y  extrae cuántos contactos tengo y si estoy conectado.
         """
-        if not self.session_id:
-            print("[!] No puedo proceder a extraer las estadísticas sin tener una sesión válida.")
+
+        if not self.session_id: # Si no tengo una sesión activa...
+            print("[!] No puedo trabajar sin una sesión activa.")
             return None
             
-        target_url = f"{self.base_url}/?ses={self.session_id}&w=kad"
+        target_url = f"{self.base_url}/?ses={self.session_id}&w=kad" # Construyo la URL para entrar en la sección Kad.
         
         try:
-            response = self.session.get(target_url, timeout=5)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            full_text = soup.get_text(separator=' ', strip=True)
+
+            response = self.session.get(target_url, timeout=5) # Lanzo la petición GET para entrar en la sección Kad.
+            soup = BeautifulSoup(response.text, 'html.parser') # Creo un objeto BeautifulSoup para analizar el HTML.
+            full_text = soup.get_text(separator=' ', strip=True) # Extraigo todo el texto de la página.
             
-            # 1. Estado de Conexión (específico de Kad)
+            # Busco el estado de Kad (Connected, Firewalled, etc.)
             match_status = re.search(r'Kad\s+Status\s+([A-Za-z]+)', full_text, re.IGNORECASE)
             status = match_status.group(1).strip() if match_status else "Desconectado"
             
-            # 2. Contacts / Current Searches (formato "Etiqueta Etiqueta Valor Valor")
+            # Extraigo el número de contactos y búsquedas activas.
             match_cs = re.search(r'Contacts\s+Current\s+Searches\s+(\d+)\s+(\d+)', full_text, re.IGNORECASE)
             nodes_count = match_cs.group(1) if match_cs else "0"
             active_searches = match_cs.group(2) if match_cs else "0"
 
-            id_type = "ID Baja (Firewalled)" if "firewall" in status.lower() or "cortafuego" in status.lower() else "ID Alta (Abierto)"
+            # Determino si el estado UDP es abierto o tras cortafuegos (exacto para Kad).
+            kad_status = "Tras corta Fuegos (Firewalled)" if "firewalled" in status.lower() else "Abierto (Open)"
 
-            # 3. Métricas adicionales enriquecidas desde /stats
+            # Llamo a mi otra función para sacar métricas de tráfico y Firewalled.
             extra = self.fetch_stats_kad_data()
 
+            # Mi paso maestro: obtener el ID real de 128 bits para el gráfico de K-Buckets.
+            local_id = self.fetch_local_kad_id()
+
+            # Empaqueto todo en un diccionario limpio.
             result = {
                 "status": status,
-                "id_type": id_type,
+                "kad_status": kad_status,
                 "contacts": nodes_count,
                 "active_searches": active_searches,
+                "local_id": local_id
             }
-            result.update(extra)
+
+            result.update(extra) # Fusiono los datos extra (tráfico y firewalled) con el resultado principal.
             return result
 
         except requests.exceptions.RequestException as e:
-            print(f"[!] Problema de conexión al extraer información de Kad: {e}")
+            print(f"[!] Error extrayendo datos de Kad: {e}")
             return None
 
-    # Método para extraer métricas Kad reales desde la página de Statistics
+
+    def fetch_local_kad_id(self):
+
+        """
+        Esta función lee el archivo 'key_index.dat' (en eMule/config/) para obtener la Kad ID de mi nodo de 128 bits. 
+        Sin ese ID, no sabría calcular las distancias XOR en mi frontend.
+        """
+
+        # Busco la ruta en el .env. Es donde eMule guarda su identidad de red.
+        pref_path = os.getenv("EMULE_KEY_INDEX_PATH", "C:\\Program Files (x86)\\eMule\\config\\key_index.dat")
+        
+        try:
+            if os.path.exists(pref_path):
+
+                with open(pref_path, "rb") as f:
+
+                    # Leo los primeros 16 bytes. Es un hash binario aleatorio único.
+                    user_hash = f.read(16)
+
+                    if len(user_hash) == 16:
+                        kad_id_hex = binascii.hexlify(user_hash).decode('ascii') # Lo convierto a hexadecimal para que sea legible.
+                        print(f"[+] He sacado tu Kad ID real: {kad_id_hex}") # Lo imprimo para verificar que se ha obtenido correctamente.
+                        return kad_id_hex
+            else:
+                print(f"[!] No encuentro el archivo key_index.dat. Asegúrate de que la ruta en el .env es correcta.")
+
+        except Exception as e:
+            print(f"[!] Error crítico leyendo tu identidad: {e}")
+
+        return "0" * 32
+
     def fetch_stats_kad_data(self):
         """
-        Scrapeo la página /stats para extraer métricas de red Kad que no aparecen en /kad:
-        - Tráfico UDP Kad (paquetes session y acumulado)
-        - Porcentaje de nodos Firewalled (UDP / TCP)
-        - Clientes descubiertos vía Kad
-        - Fuentes encontradas vía Kad en descarga activa
+        Navego a la página de Estadísticas (Statistics) para sacar datos de tráfico UDP 
+        y porcentajes de Firewalled que no están en la pestaña principal de Kad.
         """
         defaults = {
             "kad_overhead_session_pkts": "0",
@@ -139,31 +178,27 @@ class EMuleWebScraper:
         try:
             response = self.session.get(target_url, timeout=5)
             soup = BeautifulSoup(response.text, 'html.parser')
-            # Separador newline para que los patrones multilinea sean más precisos
             lines = soup.get_text(separator='\n', strip=True)
 
+            # Uso regex para capturar el tráfico 'Overhead' de la sesión de Kad.
             def find(pattern, text=lines):
                 m = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
                 return m.group(1).strip() if m else "0"
 
-            # Tráfico Kad (Session): "Kad Overhead (Packets): 796.52 KB (11.44 k)"
-            # Cogemos el número de paquetes (dentro del paréntesis al final)
             kad_session = find(r'Kad Overhead \(Packets\):\s*[\d.,]+\s*\w+\s*\(([\d.,]+\s*\w*)\)', lines)
             
-            # Tráfico Kad Acumulado (aparece por segunda vez en el bloque Cumulative)
             all_matches = re.findall(r'Kad Overhead \(Packets\):\s*[\d.,]+\s*\w+\s*\(([\d.,]+\s*\w*)\)', lines, re.IGNORECASE)
             kad_total = all_matches[1].strip() if len(all_matches) >= 2 else kad_session
 
-            # Clientes conectados vía Kad: "Kad: 19 (86.4%)"
+            # Calculo cuántos de tus clientes son estrictamente Kad.
             kad_clients_pct = find(r'^Kad:\s*\d+\s*\(([\d.]+)%\)')
 
-            # Firewalled: "UDP: 26.4%"  y "TCP: 28.2%" dentro del bloque "Firewalled (Kad)"
+            # Saco los porcentajes de bloqueos de puerto.
             fw_block = re.search(r'Firewalled \(Kad\)(.*?)Low ID', lines, re.IGNORECASE | re.DOTALL)
             fw_text = fw_block.group(1) if fw_block else ""
             fw_udp = find(r'UDP:\s*([\d.]+)%', fw_text) if fw_text else "0"
             fw_tcp = find(r'TCP:\s*([\d.]+)%', fw_text) if fw_text else "0"
 
-            # Fuentes encontradas vía Kad en descarga activa: "via Kad: 13"
             kad_sources = find(r'via Kad:\s*(\d+)')
 
             return {
@@ -175,35 +210,48 @@ class EMuleWebScraper:
                 "kad_sources_found": kad_sources,
             }
 
-        except requests.exceptions.RequestException as e:
-            print(f"[!] Problema al scrapear /stats: {e}")
+        except Exception as e:
+            print(f"[!] Error en la página de estadísticas: {e}")
             return defaults
 
 
 if __name__ == "__main__":
-    print("\n--- Scraper Avanzado KadGlobe para eMule ---")
+    
+    # Si ejecuto esto a mano, inicio la recolección y guardo los resultados en el JSON.
+    print("\n--- Estoy iniciando una captura manual de datos ---")
     
     admin_pass = os.getenv("ADMIN_PASS", "")
     ip_address = os.getenv("IP_ADDRESS", "127.0.0.1")
 
     scraper = EMuleWebScraper(host=ip_address, port=4711, password=admin_pass)
 
-    if scraper.login():
-        stats = scraper.fetch_kad_stats()
+    if scraper.login(): # Si me logueo correctamente...
+        stats = scraper.fetch_kad_stats() # ...entonces saco las estadísticas.
 
         if stats:
-            print("\n[+] Estadísticas Avanzadas extraídas:")
-            for k, v in stats.items():
-                print(f"    - {k.replace('_', ' ').title()}: {v}")
-
-            # Guardo la información enriquecida en kad_stats.json
+            # Guardo los resultados para que mi frontend los use.
             try:
                 output_path = "../jsons/kad_stats.json"
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
                 with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(stats, f, indent=4, ensure_ascii=False)
-
-                print(f"\n[+] Datos guardados en '{output_path}'.")
+                print(f"[+] Todo guardado en '{output_path}'.")
             except Exception as e:
-                print(f"[!] Error al guardar JSON: {e}")
+                print(f"[!] No he podido escribir el JSON: {e}")
+    else:
+        # Si no he podido ni loguearme (eMule cerrado), aviso al frontend.
+        print("[!] No he podido conectar con eMule. Actualizando estado a 'Disconnected'...")
+        disconnected_data = {
+            "status": "Disconnected",
+            "kad_status": "Disconnected",
+            "contacts": "0",
+            "active_searches": "0",
+            "local_id": "Unknown"
+        }
+        try:
+            output_path = "../jsons/kad_stats.json"
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(disconnected_data, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"[!] No he podido actualizar el estado offline: {e}")

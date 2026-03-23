@@ -103,17 +103,18 @@ body {
 
 /* Modal interactivo */
 #nodeModal {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(1);
-    width: 380px;
+    bottom: 30px; /* Esquina inferior derecha */
+    right: 30px;
+    top: auto;
+    left: auto;
+    width: 480px; /* Tamaño expandido */
     z-index: 100;
 }
 
 .modal-hidden {
     opacity: 0;
     pointer-events: none;
-    transform: translate(-50%, -50%) scale(0.9) !important;
+    transform: translateY(20px) scale(0.9); /* Aparece desde abajo */
 }
 
 #nodeModal h2 {
@@ -178,9 +179,32 @@ body {
 .right-panel {
     left: auto;
     right: 30px;
-    width: 260px;
+    width: 320px; /* Incrementado para nombres de países largos */
     max-height: 60vh;
     overflow-y: auto;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+}
+
+/* Estado colapsado del menú */
+.panel-collapsed {
+    max-height: 55px !important;
+    overflow: hidden !important;
+}
+
+.panel-collapsed .country-list {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.panel-collapsed .toggle-arrow {
+    transform: rotate(-90deg);
+}
+
+.toggle-arrow {
+    font-size: 10px;
+    transition: transform 0.3s ease;
+    color: #4facfe;
+    margin-left: 10px;
 }
 
 /* Scrollbar personalizado para el panel derecho al desbordar muchos países */
@@ -197,13 +221,13 @@ body {
 }
 
 .right-panel h3 {
-    margin: 0 0 10px 0;
+    margin: 0;
     font-size: 15px;
     color: #4facfe;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .country-list {
@@ -332,11 +356,12 @@ body {
     left: 30px;
     background: #ffcc00;
     color: #000;
-    padding: 15px;
+    padding: 15px 25px; /* Más padding lateral */
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(255, 204, 0, 0.4);
     z-index: 100;
-    width: 240px;
+    width: auto; /* Ancho automático basado en contenido */
+    min-width: 450px; /* Mínimo asegurado para IPs largas o nombres largos */
     transition: all 0.3s ease;
 }
 
@@ -345,6 +370,7 @@ body {
     pointer-events: none;
     transform: translateY(20px);
 }
+
 
 .xor-panel h4 {
     margin: 0 0 10px 0;
@@ -366,12 +392,39 @@ body {
 
 .xor-list li {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Alineación a la izquierda */
+    gap: 15px; /* Espacio fijo entre # y IP/Loc */
     font-size: 13px;
     font-family: 'Courier New', Courier, monospace;
     font-weight: 600;
+    white-space: nowrap; /* Evita saltos de línea */
 }
 
 .xor-list li span:first-child {
     color: rgba(0, 0, 0, 0.6);
+}
+
+/* Panel de Buckets (XOR Distribution) */
+.buckets-panel {
+    top: auto;
+    bottom: 30px;
+    right: 30px;
+    height: 250px;
+    padding: 15px;
+    z-index: 5;
+    width: 320px;
+}
+
+.buckets-panel h3 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: #4facfe;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#bucketsChart {
+    width: 100% !important;
+    height: 100% !important;
 }

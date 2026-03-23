@@ -24,10 +24,10 @@ let currentLang = 'es';
 
 const i18n = {
     es: {
-        "net_status": "Estado de Red de Kademlia:",
+        "net_status": "Estado de la Red Kad:",
         "loading": "Cargando...",
         "contacts": "Contactos Kad:",
-        "mapped": "Nodos Georreferenciados:",
+        "mapped": "Nodos Geolocalizados:",
         "ranking_title": "Nodos por país",
         "xor_neighbors_title": "Top 10 Vecindario XOR",
         "heatmap_btn": "Mapa Térmico",
@@ -44,11 +44,14 @@ const i18n = {
         "unknown_f": "Desconocida",
         "status_connected": "Conectado",
         "status_disconnected": "Desconectado",
-        "status_firewalled": "Tras Cortafuego",
-        "id_status": "Estatus ID:",
-        "overhead": "Tráfico Kad (session):",
-        "firewalled": "Firewalled (UDP/TCP):",
-        "kad_sources": "Fuentes vía Kad:"
+        "status_firewalled": "Tras cortafuegos",
+        "status_open": "Abierto (Open)",
+        "id_status": "Estado de la ID:",
+        "searches": "Búsquedas Activas:",
+        "overhead": "Tráfico Kad (sesión):",
+        "firewalled": "Tras cortafuegos (UDP/TCP):",
+        "kad_sources": "Fuentes vía Kad:",
+        "buckets_title": "Distribución K-Buckets"
     },
     en: {
         "net_status": "Kademlia Network Status:",
@@ -72,10 +75,13 @@ const i18n = {
         "status_connected": "Connected",
         "status_disconnected": "Disconnected",
         "status_firewalled": "Firewalled",
+        "status_open": "Open",
         "id_status": "ID Status:",
+        "searches": "Active Searches:",
         "overhead": "Kad Traffic (session):",
         "firewalled": "Firewalled (UDP/TCP):",
-        "kad_sources": "Sources via Kad:"
+        "kad_sources": "Sources via Kad:",
+        "buckets_title": "K-Buckets Distribution"
     }
 };
 
@@ -98,6 +104,14 @@ if (langToggle) {
         applyTranslations();
         updateKadStats();
         updateKadNodes();
+    });
+}
+
+const countriesToggle = document.getElementById('countriesToggle');
+if (countriesToggle) {
+    countriesToggle.addEventListener('click', () => {
+        const panel = document.getElementById('countriesPanel');
+        panel.classList.toggle('panel-collapsed');
     });
 }
 
@@ -222,7 +236,9 @@ function openNodeModal(node) {
     elXorNeighborsList.innerHTML = '';
     closest10.forEach((neighbor, index) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>#${index + 1}</span> <span>${neighbor.obj.ip}</span>`;
+        const city = neighbor.obj.city && neighbor.obj.city !== "-" ? neighbor.obj.city : "?";
+        const country = neighbor.obj.country && neighbor.obj.country !== "-" ? neighbor.obj.country : "?";
+        li.innerHTML = `<span>#${index + 1}</span> <span>${neighbor.obj.ip} (${city}, ${country})</span>`;
         elXorNeighborsList.appendChild(li);
     });
 
@@ -342,8 +358,20 @@ async function updateKadStats() {
             }
 
             // Inyectamos las nuevas estadísticas enriquecidas (Phase 13+14)
-            if (data.id_type) {
-                elId.textContent = data.id_type;
+            if (data.kad_status) {
+                const ksLower = data.kad_status.toLowerCase();
+                let displayKadStatus = data.kad_status;
+
+                // Traducción dinámica para evitar el mix de idiomas (Phase 15 fix)
+                if (ksLower.includes('firewall')) {
+                    displayKadStatus = i18n[currentLang].status_firewalled;
+                } else if (ksLower.includes('open') || ksLower.includes('abierto')) {
+                    displayKadStatus = i18n[currentLang].status_open;
+                } else if (ksLower.includes('disconnect') || ksLower.includes('desconectado')) {
+                    displayKadStatus = i18n[currentLang].status_disconnected;
+                }
+
+                elId.textContent = displayKadStatus;
                 elIdRow.style.display = 'flex';
             }
             if (data.kad_overhead_session_pkts !== undefined) {
@@ -358,6 +386,11 @@ async function updateKadStats() {
             if (data.kad_sources_found !== undefined) {
                 elSources.textContent = data.kad_sources_found;
                 elSourcesRow.style.display = 'flex';
+            }
+
+            // Guardamos el local_id para los cálculos de buckets
+            if (data.local_id) {
+                window.localKadId = data.local_id;
             }
         } else {
             elStatus.textContent = `Error HTTP: ${response.status}`;
@@ -375,8 +408,12 @@ let simulationInterval = null;
 
 // Función matemática base del artículo Kademlia P2P (Restamos 128-bits usando BigInt nativo de ES6)
 function getKadDistance(hex1, hex2) {
-    if (!hex1 || !hex2) return BigInt(0);
-    return BigInt('0x' + hex1) ^ BigInt('0x' + hex2);
+    if (!hex1 || !hex1.match(/^[0-9a-fA-F]+$/) || !hex2 || !hex2.match(/^[0-9a-fA-F]+$/)) return BigInt(0);
+    try {
+        return BigInt('0x' + hex1) ^ BigInt('0x' + hex2);
+    } catch (e) {
+        return BigInt(0);
+    }
 }
 
 // B. Función que obtiene todas las ubicaciones y recrea los nodos en el globo
@@ -449,12 +486,98 @@ async function updateKadNodes() {
             if (!selectedNode) {
                 simulateKadActivity(newNodesArray);
             }
+
+            // Actualizar el gráfico de K-Buckets si tenemos el ID local válido
+            if (window.localKadId && window.localKadId !== "Unknown") {
+                updateKBucketsChart(newNodesArray, window.localKadId);
+            }
         } else {
             elMappedNodes.textContent = `HTTP ${response.status}`;
         }
     } catch (e) {
         elMappedNodes.textContent = `[JS Fallo] ${e.message}`;
         console.warn('[!] Error obteniendo kad_nodes_geospatial.json:', e);
+    }
+}
+
+// --- LÓGICA DE CHART.JS PARA K-BUCKETS ---
+let bucketsChart = null;
+
+function updateKBucketsChart(nodes, localId) {
+    const ctx = document.getElementById('bucketsChart').getContext('2d');
+
+    // Inicializamos contadores para los buckets (0 a 128)
+    const bucketCounts = new Array(129).fill(0);
+
+    nodes.forEach(node => {
+        const dist = getKadDistance(localId, node.id);
+        if (dist === 0n) return; // Somos nosotros o misma ID
+
+        // El bucket es la posición del bit más significativo (log2)
+        // En JS con BigInt: toString(2).length - 1
+        const bucketIndex = dist.toString(2).length - 1;
+        if (bucketIndex >= 0 && bucketIndex <= 128) {
+            bucketCounts[bucketIndex]++;
+        }
+    });
+
+    // Filtramos para mostrar solo buckets que tengan algún nodo o un rango interesante (ej. últimos 32)
+    // Pero para eMule, los buckets importantes suelen ser los altos (lejanos)
+    // Mostraremos un histograma de los buckets 0 a 128, pero quizás agrupados o podados si están vacíos.
+    // Para simplificar, mostramos todos los buckets que tengan al menos 1 nodo.
+
+    const labels = [];
+    const dataValues = [];
+
+    for (let i = 0; i <= 128; i++) {
+        if (bucketCounts[i] > 0) {
+            labels.push(`B${i}`);
+            dataValues.push(bucketCounts[i]);
+        }
+    }
+
+    if (!bucketsChart) {
+        bucketsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Nodos',
+                    data: dataValues,
+                    backgroundColor: 'rgba(79, 172, 254, 0.6)',
+                    borderColor: '#4facfe',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `Bucket ${context.label}: ${context.raw} nodos`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 9 } },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    } else {
+        bucketsChart.data.labels = labels;
+        bucketsChart.data.datasets[0].data = dataValues;
+        bucketsChart.update();
     }
 }
 

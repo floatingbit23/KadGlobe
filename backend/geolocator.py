@@ -114,7 +114,7 @@ class KadGeolocator:
             else:
                 wasted_nodes += 1 # Incremento el contador de nodos desperdiciados
         
-        # Guardo el resultado en formato JSON para el Frontend
+        # Guardo el resultado en formato JSON para el Frontend (kad_nodes_geospatial.json)
         try:
             with open(output_file, "w", encoding="utf-8") as f: # Abro el archivo en modo escritura
                 json.dump(geospatial_nodes, f, indent=4, ensure_ascii=False) # Guardo los nodos en el archivo JSON
@@ -139,10 +139,10 @@ if __name__ == "__main__":
     
     geo = KadGeolocator() # Inicializo el geolocalizador
     
-    # Busco     primero la ruta matriz de mi eMule original configurada en .env
+    # Busco primero la ruta matriz de mi eMule original configurada en .env
     nodes_path = os.getenv("EMULE_NODES_DAT_PATH", "")
 
-    # Si la ruta proporcionada en el .env falla (por permisos o no existe), retrocedo al default
+    # Si la ruta proporcionada en el .env falla (por permisos o no existe), retrocedo al default 
     if not nodes_path or not os.path.exists(nodes_path):
         nodes_path = "../nodes.dat"
         if not os.path.exists(nodes_path): 

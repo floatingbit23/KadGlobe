@@ -1,63 +1,43 @@
 [
     {
-        "ip": "197.202.132.37",
+        "ip": "66.176.230.95",
         "udp_port": 4672,
         "tcp_port": 0,
         "id": "",
-        "lat": 36.900002,
-        "lon": null,
-        "country": "Algeria",
-        "rtt": 68
-    },
-    {
-        "ip": "98.251.53.47",
-        "udp_port": 39757,
-        "tcp_port": 0,
-        "id": "",
-        "lat": 33.748795,
-        "lon": null,
+        "lat": 25.774269,
+        "lng": -80.193604,
         "country": "United States of America",
-        "rtt": 131
+        "rtt": 144
     },
     {
-        "ip": "110.12.117.79",
-        "udp_port": 1060,
+        "ip": "18.65.141.61",
+        "udp_port": 4672,
         "tcp_port": 0,
         "id": "",
-        "lat": 37.874722,
-        "lon": null,
-        "country": "Korea (the Republic of)",
-        "rtt": 296
+        "lat": 34.694218,
+        "lng": 135.502228,
+        "country": "Japan",
+        "rtt": 277
     },
     {
-        "ip": "175.226.181.80",
+        "ip": "73.153.72.84",
         "udp_port": 4672,
+        "tcp_port": 0,
+        "id": "",
+        "lat": 40.585266,
+        "lng": -105.08429,
+        "country": "United States of America",
+        "rtt": 156
+    },
+    {
+        "ip": "211.185.56.81",
+        "udp_port": 60216,
         "tcp_port": 0,
         "id": "",
         "lat": 37.420624,
-        "lon": null,
+        "lng": 127.126717,
         "country": "Korea (the Republic of)",
-        "rtt": 292
-    },
-    {
-        "ip": "109.29.167.104",
-        "udp_port": 3333,
-        "tcp_port": 0,
-        "id": "",
-        "lat": 45.933331,
-        "lon": null,
-        "country": "France",
-        "rtt": 72
-    },
-    {
-        "ip": "124.133.39.77",
-        "udp_port": 4672,
-        "tcp_port": 0,
-        "id": "",
-        "lat": 36.668331,
-        "lon": null,
-        "country": "China",
-        "rtt": 524
+        "rtt": 316
     },
     {
         "ip": "76.17.0.146",
@@ -65,9 +45,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 33.748795,
-        "lon": null,
+        "lng": -84.387543,
         "country": "United States of America",
-        "rtt": 142
+        "rtt": 134
     },
     {
         "ip": "112.249.236.2",
@@ -75,9 +55,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 37.533329,
-        "lon": null,
+        "lng": 121.400002,
         "country": "China",
-        "rtt": 445
+        "rtt": 355
     },
     {
         "ip": "62.235.229.77",
@@ -85,9 +65,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 50.411396,
-        "lon": null,
+        "lng": 4.444489,
         "country": "Belgium",
-        "rtt": 79
+        "rtt": 53
     },
     {
         "ip": "38.55.117.79",
@@ -95,9 +75,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 34.05257,
-        "lon": null,
+        "lng": -118.243904,
         "country": "United States of America",
-        "rtt": 251
+        "rtt": 206
     },
     {
         "ip": "201.106.86.116",
@@ -105,19 +85,19 @@
         "tcp_port": 0,
         "id": "",
         "lat": 19.413647,
-        "lon": null,
+        "lng": -99.033127,
         "country": "Mexico",
-        "rtt": 215
+        "rtt": 201
     },
     {
-        "ip": "149.102.148.116",
-        "udp_port": 4673,
+        "ip": "100.18.48.82",
+        "udp_port": 4672,
         "tcp_port": 0,
         "id": "",
-        "lat": 50.798988,
-        "lon": null,
-        "country": "United Kingdom of Great Britain and Northern Ireland",
-        "rtt": 58
+        "lat": 39.573139,
+        "lng": -78.849739,
+        "country": "United States of America",
+        "rtt": 130
     },
     {
         "ip": "213.49.28.151",
@@ -125,9 +105,19 @@
         "tcp_port": 0,
         "id": "",
         "lat": 51.231091,
-        "lon": null,
+        "lng": 5.31322,
         "country": "Belgium",
-        "rtt": 66
+        "rtt": 52
+    },
+    {
+        "ip": "149.102.148.116",
+        "udp_port": 4673,
+        "tcp_port": 0,
+        "id": "",
+        "lat": 50.798988,
+        "lng": -1.09125,
+        "country": "United Kingdom of Great Britain and Northern Ireland",
+        "rtt": 45
     },
     {
         "ip": "183.86.56.81",
@@ -135,9 +125,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 34.983002,
-        "lon": null,
+        "lng": 138.382996,
         "country": "Japan",
-        "rtt": 290
+        "rtt": 298
     },
     {
         "ip": "73.8.66.82",
@@ -145,29 +135,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 41.557259,
-        "lon": null,
+        "lng": -87.665604,
         "country": "United States of America",
         "rtt": 138
-    },
-    {
-        "ip": "77.251.38.81",
-        "udp_port": 54852,
-        "tcp_port": 0,
-        "id": "",
-        "lat": 52.378502,
-        "lon": null,
-        "country": "Netherlands (Kingdom of the)",
-        "rtt": 58
-    },
-    {
-        "ip": "203.54.158.185",
-        "udp_port": 8665,
-        "tcp_port": 0,
-        "id": "",
-        "lat": -27.467541,
-        "lon": null,
-        "country": "Australia",
-        "rtt": 356
     },
     {
         "ip": "119.186.50.82",
@@ -175,19 +145,29 @@
         "tcp_port": 0,
         "id": "",
         "lat": 36.668331,
-        "lon": null,
+        "lng": 116.997223,
         "country": "China",
-        "rtt": 434
+        "rtt": 428
     },
     {
-        "ip": "187.199.216.221",
-        "udp_port": 4672,
+        "ip": "77.251.38.81",
+        "udp_port": 54852,
         "tcp_port": 0,
         "id": "",
-        "lat": 22.890846,
-        "lon": null,
-        "country": "Mexico",
-        "rtt": 185
+        "lat": 52.378502,
+        "lng": 4.89998,
+        "country": "Netherlands (Kingdom of the)",
+        "rtt": 56
+    },
+    {
+        "ip": "203.54.158.185",
+        "udp_port": 8665,
+        "tcp_port": 0,
+        "id": "",
+        "lat": -27.467541,
+        "lng": 153.028091,
+        "country": "Australia",
+        "rtt": 358
     },
     {
         "ip": "84.112.117.79",
@@ -195,9 +175,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 48.208889,
-        "lon": null,
+        "lng": 16.37208,
         "country": "Austria",
-        "rtt": 63
+        "rtt": 109
     },
     {
         "ip": "66.22.23.88",
@@ -205,9 +185,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 39.039474,
-        "lon": null,
+        "lng": -77.491806,
         "country": "United States of America",
-        "rtt": 117
+        "rtt": 126
     },
     {
         "ip": "39.122.76.83",
@@ -215,9 +195,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 35.234257,
-        "lon": null,
+        "lng": 128.881454,
         "country": "Korea (the Republic of)",
-        "rtt": 279
+        "rtt": 287
     },
     {
         "ip": "154.3.85.176",
@@ -225,9 +205,9 @@
         "tcp_port": 0,
         "id": "",
         "lat": 34.147835,
-        "lon": null,
+        "lng": -118.144302,
         "country": "United States of America",
-        "rtt": 332
+        "rtt": 335
     },
     {
         "ip": "123.153.25.130",
@@ -235,18 +215,18 @@
         "tcp_port": 0,
         "id": "",
         "lat": 28.666668,
-        "lon": null,
+        "lng": 121.349998,
         "country": "China",
-        "rtt": 457
+        "rtt": 369
     },
     {
-        "ip": "46.40.33.83",
+        "ip": "150.66.115.109",
         "udp_port": 4672,
         "tcp_port": 0,
         "id": "",
-        "lat": 45.764172,
-        "lon": null,
-        "country": "Serbia",
-        "rtt": 122
+        "lat": 34.694218,
+        "lng": 135.502228,
+        "country": "Japan",
+        "rtt": 806
     }
 ]

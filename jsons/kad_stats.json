@@ -1,12 +1,13 @@
 {
     "status": "Connected",
-    "id_type": "ID Alta (Abierto)",
-    "contacts": "262",
+    "kad_status": "Abierto (Open)",
+    "contacts": "244",
     "active_searches": "2",
-    "kad_overhead_session_pkts": "162",
-    "kad_overhead_total_pkts": "854.71 k",
-    "kad_clients_pct": "100.0",
-    "kad_firewalled_udp_pct": "17.6",
-    "kad_firewalled_tcp_pct": "17.6",
-    "kad_sources_found": "8"
+    "local_id": "0400000014cdc269fca7f58bab6d4199",
+    "kad_overhead_session_pkts": "371",
+    "kad_overhead_total_pkts": "863.42 k",
+    "kad_clients_pct": "0.0",
+    "kad_firewalled_udp_pct": "28.1",
+    "kad_firewalled_tcp_pct": "31.3",
+    "kad_sources_found": "0"
 }

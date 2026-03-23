@@ -1,9 +1,14 @@
 import json
 import time
 import os
+import ping3
+
+# Utilizo ThreadPoolExecutor para lanzar múltiples pings a la vez sin bloquear el programa, 
+# ya que esperar la respuesta de un nodo a la vez sería extremadamente lento.
 from concurrent.futures import ThreadPoolExecutor
 
-# COLORES PARA LA TERMINAL
+# Configuro una función personalizada para imprimir en la terminal con colores.
+# Así puedo distinguir visualmente entre mensajes de éxito (verde) y errores (rojo).
 import builtins
 _orig_print = builtins.print
 def _color_print(*args, **kwargs):
@@ -14,81 +19,98 @@ def _color_print(*args, **kwargs):
         _orig_print(f"\033[92m{text}\033[0m", **kwargs)
 builtins.print = _color_print
 
-try:
-    import ping3
-    ping3.EXCEPTIONS = False # Devuelve None en vez de lanzar excepciones en nodos silenciosos
-except ImportError:
-    print("[!] ping3 no está instalado. Ejecuta: pip install ping3")
-    raise
+# Configuro ping3 para que me devuelva None en lugar de fallar si el nodo no responde (Pings perdidos).
+ping3.EXCEPTIONS = False
 
 """
-Ping Sweep ICMP Concurrente para KadGlobe
-Obtiene el RTT real de los nodos Kademlia via ICMP Echo, el método más fiable.
+Este script realiza un 'Ping Sweep' sobre mis nodos Kademlia extraidos de nodes.dat.
+Uso el protocolo ICMP Echo (ping clásico) porque es el método más  fiable para medir la latencia real (RTT) de un nodo en internet.
 """
 
+# Defino las rutas de mis archivos JSON. El primero es mi fuente de nodos geolocalizados y el segundo es donde guardaré los que respondan al ping.
 INPUT_FILE  = "../jsons/kad_nodes_geospatial.json"
 OUTPUT_FILE = "../jsons/kad_responsive_nodes.json"
-MAX_WORKERS = 50   # Pings simultáneos - suficientes sin saturar el router
-TIMEOUT_S   = 2    # Tiempo máximo de espera por nodo (segundos)
 
+# Lanzo 50 pings simultáneos. Es un equilibrio bueno para ir rápido sin saturar la conexión de mi router doméstico con demasiadas peticiones.
+MAX_WORKERS = 50   
+TIMEOUT_S = 3    # Si un nodo tarda más de 3 segundos en responder, lo considero 'muerto' o filtrado.
 
+# Esta función gestiona el envío del ping a un nodo individual.
 def ping_node(node):
-    """
-    Envía un ICMP Echo a la IP del nodo y devuelve un dict enriquecido si responde.
-    Devuelve None si el nodo está desconectado o tiene firewall ICMP.
-    """
-    ip = node.get("ip")
+
+    # Si el nodo responde, calculará su tiempo de respuesta en milisegundos  y preparará un diccionario con toda su información para el heatmap.
+
+    ip = node.get("ip") # Obtengo la IP del nodo.
+
     if not ip:
         return None
 
-    # ping3.ping() devuelve el RTT en segundos, o False/None si no hay respuesta
+    # Lanzo el ping a la IP. Me devuelve el RTT en segundos.
     rtt_seconds = ping3.ping(ip, timeout=TIMEOUT_S)
 
+    # Si recibo una respuesta válida (mayor que 0), convierto el tiempo a milisegundos (ms).
     if rtt_seconds and rtt_seconds > 0:
-        rtt_ms = int(rtt_seconds * 1000)
+
+        rtt_ms = int(rtt_seconds * 1000) # Convierto el tiempo a milisegundos (ms).
+
+        # Preparo un diccionario con toda la información del nodo para el heatmap.
         return {
             "ip": ip,
             "udp_port": node.get("udp_port", 0),
             "tcp_port": 0,
             "id": node.get("client_id", ""),
             "lat": node.get("lat"),
-            "lon": node.get("lon"),
+            "lng": node.get("lng"),
             "country": node.get("country", ""),
-            "rtt": rtt_ms
+            "rtt": rtt_ms # Este valor es el que usará mi frontend para pintar el nodo de verde, amarillo o rojo.
         }
+    
     return None
 
 
+# Esta es la función principal donde orquesto todo el Ping Sweeping
 def ping_all_nodes():
+    
     """
-    Barrido ICMP concurrente sobre todos los nodos del archivo maestro.
+    Leo mi lista de nodos, lanzo la ejecución paralela y guardo los resultados.
     """
+
+    # Verifico si el archivo maestro existe.
     if not os.path.exists(INPUT_FILE):
-        print(f"[!] Archivo maestro no hallado: {INPUT_FILE}")
+        print(f"[!] Archivo maestro no hallado: {INPUT_FILE}. Primero necesito que geolocator.py genere este archivo.")
         return
 
+    # Cargo mis nodos desde el archivo JSON que generó previamente mi geolocalizador (kad_nodes_geospatial.json)
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
         nodes = json.load(f)
 
-    print(f"\n[*] Iniciando ICMP Ping Sweep sobre {len(nodes)} nodos ({MAX_WORKERS} workers paralelos)...")
-    start = time.time()
+    print(f"\n[*] Estoy iniciando el ICMP Ping Sweep sobre {len(nodes)} nodos...")
 
-    responsive_nodes = []
+    start = time.time() # Tomo el tiempo inicial para calcular la duración del Sweeping
 
+    responsive_nodes = [] # Lista donde guardaré los nodos que respondan al ping
+
+    # Uso el ThreadPoolExecutor para mapear mi función ping_node() a toda la lista de nodos
+    # Así puedo procesar 50 nodos a la vez de forma asíncrona
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         results = list(executor.map(ping_node, nodes))
 
+    # Filtro los resultados para quedarme solo con los nodos que realmente respondieron
     for r in results:
         if r is not None:
-            responsive_nodes.append(r)
+            responsive_nodes.append(r) # Añadimos los nodos con su información geográfica a la lista
 
-    elapsed = time.time() - start
-    print(f"[+] Sweep completado en {elapsed:.2f}s.")
-    print(f"[+] Nodos que respondieron al ping ICMP: {len(responsive_nodes)} / {len(nodes)} VIVOS.\n")
+    elapsed = time.time() - start # Calculo el tiempo que tardó el Sweeping
 
+    print(f"[+] He terminado el barrido en {elapsed:.2f} segundos.") # Imprimo el tiempo que tardó el Sweeping
+    print(f"[+] He detectado {len(responsive_nodes)} nodos vivos de un total de {len(nodes)}.\n")
+
+    # Finalmente, guardo la lista de 'nodos vivos' en un JSON dedicado (kad_responsive_nodes.json)
+    # El archivo app.js de mi frontend leerá este archivo para actualizar el mapa térmico
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(responsive_nodes, f, indent=4)
 
 
 if __name__ == "__main__":
+    # Si ejecuto el script directamente, inicio el proceso de ping.
     ping_all_nodes()

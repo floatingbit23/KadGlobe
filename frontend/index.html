@@ -12,6 +12,8 @@
     <!-- Dependencias de Three.js y Globe.gl -->
     <script src="https://unpkg.com/three"></script>
     <script src="https://unpkg.com/globe.gl"></script>
+    <!-- Chart.js para visualización de K-Buckets -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -86,11 +88,25 @@
     </div>
 
     <!-- Panel flotante derecho: Ranking de Países -->
-    <div id="countriesPanel" class="glass-panel right-panel">
-        <h3 data-i18n="ranking_title">Nodos por país</h3>
+    <div id="countriesPanel" class="glass-panel right-panel panel-collapsed">
+        <h3 id="countriesToggle" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
+            <span data-i18n="ranking_title">Nodos por país</span>
+            <span class="toggle-arrow">▼</span>
+        </h3>
         <ul id="countryList" class="country-list">
             <!-- Inyectado visualmente por app.js -->
         </ul>
+    </div>
+    
+    <!-- Panel de K-Buckets (Histograma XOR) -->
+    <div id="bucketsPanel" class="glass-panel right-panel buckets-panel">
+        <h3 style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span data-i18n="buckets_title">Distribución K-Buckets</span>
+            <span style="font-size: 10px; color: #4facfe;">XOR Distance</span>
+        </h3>
+        <div style="height: 180px; position: relative;">
+            <canvas id="bucketsChart"></canvas>
+        </div>
     </div>
 
     <!-- Panel Inferior Izquierdo: IPs del Vecindario XOR -->
@@ -105,9 +121,6 @@
     <div id="nodeModal" class="glass-panel modal-hidden">
         <button id="closeModal" class="modal-close-btn">&times;</button>
         <h2 id="modalTitle" style="margin-bottom:5px;" data-i18n="modal_title">Información del Nodo</h2>
-        <span
-            style="display:block; font-size:11px; color:#ffcc00; margin-bottom:15px; font-weight:600; text-transform:uppercase;"
-            data-i18n="modal_xor">● Proyectando Vecindario Kad (XOR)</span>
         <div class="stat-item">
             <span class="stat-label">IP:</span>
             <span class="stat-value" id="modalIp">-</span>
