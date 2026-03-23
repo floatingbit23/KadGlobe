@@ -1,4 +1,85 @@
-# KadGlobe 🌍
+
+# Kadglobe 🌍 (English)
+
+## 1. General Overview
+
+**KadGlobe** is an advanced 3D visualization tool for the [Kademlia](https://en.wikipedia.org/wiki/Kademlia) network in [eMule](https://en.wikipedia.org/wiki/EMule). It serves as a visual "command post," connecting to the eMule WebUI to extract live statistics and analyzing local configuration files (`key_index.dat` and `nodes.dat`) to project your Kademlia neighborhood onto an interactive 3D globe. It aims to provide transparency on how decentralized routing works and the real-time health of your connections.
+
+![alt text](images/presentation_en.png)
+
+### 2. Technologies and Implementation
+The project is built with a robust Python backend and a premium web-based frontend:
+
+*   **Backend (Python)**:
+    *   **Advanced Scraper**: Logs into the eMule WebUI to capture telemetry (traffic, searches, UDP status), and saves the data in a JSON file.
+
+    ![alt text](images/json1.png)
+
+    *   **Identity Extraction**: Reads the 128-bit Kad ID directly from `key_index.dat`.
+
+    *   **Geolocation**: Processes `nodes.dat` and uses IP2Location databases to place each contact on the map, and saves the data in a JSON file.
+
+    ![alt text](images/json2.png)
+
+    *   **ICMP Pinger**: Performs multi-threaded ping sweeps (via OS ICMP) to measure real-world node latency (RTT), and saves the data in a JSON file.
+
+    ![alt text](images/json3.png)
+
+*   **Frontend (Web)**:
+    *   **3D Rendering**: Built on **Globe.gl** and **Three.js** for a smooth planet visualization.
+    *   **Glassmorphism UI**: Modern design featuring crystal and blur effects.
+    *   **Analytics**: Uses **Chart.js** to display the K-Buckets distribution.
+
+### 3. Components and Features
+
+*   **Heat Map**: When active, the system performs real-time pings. Nodes are color-coded: Green (<150ms), Yellow (<500ms), or Red (>500ms), showing which parts of the world offer the best connectivity.
+
+![alt text](images/heatmap.png)
+
+*   **Nodes by Country**: A sidebar that classifies and sorts your contacts by geographic location.
+
+![alt text](images/ranking.png)
+
+*   **K-Buckets Distribution**: A histogram showing how many contacts you have in each routing "bucket" (XOR distance 0-128).
+
+![alt text](images/kbuckets.png)
+
+
+*   **Top 10 XOR Neighborhood**: Clicking a node calculates its 10 mathematically closest neighbors and traces golden connection arcs.
+
+As an example, for a random node in London:
+![alt text](images/node_info.png)
+![alt text](images/xor_arcs.png)
+
+*   **ID Status (Kad Status)**: Displays your status in the Kad network, using specific Kademlia terminology.
+
+![alt text](images/status_opened.png)
+![alt text](images/status_firewalled.png)
+![alt text](images/status_disconnected.png)
+
+### 4. Requirements and Setup
+To use KadGlobe, you must ensure the following requirements are met:
+
+1.  **eMule WebUI**: The "Web Interface" must be enabled in eMule's options, and an administrator password must be set.
+
+![alt text](images/webInterface.png)
+
+2.  **Dependencies**: Install the required Python modules:
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  **Environment Variables**: Configure the `backend/.env` file with your local paths:
+    *   `ADMIN_PASS`: Your eMule WebUI password.
+    *   `EMULE_NODES_DAT_PATH`: Full path to your `nodes.dat` file.
+    *   `EMULE_KEY_INDEX_PATH`: Path to your `key_index.dat` file.
+    *   `IP2LOCATION_DB_PATH`: Path to the IP2Location `.BIN` database file.
+
+![alt text](images/files.png)
+![alt text](images/database.png)
+
+-----
+
+# KadGlobe 🌍 (Spanish)
 
 **KadGlobe** es una herramienta de visualización avanzada en 3D para la red [Kademlia](https://es.wikipedia.org/wiki/Kademlia) en [eMule](https://es.wikipedia.org/wiki/EMule). Permite monitorizar en tiempo real la salud de la red, la distribución geográfica de los nodos y la topología lógica (distancia XOR) de tu tabla de enrutamiento.
 
@@ -77,83 +158,3 @@ Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos
 ![alt text](images/database.png)
 
 ---
-
-## Kadglobe (English)
-
-### 1. General Overview
-
-**KadGlobe** is an advanced 3D visualization tool for the [Kademlia](https://en.wikipedia.org/wiki/Kademlia) network in [eMule](https://en.wikipedia.org/wiki/EMule). It serves as a visual "command post," connecting to the eMule WebUI to extract live statistics and analyzing local configuration files (`key_index.dat` and `nodes.dat`) to project your Kademlia neighborhood onto an interactive 3D globe. It aims to provide transparency on how decentralized routing works and the real-time health of your connections.
-
-![alt text](images/presentation.png)
-
-### 2. Technologies and Implementation
-The project is built with a robust Python backend and a premium web-based frontend:
-
-*   **Backend (Python)**:
-    *   **Advanced Scraper**: Logs into the eMule WebUI to capture telemetry (traffic, searches, UDP status), and saves the data in a JSON file.
-
-    ![alt text](images/json1.png)
-
-    *   **Identity Extraction**: Reads the 128-bit Kad ID directly from `key_index.dat`.
-
-    *   **Geolocation**: Processes `nodes.dat` and uses IP2Location databases to place each contact on the map, and saves the data in a JSON file.
-
-    ![alt text](images/json2.png)
-
-    *   **ICMP Pinger**: Performs multi-threaded ping sweeps (via OS ICMP) to measure real-world node latency (RTT), and saves the data in a JSON file.
-
-    ![alt text](images/json3.png)
-
-*   **Frontend (Web)**:
-    *   **3D Rendering**: Built on **Globe.gl** and **Three.js** for a smooth planet visualization.
-    *   **Glassmorphism UI**: Modern design featuring crystal and blur effects.
-    *   **Analytics**: Uses **Chart.js** to display the K-Buckets distribution.
-
-### 3. Components and Features
-
-*   **Heat Map**: When active, the system performs real-time pings. Nodes are color-coded: Green (<150ms), Yellow (<500ms), or Red (>500ms), showing which parts of the world offer the best connectivity.
-
-![alt text](images/heatmap.png)
-
-*   **Nodes by Country**: A sidebar that classifies and sorts your contacts by geographic location.
-
-![alt text](images/ranking.png)
-
-*   **K-Buckets Distribution**: A histogram showing how many contacts you have in each routing "bucket" (XOR distance 0-128).
-
-![alt text](images/kbuckets.png)
-
-
-*   **Top 10 XOR Neighborhood**: Clicking a node calculates its 10 mathematically closest neighbors and traces golden connection arcs.
-
-As an example, for a random node in London:
-![alt text](images/node_info.png)
-![alt text](images/xor_arcs.png)
-
-*   **ID Status (Kad Status)**: Displays your status in the Kad network, using specific Kademlia terminology.
-
-![alt text](images/status_opened.png)
-![alt text](images/status_firewalled.png)
-![alt text](images/status_disconnected.png)
-
-### 4. Requirements and Setup
-To use KadGlobe, you must ensure the following requirements are met:
-
-1.  **eMule WebUI**: The "Web Interface" must be enabled in eMule's options, and an administrator password must be set.
-
-![alt text](images/webInterface.png)
-
-2.  **Dependencies**: Install the required Python modules:
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  **Environment Variables**: Configure the `backend/.env` file with your local paths:
-    *   `ADMIN_PASS`: Your eMule WebUI password.
-    *   `EMULE_NODES_DAT_PATH`: Full path to your `nodes.dat` file.
-    *   `EMULE_KEY_INDEX_PATH`: Path to your `key_index.dat` file.
-    *   `IP2LOCATION_DB_PATH`: Path to the IP2Location `.BIN` database file.
-
-![alt text](images/files.png)
-![alt text](images/database.png)
-
--------
