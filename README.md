@@ -11,10 +11,18 @@ KadGlobe actúa como un "puesto de mando" visual para eMule. Se conecta a la Web
 El proyecto se divide en un backend de orquestación y un frontend de visualización premium:
 
 *   **Backend (Python)**:
-    *   **Scraper Avanzado**: Inicia sesión en la WebUI de eMule para capturar telemetría (tráfico, búsquedas, estado UDP).
+    *   **Scraper Avanzado**: Inicia sesión en la WebUI de eMule para capturar telemetría (tráfico, búsquedas, estado UDP), y guarda los datos en un archivo JSON.
+    ![alt text](image.png)
+
     *   **Extracción de Identidad**: Lee directamente el Kad ID de 128 bits desde `key_index.dat`.
-    *   **Geolocalización**: Procesa `nodes.dat` y utiliza una base de dato IP2Location para situar cada nodo de la red en el mapa.
-    *   **ICMP Pinger**: Realiza _ping sweeps_ (pasando por el SO) para medir la latencia real (RTT, _Round-Trip Time_) de los nodos.
+    *   **Geolocalización**: Procesa `nodes.dat` y utiliza una base de dato IP2Location para situar cada nodo de la red en el mapa, y guarda los datos en un archivo JSON.
+
+    ![alt text](image-1.png)
+    
+    *   **ICMP Pinger**: Realiza _ping sweeps_ (pasando por el SO) para medir la latencia real (RTT, _Round-Trip Time_) de los nodos, y guarda los datos en un archivo JSON.
+
+    ![alt text](image-2.png)
+
 *   **Frontend (Web)**:
     *   **Visualización 3D**: Basado en **Globe.gl** y **Three.js** para un renderizado fluido del planeta.
     *   **Interfaz Glassmorphism**: Diseño moderno con efectos de cristal y desenfoque.
@@ -24,7 +32,7 @@ El proyecto se divide en un backend de orquestación y un frontend de visualizac
 
 *   **Mapa Térmico (Heat Map)**: Al activarlo, el sistema realiza pings en tiempo real. Los nodos se colorean: Verde (<150ms), Amarillo (<500ms), Rojo (>500ms) o Blanco (sin respuesta), permitiendo ver qué nodos tienen mejor conectividad contigo a nivel global y en tiempo real.
 
-![alt text](images/image-1.png)
+![alt text](image-4.png)
 
 *   **Nodos por País**: Un panel lateral que clasifica y ordena los nodos por ubicación geográfica.
 
@@ -94,7 +102,7 @@ The project is built with a robust Python backend and a premium web-based fronte
 
 *   **Heat Map**: When active, the system performs real-time pings. Nodes are color-coded: Green (<150ms), Yellow (<500ms), or Red (>500ms), showing which parts of the world offer the best connectivity.
 
-![alt text](images/image-1.png)
+![alt text](image-5.png)
 
 *   **Nodes by Country**: A sidebar that classifies and sorts your contacts by geographic location, including flag icons.
 
