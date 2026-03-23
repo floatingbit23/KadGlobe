@@ -158,3 +158,15 @@ Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos
 ![alt text](images/database.png)
 
 ---
+
+# Automation
+
+[Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat) is the project's all-in-one launcher. Its function is to automate three tasks in a single step:
+
+1. Launch eMule: Starts the file-sharing program executable.
+2. Start the Server: Launches the KadGlobe engine ([server.py](https://github.com/floatingbit23/KadGlobe/blob/main/server.py)) in the background and in a minimized window.
+3. Open the Web UI: Automatically opens your default browser at the 3D map interface.
+
+In short: it allows you to start monitoring your Kad network with a single click, without having to open each component manually.
+
+--------
