@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KadGlobe 3D Visualization</title>
+
+    <!-- CSS Estilos -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Dependencias de Three.js y Globe.gl -->
+    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/globe.gl"></script>
+</head>
+
+<body>
+    <!-- Contenedor principal donde renderizaremos el planeta -->
+    <div id="globeViz"></div>
+
+    <!-- Panel flotante con Glassmorphism para mostrar las estadísticas en tiempo real -->
+    <div id="statsPanel" class="glass-panel">
+        <h1 style="display: flex; justify-content: space-between; align-items: center;">
+            KadGlobe
+            <button id="langToggle" class="lang-btn">EN</button>
+        </h1>
+
+        <div class="stat-item">
+            <span class="stat-label" data-i18n="net_status">Estado de Red:</span>
+            <span class="stat-value" id="kadStatus">Cargando...</span>
+        </div>
+
+        <div class="stat-item">
+            <span class="stat-label" data-i18n="contacts">Contactos Kad:</span>
+            <div>
+                <span class="stat-value" id="kadContacts">-</span>
+                <span id="kadContactsDiff" style="font-size: 13px; margin-left: 6px; font-weight: bold;"></span>
+            </div>
+        </div>
+
+        <div class="stat-item">
+            <span class="stat-label" data-i18n="searches">Búsquedas Activas:</span>
+            <span class="stat-value" id="kadSearches">-</span>
+        </div>
+
+        <div class="stat-item">
+            <span class="stat-label" data-i18n="mapped">Nodos Georreferenciados:</span>
+            <span class="stat-value" id="kadMappedNodes">-</span>
+        </div>
+    </div>
+
+    <!-- Panel flotante derecho: Ranking de Países -->
+    <div id="countriesPanel" class="glass-panel right-panel">
+        <h3 data-i18n="ranking_title">Nodos por país</h3>
+        <ul id="countryList" class="country-list">
+            <!-- Inyectado visualmente por app.js -->
+        </ul>
+    </div>
+
+    <!-- Panel Inferior Izquierdo: IPs del Vecindario XOR -->
+    <div id="xorNeighborsPanel" class="xor-panel modal-hidden">
+        <h4 data-i18n="xor_neighbors_title">Top 10 Vecindario XOR</h4>
+        <ul id="xorNeighborsList" class="xor-list">
+            <!-- Inyectado visualmente por app.js -->
+        </ul>
+    </div>
+
+    <!-- Modal Interactivo del Nodo -->
+    <div id="nodeModal" class="glass-panel modal-hidden">
+        <button id="closeModal" class="modal-close-btn">&times;</button>
+        <h2 id="modalTitle" style="margin-bottom:5px;" data-i18n="modal_title">Información del Nodo</h2>
+        <span
+            style="display:block; font-size:11px; color:#ffcc00; margin-bottom:15px; font-weight:600; text-transform:uppercase;"
+            data-i18n="modal_xor">● Proyectando Vecindario Kad (XOR)</span>
+        <div class="stat-item">
+            <span class="stat-label">IP:</span>
+            <span class="stat-value" id="modalIp">-</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label" data-i18n="modal_loc">Ubicación:</span>
+            <span class="stat-value" id="modalLocation">-</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">Kad Node ID:</span>
+            <span class="stat-value" id="modalId">-</span>
+        </div>
+    </div>
+
+    <!-- Script principal de la lógica visual -->
+    <script src="app.js"></script>
+</body>
+
+</html>

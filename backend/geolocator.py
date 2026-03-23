@@ -52,7 +52,8 @@ class KadGeolocator:
                 "lat": float(getattr(rec, 'latitude', 0.0)),
                 "lng": float(getattr(rec, 'longitude', 0.0)),
                 "city": getattr(rec, 'city', "Unknown"),
-                "country": getattr(rec, 'country_long', "Unknown")
+                "country": getattr(rec, 'country_long', "Unknown"),
+                "country_code": str(getattr(rec, 'country_short', "unknown")).lower()
             }
 
         except Exception as e: # Si ocurre un error al geolocalizar la IP
@@ -90,10 +91,12 @@ class KadGeolocator:
 
                 geospatial_nodes.append({ # Añadimos los nodos con su información geográfica a la lista
                     "id": node['id'], # ID de la IP
+                    "ip": node['ip'], # Dirección IP real
                     "lat": loc['lat'], # Latitud de la IP
                     "lng": loc['lng'], # Longitud de la IP
                     "city": loc['city'], # Ciudad de la IP
                     "country": loc['country'], # País de la IP
+                    "country_code": loc.get('country_code', 'unknown'), # Código ISO de 2 letras
                     "size": 0.01  # Tamaño por defecto para la representación en el globo terráqueo
                 })
             
@@ -125,11 +128,14 @@ if __name__ == "__main__":
     
     geo = KadGeolocator() # Inicializo el geolocalizador
     
-    # Verificamos si existe el archivo nodes.dat antes de empezar
-    nodes_path = "../nodes.dat"
+    # Busco     primero la ruta matriz de mi eMule original configurada en .env
+    nodes_path = os.getenv("EMULE_NODES_DAT_PATH", "")
 
-    if not os.path.exists(nodes_path): 
-        nodes_path = "nodes.dat" # Si no está en el nivel (directorio) superior, pruebo en el actual
+    # Si la ruta proporcionada en el .env falla (por permisos o no existe), retrocedo al default
+    if not nodes_path or not os.path.exists(nodes_path):
+        nodes_path = "../nodes.dat"
+        if not os.path.exists(nodes_path): 
+            nodes_path = "nodes.dat" # Si no está en el nivel (directorio) superior, pruebo en el actual
         
     geo.process_kad_nodes(nodes_file=nodes_path) # Proceso el archivo nodes.dat
 

@@ -1,0 +1,313 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #0b0f19;
+    /* Fondo oscuro premium (espacial) */
+    color: #ffffff;
+    overflow: hidden;
+    /* Ocultamos barras de scroll para la inmersión 3D */
+}
+
+/* El globo toma toda la pantalla */
+#globeViz {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Efecto Glassmorphism (Vidrio esmerilado) para el panel flotante */
+.glass-panel {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    width: 320px;
+    padding: 24px;
+
+    background: rgba(20, 25, 40, 0.5);
+    /* Fondo oscuro semitransparente */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    /* Soporte para Webkit/Safari */
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+/* Título con gradiente moderno */
+.glass-panel h1 {
+    margin: 0 0 10px 0;
+    font-size: 26px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+/* Filas individuales de datos */
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 12px;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+}
+
+/* Valores dinámicos */
+.stat-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* Clase JavaScript dedicada para cuando hay conexión establecida */
+.status-connected {
+    color: #00e676 !important;
+    text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
+}
+
+.status-disconnected {
+    color: #ff0000 !important;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+}
+
+.status-firewalled {
+    color: #f1ee06 !important;
+    text-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+}
+
+/* Modal interactivo */
+#nodeModal {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    width: 380px;
+    z-index: 100;
+}
+
+.modal-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.9) !important;
+}
+
+#nodeModal h2 {
+    margin: 0 0 16px 0;
+    font-size: 20px;
+    color: #fff;
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+    padding-bottom: 10px;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.modal-close-btn:hover {
+    opacity: 1;
+}
+
+/* Ajustes para el contenido del modal para evitar solapamiento */
+#nodeModal .stat-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding-bottom: 14px;
+}
+
+#nodeModal .stat-label {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+#nodeModal .stat-value {
+    width: 100%;
+    text-align: left;
+    font-size: 15px;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+#nodeModal #modalId {
+    font-family: monospace;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px;
+    border-radius: 4px;
+    color: #4facfe;
+}
+
+/* Panel derecho para el Ranking de Países */
+.right-panel {
+    left: auto;
+    right: 30px;
+    width: 260px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Scrollbar personalizado para el panel derecho al desbordar muchos países */
+.right-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.right-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+.right-panel::-webkit-scrollbar-thumb {
+    background: rgba(79, 172, 254, 0.5);
+    border-radius: 10px;
+}
+
+.right-panel h3 {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+    color: #4facfe;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.country-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.country-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: background 0.2s ease;
+}
+
+.country-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.country-name {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+}
+
+.country-count {
+    color: #00e676;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.lang-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-left: 10px;
+    vertical-align: middle;
+    transition: all 0.3s ease;
+}
+
+.lang-btn:hover {
+    background: rgba(0, 242, 254, 0.3);
+    border-color: #00f2fe;
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+}
+
+/* Panel Amarillo para el Vecindario XOR */
+.xor-panel {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    background: #ffcc00;
+    color: #000;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(255, 204, 0, 0.4);
+    z-index: 100;
+    width: 240px;
+    transition: all 0.3s ease;
+}
+
+.xor-panel.modal-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+}
+
+.xor-panel h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 8px;
+}
+
+.xor-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.xor-list li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 600;
+}
+
+.xor-list li span:first-child {
+    color: rgba(0, 0, 0, 0.6);
+}

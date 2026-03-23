@@ -115,6 +115,7 @@ def parse_nodes_dat(file_path="nodes.dat"): # si no se especifica una ruta, se a
         print(f"[!] Advertencia: Ha ocurrido un error mientras se parseaba el fichero: {str(e)}")
         return nodes
 
+# Función para probar el parseador (no se ejecuta si se importa el módulo)
 if __name__ == "__main__": 
 
     # Si ejecuto esto de forma independiente, asumo la lectura del nodes.dat en el directorio raíz
