@@ -77,6 +77,14 @@ To use KadGlobe, you must ensure the following requirements are met:
 ![alt text](images/files.png)
 ![alt text](images/database.png)
 
+### 5. _Disclaimer: Data Latency and Persistence_
+
+_It is important to note that the node information visualized in KadGlobe is retrieved by binary parsing of the `nodes.dat` file, retrieved from the user's local storage._
+
+_In the Kademlia protocol, the **active routing table** (the _buckets_) is managed directly in the system memory (RAM) of the eMule process to ensure maximum speed. eMule flushes this data to the hard disk (`nodes.dat`) only periodically or during a controlled shutdown to maintain persistence between sessions._
+
+_Therefore, while the traffic statistics and UDP status are captured in real-time via the eMule's WebUI scraper, the geographic positions and XOR distances represent a "recent snapshot" of your Kad neighborhood rather than a millisecond-accurate live stream. This design choice was made to provide a non-invasive way to audit the network state without the stability risks associated with direct memory hooking or process injection._
+
 -----
 
 # KadGlobe 🌍 (Spanish)
@@ -157,9 +165,17 @@ Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos
 ![alt text](images/files.png)
 ![alt text](images/database.png)
 
+### 5. _Aclaración sobre la Latencia y Persistencia de Datos_
+
+_Es necesario aclarar que la información de los nodos visualizada en KadGlobe se obtiene mediante el análisis (_parsing binario_) del archivo `nodes.dat`, extraído del almacenamiento local del usuario_.
+
+_En el protocolo Kademlia, la **tabla de enrutamiento activa** (los "buckets") se gestiona directamente en la memoria del sistema (RAM) del proceso de eMule para garantizar la máxima velocidad. eMule vuelca estos datos al disco duro (al `nodes.dat`) solo de forma periódica o durante un cierre controlado para mantener la persistencia entre sesiones._
+
+_Por lo tanto, mientras que las estadísticas de tráfico y el estado de UDP sí se capturan en tiempo real a través del _scrapeo_ de la WebUI de eMule, las posiciones geográficas y las distancias XOR representan una "foto" reciente de tus vecinos en la red Kad, en lugar de una transmisión en tiempo real con precisión de milisegundos. Esta decisión de diseño se tomó para ofrecer una forma no invasiva de auditar el estado de la red sin los riesgos de estabilidad asociados con el acceso directo a la memoria ("memory hooking") o la inyección de procesos invasivos._
+
 ---
 
-# Automation
+# Automation/Automatización
 
 [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat) is the project's all-in-one launcher. Its function is to automate three tasks in a single step:
 
@@ -167,6 +183,16 @@ Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos
 2. Start the Server: Launches the KadGlobe engine ([server.py](https://github.com/floatingbit23/KadGlobe/blob/main/server.py)) in the background and in a minimized window.
 3. Open the Web UI: Automatically opens your default browser at the 3D map interface.
 
-In short: it allows you to start monitoring your Kad network with a single click, without having to open each component manually.
+In short: it allows you to start monitoring your Kad network with a single click, without having to open/execute each component manually.
+
+-------
+
+Script.bat es el script principal del proyecto. Su función es automatizar tres tareas en un solo paso:
+
+1. Iniciar eMule: Arranca el ejecutable del programa de intercambio de archivos.
+2. Iniciar el Servidor: Lanza el motor de KadGlobe (server.py) en segundo plano y en una ventana minimizada.
+3. Abrir la Interfaz Web: Abre automáticamente tu navegador predeterminado en la interfaz del mapa 3D.
+
+En resumen: te permite empezar a monitorizar tu red Kad con un solo clic, sin tener que abrir o ejecutar cada componente manualmente.
 
 --------
