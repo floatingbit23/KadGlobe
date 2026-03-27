@@ -177,22 +177,36 @@ _Por lo tanto, mientras que las estadísticas de tráfico y el estado de UDP sí
 
 # Automation/Automatización
 
-[Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat) is the project's all-in-one launcher. Its function is to automate three tasks in a single step:
+**Windows**: [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat) is the project's all-in-one _launcher_.  
+**Linux**: [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh) provides the same automation (supports aMule and Wine/eMule).
 
-1. Launch eMule: Starts the file-sharing program executable.
-2. Start the Server: Launches the KadGlobe engine ([server.py](https://github.com/floatingbit23/KadGlobe/blob/main/server.py)) in the background and in a minimized window.
-3. Open the Web UI: Automatically opens your default browser at the 3D map interface.
+Its function is to automate three tasks in a single step:
 
-In short: it allows you to start monitoring your Kad network with a single click, without having to open/execute each component manually.
+1.  **Launch Client**: Starts aMule (Linux) or eMule (Windows).
+2.  **Start the Server**: Launches the KadGlobe engine ([server.py](https://github.com/floatingbit23/KadGlobe/blob/main/server.py)).
+3.  **Open the Web UI**: Automatically opens your default browser at the 3D map interface.
 
--------
+> [!IMPORTANT]
+> **Linux Network Permissions**: On Linux, to use the "Heat Map" (ICMP Ping), you must grant Python permissions to open _Raw Sockets_:
+> ```bash
+> sudo setcap cap_net_raw+ep $(readlink -f $(which python3))
+> ```
 
-Script.bat es el script principal del proyecto. Su función es automatizar tres tareas en un solo paso:
+------
 
-1. Iniciar eMule: Arranca el ejecutable del programa de intercambio de archivos.
-2. Iniciar el Servidor: Lanza el motor de KadGlobe (server.py) en segundo plano y en una ventana minimizada.
-3. Abrir la Interfaz Web: Abre automáticamente tu navegador predeterminado en la interfaz del mapa 3D.
+**Windows**: [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat) es el _launcher_ principal.  
+**Linux**: [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh) realiza la misma automatización (soporta aMule y Wine/eMule).
 
-En resumen: te permite empezar a monitorizar tu red Kad con un solo clic, sin tener que abrir o ejecutar cada componente manualmente.
+Su función es automatizar tres tareas en un solo paso:
+
+1.  **Iniciar Cliente**: Arranca aMule (Linux) o eMule (Windows).
+2.  **Iniciar el Servidor**: Lanza el motor de KadGlobe.
+3.  **Abrir la Interfaz Web**: Abre tu navegador en la interfaz del mapa 3D.
+
+> [!IMPORTANT]
+> **Permisos de red en Linux**: Para usar el "Mapa Térmico" (ICMP Ping) en Linux, debes dar permisos a Python para abrir _Raw Sockets_:
+> ```bash
+> sudo setcap cap_net_raw+ep $(readlink -f $(which python3))
+> ```
 
 --------

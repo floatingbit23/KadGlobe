@@ -142,11 +142,21 @@ if __name__ == "__main__":
     # Busco primero la ruta matriz de mi eMule original configurada en .env
     nodes_path = os.getenv("EMULE_NODES_DAT_PATH", "")
 
-    # Si la ruta proporcionada en el .env falla (por permisos o no existe), retrocedo al default 
+    # Si la ruta proporcionada en el .env falla (por permisos o no existe), retrocedo al default
     if not nodes_path or not os.path.exists(nodes_path):
-        nodes_path = "../nodes.dat"
-        if not os.path.exists(nodes_path): 
-            nodes_path = "nodes.dat" # Si no está en el nivel (directorio) superior, pruebo en el actual
+        
+        # Lógica de detección automática para Linux (aMule)
+        if os.name != "nt": # Si no estamos en Windows...
+            amule_path = os.path.expanduser("~/.aMule/nodes.dat")
+            if os.path.exists(amule_path):
+                nodes_path = amule_path
+                print(f"[*] Detectado sistema Linux. Usando ruta de aMule: {nodes_path}")
+
+        # Si aún no tenemos ruta válida, probamos el relativo local
+        if not nodes_path or not os.path.exists(nodes_path):
+            nodes_path = "../nodes.dat"
+            if not os.path.exists(nodes_path): 
+                nodes_path = "nodes.dat" # Prueba en el actual
         
     geo.process_kad_nodes(nodes_file=nodes_path) # Proceso el archivo nodes.dat
 

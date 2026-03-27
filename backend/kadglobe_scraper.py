@@ -137,6 +137,12 @@ class EMuleWebScraper:
         # Busco la ruta en el .env. Es donde eMule guarda su identidad de red.
         pref_path = os.getenv("EMULE_KEY_INDEX_PATH", "C:\\Program Files (x86)\\eMule\\config\\key_index.dat")
         
+        # Lógica de detección automática para Linux (aMule) si la ruta por defecto no existe.
+        if (not os.path.exists(pref_path)) and os.name != "nt":
+            amule_pref = os.path.expanduser("~/.aMule/key_index.dat")
+            if os.path.exists(amule_pref):
+                pref_path = amule_pref
+
         try:
             if os.path.exists(pref_path):
 
@@ -150,7 +156,7 @@ class EMuleWebScraper:
                         print(f"[+] He sacado tu Kad ID real: {kad_id_hex}") # Lo imprimo para verificar que se ha obtenido correctamente.
                         return kad_id_hex
             else:
-                print(f"[!] No encuentro el archivo key_index.dat. Asegúrate de que la ruta en el .env es correcta.")
+                print(f"[!] No encuentro el archivo key_index.dat en {pref_path}. Asegúrate de que la ruta en el .env es correcta.")
 
         except Exception as e:
             print(f"[!] Error crítico leyendo tu identidad: {e}")

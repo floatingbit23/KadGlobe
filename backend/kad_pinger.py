@@ -46,7 +46,23 @@ def ping_node(node):
         return None
 
     # Lanzo el ping a la IP. Me devuelve el RTT en segundos.
-    rtt_seconds = ping3.ping(ip, timeout=TIMEOUT_S)
+    try:
+        rtt_seconds = ping3.ping(ip, timeout=TIMEOUT_S)
+    except PermissionError:
+        # Este error es típico en Linux cuando no se tienen permisos para usar sockets RAW (ICMP).
+        if os.name != "nt": # 'nt' means Windows, 'posix' means Linux/Mac
+            print(f"\n[!] ERROR DE PERMISOS: No tienes privilegios para enviar pings ICMP en este sistema Linux.")
+            print(f"[!] Por favor, ejecuta el siguiente comando en tu terminal para dar permisos a Python:")
+            print(f"    sudo setcap cap_net_raw+ep $(readlink -f $(which python3))\n")
+        else:
+            print(f"\n[!] ERROR DE PERMISOS: Asegúrate de ejecutar este script con privilegios de Administrador.")
+        
+        # Para evitar saturar la terminal con el mismo mensaje, detenemos la ejecución de este hilo si es crítico.
+        # En una ejecución real, el usuario debería aplicar el setcap y reiniciar.
+        os._exit(1)
+    except Exception as e:
+        # Cualquier otro error lo ignoramos y devolvemos None.
+        return None
 
     # Si recibo una respuesta válida (mayor que 0), convierto el tiempo a milisegundos (ms).
     if rtt_seconds and rtt_seconds > 0:
