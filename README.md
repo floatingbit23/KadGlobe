@@ -178,7 +178,8 @@ _Por lo tanto, mientras que las estadísticas de tráfico y el estado de UDP sí
 # Automation/Automatización
 
 **Windows**: [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat) is the project's all-in-one _launcher_.  
-**Linux**: [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh) provides the same automation (supports aMule and Wine/eMule).
+**Linux**: [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh) provides the same automation (supports aMule and Wine/eMule).  
+_Note for Linux: Before first use, give execution permissions:_ `chmod +x launcher.sh`.
 
 Its function is to automate three tasks in a single step:
 
