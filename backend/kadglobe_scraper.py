@@ -37,8 +37,12 @@ class EMuleWebScraper:
         self.port = port
         self.password = password
         self.base_url = f"http://{host}:{port}"
-        self.session_id = None # Aquí guardaré el token de sesión una vez me loguee.
-        self.session = requests.Session() # Uso una sesión de requests para mantener las cookies.
+        self.session_id = None 
+        # Sesión persistente para evitar re-logins constantes
+        self.session = requests.Session()
+        self.headers = {
+            'Connection': 'close'
+        }
 
 
     def login(self):
@@ -51,20 +55,24 @@ class EMuleWebScraper:
         print(f"\n[*] Estoy intentando entrar en tu eMule WebUI en {self.base_url}...")
 
         try:
+            # Parámetros universales: p (eMule), pass (amuleweb)
             payload = {
                 "w": "password",
-                "p": self.password
+                "p": self.password,
+                "pass": self.password,
+                "submit": "Submit"
             }
 
-            # Lanzo la petición POST para autenticarme.
-            response = self.session.post(self.base_url + "/", data=payload, timeout=5)
+            # Lanzo la petición POST para autenticarme usando la sesión
+            response = self.session.post(self.base_url + "/", data=payload, headers=self.headers, timeout=5)
             
             # eMule redirige usando un meta-refresh con el ID de sesión. Lo extraigo con esta regex.
             match = re.search(r'\?ses=([A-Za-z0-9_]+)', response.text)
-
-            if match: # Si se encuentra el ID de sesión...
-                self.session_id = match.group(1) # Capturo el ID de sesión.
-                print(f"[+] ¡Logueado perfectamente! Mi ID de sesión es: {self.session_id}") 
+            
+            if match: 
+                self.session_id = match.group(1) 
+                print(f"[+] ¡Logueado perfectamente! ID: {self.session_id}") 
+                time.sleep(2) # Pausa tras login para dejar que aMule respire
                 return True
             else:
                 print("[!] No he podido entrar. Revisa si tu contraseña en el .env es correcta.")
@@ -88,7 +96,7 @@ class EMuleWebScraper:
         
         try:
 
-            response = self.session.get(target_url, timeout=5) # Lanzo la petición GET para entrar en la sección Kad.
+            response = self.session.get(target_url, headers=self.headers, timeout=5) # Lanzo la petición GET para entrar en la sección Kad.
             soup = BeautifulSoup(response.text, 'html.parser') # Creo un objeto BeautifulSoup para analizar el HTML.
             full_text = soup.get_text(separator=' ', strip=True) # Extraigo todo el texto de la página.
             
@@ -182,7 +190,7 @@ class EMuleWebScraper:
 
         target_url = f"{self.base_url}/?ses={self.session_id}&w=stats"
         try:
-            response = self.session.get(target_url, timeout=5)
+            response = self.session.get(target_url, headers=self.headers, timeout=5)
             soup = BeautifulSoup(response.text, 'html.parser')
             lines = soup.get_text(separator='\n', strip=True)
 
@@ -221,9 +229,9 @@ class EMuleWebScraper:
             return defaults
 
 
+# Bloque de ejecución manual (solo si lanzas este archivo solo)
+
 if __name__ == "__main__":
-    
-    # Si ejecuto esto a mano, inicio la recolección y guardo los resultados en el JSON.
     print("\n--- Estoy iniciando una captura manual de datos ---")
     
     admin_pass = os.getenv("ADMIN_PASS", "")
@@ -231,13 +239,15 @@ if __name__ == "__main__":
 
     scraper = EMuleWebScraper(host=ip_address, port=4711, password=admin_pass)
 
-    if scraper.login(): # Si me logueo correctamente...
-        stats = scraper.fetch_kad_stats() # ...entonces saco las estadísticas.
+    if scraper.login():
+        stats = scraper.fetch_kad_stats()
 
         if stats:
-            # Guardo los resultados para que mi frontend los use.
             try:
-                output_path = "../jsons/kad_stats.json"
+                # Calculo la ruta absoluta de la carpeta jsons/ en la raíz del proyecto
+                project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                output_path = os.path.join(project_root, "jsons", "kad_stats.json")
+                
                 os.makedirs(os.path.dirname(output_path), exist_ok=True)
                 with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(stats, f, indent=4, ensure_ascii=False)
@@ -245,7 +255,6 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"[!] No he podido escribir el JSON: {e}")
     else:
-        # Si no he podido ni loguearme (eMule cerrado), aviso al frontend.
         print("[!] No he podido conectar con eMule. Actualizando estado a 'Disconnected'...")
         disconnected_data = {
             "status": "Disconnected",
@@ -255,9 +264,12 @@ if __name__ == "__main__":
             "local_id": "Unknown"
         }
         try:
-            output_path = "../jsons/kad_stats.json"
+            # Calculo la ruta absoluta de la carpeta jsons/ en la raíz del proyecto
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            output_path = os.path.join(project_root, "jsons", "kad_stats.json")
+            
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(disconnected_data, f, indent=4, ensure_ascii=False)
         except Exception as e:
-            print(f"[!] No he podido actualizar el estado offline: {e}")
+            print(f"[!] No he podido de actualizar el estado offline: {e}")

@@ -28,8 +28,14 @@ class KadGeolocator:
 
     # Función que inicializa el geolocalizador
     def __init__(self): 
-        # Recupero la ruta de la base de datos desde el entorno (.env)
-        self.db_path = os.getenv("IP2LOCATION_DB_PATH", "../data/IP2LOCATION-LITE-DB5.BIN")
+        # Calculo la ruta absoluta de la raíz del proyecto (un nivel por encima de este script)
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+        # Ruta por defecto absoluta a la base de datos
+        default_db_path = os.path.join(project_root, "data", "IP2LOCATION-LITE-DB5.BIN")
+
+        # Recupero la ruta de la base de datos desde el entorno (.env) o uso el default absoluto
+        self.db_path = os.getenv("IP2LOCATION_DB_PATH", default_db_path)
         self.db = None 
         
         if os.path.exists(self.db_path): # Si existe la base de datos
@@ -71,11 +77,17 @@ class KadGeolocator:
             return None
 
     # Función que se encarga de procesar los nodos
-    def process_kad_nodes(self, nodes_file="../nodes.dat", output_file="../jsons/kad_nodes_geospatial.json"): 
+    def process_kad_nodes(self, nodes_file=None, output_file=None): 
         
         """
         Es el proceso principal: parseo el archivo binario, traduzco cada IP y guardo el JSON final en la carpeta de jsons.
         """
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+        if nodes_file is None:
+            nodes_file = os.path.join(project_root, "nodes.dat")
+        if output_file is None:
+            output_file = os.path.join(project_root, "jsons", "kad_nodes_geospatial.json")
         
         # 1. Extraigo los nodos usando el parseador binario
         print(f"[*] Iniciando el procesamiento de {nodes_file}...")
@@ -154,9 +166,11 @@ if __name__ == "__main__":
 
         # Si aún no tenemos ruta válida, probamos el relativo local
         if not nodes_path or not os.path.exists(nodes_path):
-            nodes_path = "../nodes.dat"
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            nodes_path = os.path.join(project_root, "nodes.dat")
+            
             if not os.path.exists(nodes_path): 
-                nodes_path = "nodes.dat" # Prueba en el actual
+                nodes_path = "nodes.dat" # Prueba en el actual por si acaso
         
     geo.process_kad_nodes(nodes_file=nodes_path) # Proceso el archivo nodes.dat
 

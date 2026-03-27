@@ -68,7 +68,7 @@ To use KadGlobe, you must ensure the following requirements are met:
     ```bash
     pip install -r requirements.txt
     ```
-3.  **Environment Variables**: Configure the `backend/.env` file with your local paths:
+3.  **Environment Variables**: Configure the `.env` file (you can copy `.env.windows.example` or `.env.linux.example` depending on your OS) with your local paths:
     *   `ADMIN_PASS`: Your eMule WebUI password.
     *   `EMULE_NODES_DAT_PATH`: Full path to your `nodes.dat` file.
     *   `EMULE_KEY_INDEX_PATH`: Path to your `key_index.dat` file.
@@ -156,7 +156,7 @@ Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos
     ```bash
     pip install -r requirements.txt
     ```
-3.  **Variables de Entorno**: Configura el archivo `backend/.env` con tus rutas locales:
+3.  **Variables de Entorno**: Configura el archivo `.env` (puedes copiar de `.env.windows.example` o `.env.linux.example` según tu sistema) con tus rutas locales:
     *   `ADMIN_PASS`: La contraseña que pusiste en la WebUI de eMule.
     *   `EMULE_NODES_DAT_PATH`: Ruta completa a tu archivo `nodes.dat` (ej: `C:\eMule\config\nodes.dat`).
     *   `EMULE_KEY_INDEX_PATH`: Ruta a tu archivo `key_index.dat`.
@@ -177,15 +177,30 @@ _Por lo tanto, mientras que las estadísticas de tráfico y el estado de UDP sí
 
 # Automation/Automatización
 
-**Windows**: [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat) is the project's all-in-one _launcher_.  
-**Linux**: [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh) provides the same automation (supports aMule and Wine/eMule).  
-_Note for Linux: Before first use, give execution permissions:_ `chmod +x launcher.sh`.
+### 1. First Time Setup (Recommended)
+The project includes a **setup script** that automates the installation of dependencies, ensures the folder structure is correct, and helps you download the IP2Location database.
 
-Its function is to automate three tasks in a single step:
+**Windows**: Double-click [setup.bat](https://github.com/floatingbit23/KadGlobe/blob/main/setup.bat).  
+**Linux**: Run `./setup.sh` in your terminal.
 
-1.  **Launch Client**: Starts aMule (Linux) or eMule (Windows).
-2.  **Start the Server**: Launches the KadGlobe engine ([server.py](https://github.com/floatingbit23/KadGlobe/blob/main/server.py)).
-3.  **Open the Web UI**: Automatically opens your default browser at the 3D map interface.
+```bash
+# Give execution permissions (only first time)
+chmod +x setup.sh
+
+# Run the setup wizard
+./setup.sh
+```
+
+### 2. Launching KadGlobe
+Once configured, you can launch all components in a single step:
+
+**Windows**: Run [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat).  
+**Linux**: Run [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh).
+
+> [!CAUTION]
+> **DO NOT run `launcher.sh` with `sudo`.**  
+> Running as root will cause "Permission Denied" errors in `/run/user/0` and "Display not found" errors because GUI applications like aMule must run within your normal user session.
+
 
 > [!IMPORTANT]
 > **Linux Network Permissions**: On Linux, to use the "Heat Map" (ICMP Ping), you must grant Python permissions to open _Raw Sockets_:
@@ -195,14 +210,33 @@ Its function is to automate three tasks in a single step:
 
 ------
 
-**Windows**: [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat) es el _launcher_ principal.  
-**Linux**: [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh) realiza la misma automatización (soporta aMule y Wine/eMule).
+# Automatización
+
+### 1. Configuración Inicial (Recomendado)
+El proyecto incluye un **script de configuración** que automatiza la instalación de dependencias, asegura que la estructura de carpetas sea correcta y te ayuda a descargar la base de datos de IP2Location.
+
+**Windows**: Haz doble clic en [setup.bat](https://github.com/floatingbit23/KadGlobe/blob/main/setup.bat).  
+**Linux**: Ejecuta `./setup.sh` en tu terminal.
+
+```bash
+# Dar permisos de ejecución (solo la primera vez)
+chmod +x setup.sh
+
+# Ejecutar el asistente de configuración
+./setup.sh
+```
+
+### 2. Ejecución de KadGlobe
+Una vez configurado, puedes lanzar todos los componentes en un solo paso:
+
+**Windows**: Ejecuta [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat).  
+**Linux**: Ejecuta [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh).
+
+> [!CAUTION]
+> **NO ejecutes `launcher.sh` con `sudo`.**  
+> Ejecutarlo como root provocará errores de "Permiso denegado" en `/run/user/0` y errores de pantalla (X11) ya que las aplicaciones gráficas como aMule deben correr en tu sesión de usuario normal.
 
 Su función es automatizar tres tareas en un solo paso:
-
-1.  **Iniciar Cliente**: Arranca aMule (Linux) o eMule (Windows).
-2.  **Iniciar el Servidor**: Lanza el motor de KadGlobe.
-3.  **Abrir la Interfaz Web**: Abre tu navegador en la interfaz del mapa 3D.
 
 > [!IMPORTANT]
 > **Permisos de red en Linux**: Para usar el "Mapa Térmico" (ICMP Ping) en Linux, debes dar permisos a Python para abrir _Raw Sockets_:

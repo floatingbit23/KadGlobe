@@ -27,9 +27,12 @@ Este script realiza un 'Ping Sweep' sobre mis nodos Kademlia extraidos de nodes.
 Uso el protocolo ICMP Echo (ping clásico) porque es el método más  fiable para medir la latencia real (RTT) de un nodo en internet.
 """
 
-# Defino las rutas de mis archivos JSON. El primero es mi fuente de nodos geolocalizados y el segundo es donde guardaré los que respondan al ping.
-INPUT_FILE  = "../jsons/kad_nodes_geospatial.json"
-OUTPUT_FILE = "../jsons/kad_responsive_nodes.json"
+# Punto de referencia: Carpeta raíz del proyecto (un nivel arriba del backend)
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Defino las rutas de mis archivos JSON de forma absoluta.
+INPUT_FILE  = os.path.join(project_root, "jsons", "kad_nodes_geospatial.json")
+OUTPUT_FILE = os.path.join(project_root, "jsons", "kad_responsive_nodes.json")
 
 # Lanzo 50 pings simultáneos. Es un equilibrio bueno para ir rápido sin saturar la conexión de mi router doméstico con demasiadas peticiones.
 MAX_WORKERS = 50   
