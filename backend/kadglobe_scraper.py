@@ -10,18 +10,31 @@ import urllib.parse
 import os
 import json
 import binascii
+import time
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 # Configuro mi sistema de impresión con colores para que los logs sean legibles.
 import builtins
 _orig_print = builtins.print
+
 def _color_print(*args, **kwargs):
     text = " ".join(map(str, args))
-    if text.lstrip().startswith("[!]"):
+    stripped_text = text.lstrip()
+    
+    if stripped_text.startswith("[!]"):
+        # Rojo para avisos y errores
         _orig_print(f"\033[91m{text}\033[0m", **kwargs)
-    else:
+    elif stripped_text.startswith("[+]"):
+        # Verde para éxitos y resultados positivos
         _orig_print(f"\033[92m{text}\033[0m", **kwargs)
+    elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
+        # Blanco brillante para información de pasos
+        _orig_print(f"\033[97m{text}\033[0m", **kwargs)
+    else:
+        # Por defecto, blanco estándar
+        _orig_print(text, **kwargs)
+
 builtins.print = _color_print
 
 

@@ -1,20 +1,40 @@
 @echo off
 setlocal
+chcp 65001 > nul
+
 :: ========================================================
 ::          LANZADOR ÚNICO: eMule + KadGlobe
 :: ========================================================
 
-echo [*] Limpiando procesos antiguos de KadGlobe y eMule...
-:: Mata el proceso del servidor de Python de forma silenciosa
-powershell -Command "Get-Process python* -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like '*server.py*' } | Stop-Process -Force"
-:: Mata eMule si está abierto (evita bloqueos de archivos de configuración)
-taskkill /F /IM emule.exe /T 2>nul
+setlocal enabledelayedexpansion
+echo [*] Limpiando servidor KadGlobe anterior...
 
-echo [*] Entorno limpiado e iniciando nuevos sistemas...
-echo [*] Iniciando eMule v0.70b...
+:: Método 1: Por PID guardado (más preciso)
+if exist "server.pid" (
+    set /p OLD_PID=<"server.pid"
+    taskkill /F /PID !OLD_PID! >nul 2>&1
+    del "server.pid"
+)
 
-:: Cambia esta ruta si tienes el ejecutable de eMule en otro directorio
-start "" "C:\Program Files (x86)\eMule\emule.exe"
+:: Método 2: Por nombre y ruta (fallback de seguridad)
+wmic process where "name like 'python%%' and commandline like '%%%%KadGlobe%%%%server.py%%%%'" call terminate > nul 2>&1
+
+echo [*] Comprobando si eMule está abierto...
+tasklist /fi "ImageName eq emule.exe" /nh | find /i "emule.exe" > nul
+
+if errorlevel 1 (
+    
+    echo [*] eMule no está en ejecución. Iniciando eMule...
+
+    :: Cambia esta ruta si tienes el ejecutable de eMule en otro directorio
+    start "" "C:\Program Files (x86)\eMule\emule.exe"
+
+    echo [*] Esperando 7 segundos a que eMule levante su servidor WebUI...
+    timeout /t 7 /nobreak > nul
+
+) else (
+    echo [+] eMule ya está abierto. No es necesario relanzarlo.
+)
 
 echo [*] Iniciando Servidor KadGlobe (en ventana minimizada)...
 :: Usamos %~dp0 para que el script sea portátil (funcione en cualquier carpeta)

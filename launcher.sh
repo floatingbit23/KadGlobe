@@ -31,12 +31,20 @@ cleanup() {
 # Capturar Ctrl+C (SIGINT) y llamar a cleanup
 trap cleanup SIGINT SIGTERM
 
-# 1. Limpieza inicial (por si acaso)
+# 1. Limpieza inicial (Fiel al sistema server.pid)
+if [ -f "server.pid" ]; then
+    OLD_PID=$(cat server.pid)
+    echo "[*] Limpiando servidor anterior (PID: $OLD_PID)..."
+    kill -9 $OLD_PID 2>/dev/null
+    rm server.pid
+fi
+
+# Fallback en caso de que el PID no exista
 pkill -f server_aMule.py 2>/dev/null
 pkill -f amuleweb 2>/dev/null
 pkill -f amule 2>/dev/null
 pkill -f emule 2>/dev/null
-rm -f ~/.aMule/muleLock
+rm -f ~/.aMule/muleLock # a veces se queda bloqueado
 
 echo "[*] Entorno limpiado e iniciando nuevos sistemas..."
 

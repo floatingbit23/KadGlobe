@@ -8,15 +8,27 @@ import ping3
 from concurrent.futures import ThreadPoolExecutor
 
 # Configuro una función personalizada para imprimir en la terminal con colores.
-# Así puedo distinguir visualmente entre mensajes de éxito (verde) y errores (rojo).
+# Así puedo distinguir visualmente entre mensajes de éxito (verde), errores (rojo) e información (blanco).
 import builtins
 _orig_print = builtins.print
+
 def _color_print(*args, **kwargs):
     text = " ".join(map(str, args))
-    if text.lstrip().startswith("[!]"):
+    stripped_text = text.lstrip()
+    
+    if stripped_text.startswith("[!]"):
+        # Rojo para avisos y errores
         _orig_print(f"\033[91m{text}\033[0m", **kwargs)
-    else:
+    elif stripped_text.startswith("[+]"):
+        # Verde para éxitos y resultados positivos
         _orig_print(f"\033[92m{text}\033[0m", **kwargs)
+    elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
+        # Blanco brillante para información de pasos
+        _orig_print(f"\033[97m{text}\033[0m", **kwargs)
+    else:
+        # Por defecto, blanco estándar
+        _orig_print(text, **kwargs)
+
 builtins.print = _color_print
 
 # Configuro ping3 para que me devuelva None en lugar de fallar si el nodo no responde (Pings perdidos).
@@ -60,9 +72,8 @@ def ping_node(node):
         else:
             print(f"\n[!] ERROR DE PERMISOS: Asegúrate de ejecutar este script con privilegios de Administrador.")
         
-        # Para evitar saturar la terminal con el mismo mensaje, detenemos la ejecución de este hilo si es crítico.
-        # En una ejecución real, el usuario debería aplicar el setcap y reiniciar.
-        os._exit(1)
+        # Devolvemos None en lugar de matar el proceso, para que el resto de sistemas sigan funcionando.
+        return None
     except Exception as e:
         # Cualquier otro error lo ignoramos y devolvemos None.
         return None

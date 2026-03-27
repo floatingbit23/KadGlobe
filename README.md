@@ -6,6 +6,7 @@
 **KadGlobe** is an advanced 3D visualization tool for the [Kademlia](https://en.wikipedia.org/wiki/Kademlia) network in [eMule](https://en.wikipedia.org/wiki/EMule). It serves as a visual "command post," connecting to the eMule WebUI to extract live statistics and analyzing local configuration files (`key_index.dat` and `nodes.dat`) to project your Kademlia neighborhood onto an interactive 3D globe. It aims to provide transparency on how decentralized routing works and the real-time health of your connections.
 
 ![alt text](images/presentationv2.png)
+![alt text](images/terminal.png)
 
 ### 2. Technologies and Implementation
 The project is built with a robust Python backend and a premium web-based frontend:
