@@ -4,25 +4,50 @@
 # ========================================================
 echo "[*] Iniciando KadGlobe en Linux..."
 
-# 1. Limpieza profunda
+# Función de limpieza al apagar
+cleanup() {
+    echo ""
+    echo "[*] Recibida señal de apagado. Cerrando procesos de forma limpia..."
+    # Matamos amuleweb y el servidor Python
+    pkill -f server_aMule.py 2>/dev/null
+    pkill -f amuleweb 2>/dev/null
+    
+    # Intentamos cerrar aMule de forma suave primero
+    pkill -15 amule 2>/dev/null
+    
+    echo "[*] Esperando a que aMule guarde archivos temporales..."
+    sleep 3
+    
+    # Si sigue vivo, forzamos cierre
+    pkill -9 amule 2>/dev/null
+    pkill -f emule 2>/dev/null
+    
+    # Limpieza de bloqueos
+    rm -f ~/.aMule/muleLock
+    echo "[+] Todo cerrado. ¡Hasta pronto!"
+    exit 0
+}
+
+# Capturar Ctrl+C (SIGINT) y llamar a cleanup
+trap cleanup SIGINT SIGTERM
+
+# 1. Limpieza inicial (por si acaso)
 pkill -f server_aMule.py 2>/dev/null
 pkill -f amuleweb 2>/dev/null
 pkill -f amule 2>/dev/null
 pkill -f emule 2>/dev/null
-
-# 2. Eliminar archivos de bloqueo
 rm -f ~/.aMule/muleLock
 
 echo "[*] Entorno limpiado e iniciando nuevos sistemas..."
 
-# 3. Preparar entorno del servidor
+# 2. Preparar entorno del servidor
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$DIR"
 
-# 4. Leer la contraseña del archivo .env
+# 3. Leer la contraseña del archivo .env
 ADMIN_PASS=$(grep -oP "ADMIN_PASS='?\K[^']*" .env 2>/dev/null)
 
-# 5. Lanzar el cliente
+# 4. Lanzar el cliente
 if command -v amule &> /dev/null; then
     echo "[*] Iniciando aMule nativo..."
     amule &
@@ -33,7 +58,7 @@ else
     echo "[!] No se detecto aMule ni eMule/Wine."
 fi
 
-# 6. Lanzar amuleweb independiente
+# 5. Lanzar amuleweb independiente
 echo "[*] Esperando 15s a que aMule arranque su motor EC..."
 sleep 15
 
@@ -52,8 +77,10 @@ if command -v xdg-open &> /dev/null; then
     xdg-open http://localhost:8000/frontend/
 fi
 
-# 7. Iniciar el servidor central
+# 6. Iniciar el servidor central (usamos 'wait' para que el trap funcione correctamente)
 echo "[*] Iniciando Servidor KadGlobe..."
-python3 server_aMule.py
+python3 server_aMule.py &
+SERVER_PID=$!
 
-echo "[+] Sistemas cerrados."
+# Esperamos al proceso del servidor. Si se pulsa Ctrl+C, el trap se encargará de todo.
+wait $SERVER_PID

@@ -13,9 +13,9 @@ import os
 import sys
 import builtins
 
-# Importamos el scraper para poder usarlo de forma persistente en memoria
+# Importamos el scraper especializado para amuleweb
 sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
-from kadglobe_scraper import EMuleWebScraper
+from kadglobe_scraper_aMule import AMuleWebScraper
 
 # COLORES EN TERMINAL
 _orig_print = builtins.print 
@@ -29,7 +29,7 @@ def _color_print(*args, **kwargs):
 
 builtins.print = _color_print
 
-# CONFIGURACIÓN
+# CONFIGURACION
 PORT = 8000
 POLL_INTERVAL = 60 
 
@@ -51,14 +51,12 @@ def run_backend_cronjob():
     except Exception as e:
         print(f"[!] Error ejecutando geolocator en inicio: {e}")
 
-    # CONFIGURACIÓN DEL SCRAPER PERSISTENTE
-    # Conectamos al puerto 4712 donde amuleweb sirve HTTP estable,
-    # NO al 4711 (EC) que causa el crash de ECSocket.cpp.
+    # Scraper persistente conectado a amuleweb (puerto 4712)
     admin_pass = os.getenv("ADMIN_PASS", "")
     ip_address = os.getenv("IP_ADDRESS", "127.0.0.1")
-    scraper = EMuleWebScraper(host=ip_address, port=4712, password=admin_pass)
+    scraper = AMuleWebScraper(host=ip_address, port=4712, password=admin_pass)
     
-    # Intentamos el login inicial
+    # Login inicial
     scraper_ready = scraper.login()
 
     round = 1 
