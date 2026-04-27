@@ -573,12 +573,25 @@ function updateKBucketsChart(nodes, localId) {
 
     const labels = [];
     const dataValues = [];
+    let validNodesCount = 0;
 
     for (let i = 0; i <= 128; i++) {
         if (bucketCounts[i] > 0) {
-            labels.push(`B${i}`);
+            // Calcular la probabilidad matemática de caer en esta cubeta (1 / 2^(128-i))
+            const probPct = (1 / Math.pow(2, 128 - i)) * 100;
+            const probStr = probPct >= 1 ? `${Math.round(probPct)}%` : 
+                           (probPct >= 0.01 ? `${probPct.toFixed(2)}%` : `<0.01%`);
+            
+            // Usamos un array para que Chart.js ponga el Bx en una línea y el % debajo
+            labels.push([`B${i}`, probStr]);
             dataValues.push(bucketCounts[i]);
+            validNodesCount += bucketCounts[i];
         }
+    }
+
+    const subtitleEl = document.getElementById('bucketsSubtitle');
+    if (subtitleEl) {
+        subtitleEl.textContent = `Total: ${validNodesCount} | XOR Distance`;
     }
 
     if (!bucketsChart) {
@@ -602,7 +615,12 @@ function updateKBucketsChart(nodes, localId) {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: (context) => `Bucket ${context.label}: ${context.raw} nodos`
+                            title: (context) => {
+                                const item = context[0];
+                                const labelArr = item.chart.data.labels[item.dataIndex];
+                                return `Bucket ${labelArr[0]} (Prob: ${labelArr[1]})`;
+                            },
+                            label: (context) => ` Nodos: ${context.raw}`
                         }
                     }
                 },
