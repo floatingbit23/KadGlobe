@@ -17,9 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Importamos el scraper especializado para amuleweb
-sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
-from kadglobe_scraper_aMule import AMuleWebScraper
+from backend.kadglobe_scraper_aMule import AMuleWebScraper
 
 # Inicializamos el soporte de colores para la terminal (útil si se corre en entornos WSL)
 if os.name == 'nt':

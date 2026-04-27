@@ -13,3 +13,6 @@ jsons/
 server.pid
 __pycache__/
 *.pyc
+
+# WebUI
+eMule.tmpl

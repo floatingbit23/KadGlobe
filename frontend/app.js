@@ -30,13 +30,13 @@ const i18n = {
         "mapped": "Nodos Geolocalizados:",
         "ranking_title": "Nodos por país",
         "xor_neighbors_title": "Top 10 Vecindario XOR",
-        "heatmap_btn": "Mapa Térmico",
-        "heatmap_tool_title": "Salud de Red (RTT)",
-        "heatmap_tool_desc": `Mide la latencia real mediante ráfagas ICMP (Ping). Colorea los nodos según su tiempo de respuesta:
-🟢: < 150ms (Fibra / Excelente)
-🟡: < 500ms (Medio / Saturado)
-🔴: > 500ms (Lento / Crítico)
-⚪: Sin respuesta (Bloqueado/Offline)`,
+        "heatmap_btn": "Nodos Activos",
+        "heatmap_tool_title": "Salud de Red Kad (UDP)",
+        "heatmap_tool_desc": `Mide la latencia real mediante ráfagas nativas Kademlia (UDP Ping). Colorea los nodos según su tiempo de respuesta:
+🟢: < 150ms (Excelente)
+🟡: < 500ms (Aceptable)
+🔴: > 500ms (Lento)
+⚪: Sin respuesta (Filtrado/Offline)`,
         "modal_title": "Información del Nodo",
         "modal_xor": "● Proyectando Vecindario Kad (XOR)",
         "modal_loc": "Ubicación:",
@@ -51,7 +51,8 @@ const i18n = {
         "overhead": "Tráfico Kad (sesión):",
         "firewalled": "Tras cortafuegos (UDP/TCP):",
         "kad_sources": "Fuentes vía Kad:",
-        "buckets_title": "Distribución K-Buckets"
+        "buckets_title": "Distribución K-Buckets",
+        "self_node_label": "ESTE ERES TÚ (eMule)"
     },
     en: {
         "net_status": "Kademlia Network Status:",
@@ -60,13 +61,13 @@ const i18n = {
         "mapped": "Georeferenced Nodes:",
         "ranking_title": "Nodes by country",
         "xor_neighbors_title": "Top 10 XOR Neighborhood",
-        "heatmap_btn": "Heat Map",
-        "heatmap_tool_title": "Network Health (RTT)",
-        "heatmap_tool_desc": `Measures real-time latency using ICMP (Ping) bursts. Colors nodes based on response time:
-🟢: < 150ms (Fiber / Excellent)
-🟡: < 500ms (Medium / Saturated)
-🔴: > 500ms (Slow / Critical)
-⚪: No response (Blocked/Offline)`,
+        "heatmap_btn": "Active Nodes",
+        "heatmap_tool_title": "Kad Network Health (UDP)",
+        "heatmap_tool_desc": `Measures real latency using native Kademlia bursts (UDP Ping). Colors nodes based on response time:
+🟢: < 150ms (Excellent)
+🟡: < 500ms (Acceptable)
+🔴: > 500ms (Slow)
+⚪: No response (Filtered/Offline)`,
         "modal_title": "Node Information",
         "modal_xor": "● Projecting Kad Neighborhood (XOR)",
         "modal_loc": "Location:",
@@ -81,7 +82,8 @@ const i18n = {
         "overhead": "Kad Traffic (session):",
         "firewalled": "Firewalled (UDP/TCP):",
         "kad_sources": "Sources via Kad:",
-        "buckets_title": "K-Buckets Distribution"
+        "buckets_title": "K-Buckets Distribution",
+        "self_node_label": "THIS IS YOU (eMule)"
     }
 };
 
@@ -95,6 +97,17 @@ function applyTranslations() {
 
     const btn = document.getElementById('langToggle');
     if (btn) btn.textContent = currentLang === 'es' ? 'EN' : 'ES';
+
+    updateHeatmapButtonText();
+}
+
+let activeNodesCount = 0;
+function updateHeatmapButtonText() {
+    const btn = document.getElementById('heatMapToggle');
+    if (btn) {
+        const baseText = i18n[currentLang].heatmap_btn;
+        btn.textContent = activeNodesCount > 0 ? `${baseText} (${activeNodesCount})` : baseText;
+    }
 }
 
 const langToggle = document.getElementById('langToggle');
@@ -117,22 +130,36 @@ if (countriesToggle) {
 
 // --- LOGICA DE RENDER TÉRMICO ---
 let heatMapMode = false;
-let latestLatencies = {};
+let latestUdpLatencies = {};
 
 function getPointColor(node) {
+    if (node.is_self) return '#000000'; // Negro profundo para nosotros (tu cliente)
+
     if (!heatMapMode) {
-        return '#00f2fe'; // Azul brillante estático blindado (Clásico)
+        return '#00f2fe'; // Azul brillante estático (Clásico)
     }
 
-    // MODO TÉRMICO (Semáforo UDP UDP RTT)
-    const ms = latestLatencies[node.ip];
+    // MODO TÉRMICO (Semáforo UDP Kad RTT)
+    const ms = latestUdpLatencies[node.ip];
     if (ms === undefined) {
-        return 'rgba(255, 255, 255, 0.9)'; // Gris carbón oscuro (Nodo mudo / ICMP bloqueado)
+        return 'rgba(255, 255, 255, 0.9)'; // Sin respuesta
     }
 
-    if (ms < 150) return '#00ff00';      // Verde brillante (Fibra / Excelente)
-    if (ms < 500) return '#ffcc00';      // Amarillo (Aceptable / Transoceánico / Saturado)
-    return '#ff3333';                    // Rojo (Saturación extrema / Lento)
+    if (ms < 150) return '#00ff00';      // Excelente
+    if (ms < 500) return '#ffcc00';      // Aceptable
+    return '#ff3333';                    // Lento
+}
+
+function getPointAltitude(d) {
+    if (d.is_self) return 0.05; // El pilar más alto para nosotros
+
+    if (heatMapMode) {
+        // En modo "Nodos Activos", destacamos los que tienen latencia medida o son frescos
+        if (d.isFresh || latestUdpLatencies[d.ip] !== undefined) {
+            return 0.03; // Pilar para nodos activos (reducido a la mitad)
+        }
+    }
+    return d.size || 0.01; // Tamaño normal (base)
 }
 
 const heatMapToggle = document.getElementById('heatMapToggle');
@@ -151,16 +178,13 @@ if (heatMapToggle) {
             heatMapToggle.style.boxShadow = '';
         }
 
-        // Repintar todos los puntos usando la lógica del color inmediatamente
         if (typeof renderGlobe !== 'undefined') {
             renderGlobe.pointColor(getPointColor);
-
-            // Si activamos el mapa térmico, limpiamos arcos/anillos inmediatamente
+            renderGlobe.pointAltitude(getPointAltitude); // Actualizamos también la altura
             if (heatMapMode) {
                 renderGlobe.arcsData([]).ringsData([]);
             }
-
-            renderGlobe.pointsData([...globalNodesArray]); // Forzamos recompilación de materiales en WebGL
+            renderGlobe.pointsData([...globalNodesArray]);
         }
     });
 }
@@ -177,16 +201,16 @@ const renderGlobe = Globe()
     // HE QUITADO pointsMerge(true) para que Globe.gl envíe los eventos de Click y el ratón reconozca los pilares individuales.
     .pointLat('lat')
     .pointLng('lng')
-    .pointAltitude('size')      // Utilizamos el "size" extraído de la BD
-    .pointRadius(0.2)           // Ancho del radio del pilar
-    .pointColor(getPointColor)  // Color atado la evaluación dinámica en caliente
+    .pointAltitude(getPointAltitude) // Evaluación dinámica del tamaño (crece en modo Activos)
+    .pointRadius(0.2)                // Ancho del radio del pilar
+    .pointColor(getPointColor)       // Color atado la evaluación dinámica en caliente
 
 
     // Tarjeta emergente (Tooltip) que aparece al pasar el ratón por los nodos
     .pointLabel(d => `
         <div style="background: rgba(10, 15, 30, 0.9); padding: 10px; border-radius: 8px; border: 1px solid #4facfe; color: white; font-family: Inter, sans-serif;">
-            <b style="font-size: 14px;">${d.city !== "-" && d.city !== "Unknown" ? d.city : 'Desconocida'}</b><br/>
-            <i style="color: #ccc;">${d.country !== "-" && d.country !== "Unknown" ? d.country : 'Desconocido'}</i><br/>
+            <b style="font-size: 14px;">${d.is_self ? i18n[currentLang].self_node_label : (d.city !== "-" && d.city !== "Unknown" ? d.city : i18n[currentLang].unknown_f)}</b><br/>
+            <i style="color: #ccc;">${d.country !== "-" && d.country !== "Unknown" ? d.country : i18n[currentLang].unknown}</i><br/>
             <small style="color: #666; margin-top: 4px; display: block;">ID: ${d.id.substring(0, 8)}...</small>
         </div>
     `)
@@ -203,7 +227,9 @@ const btnCloseModal = document.getElementById('closeModal');
 // Función asíncrona y UI para abrir/cerrar el modal
 function openNodeModal(node) {
     modalIp.textContent = node.ip || i18n[currentLang].unknown_f;
-    modalLocation.textContent = `${node.city !== "-" ? node.city : "?"}, ${node.country !== "-" ? node.country : "?"}`;
+    const city = (node.city && node.city !== "-" && node.city !== "null") ? node.city : "?";
+    const country = (node.country && node.country !== "-" && node.country !== "null") ? node.country : "?";
+    modalLocation.textContent = `${city}, ${country}`;
     modalId.textContent = node.id || "Error";
 
     nodeModal.classList.remove('modal-hidden');
@@ -424,35 +450,54 @@ async function updateKadNodes() {
         if (response.ok) {
             const newNodesArray = await response.json();
 
-            // Recoger latencias asíncronas elaboradas por el backend pinger
+            let mergedNodes = [...newNodesArray];
+
+            // Recoger latencias UDP asíncronas elaboradas por el backend (Kad UDP Probe)
             try {
-                const latRes = await fetch('/jsons/kad_responsive_nodes.json?t=' + Date.now());
-                if (latRes.ok) {
-                    const responsiveArray = await latRes.json();
-                    latestLatencies = {};
-                    // El nuevo backend devuelve un Array de objetos con todo el payload parseado
-                    responsiveArray.forEach(rn => {
-                        latestLatencies[rn.ip] = rn.rtt;
+                const latUdpRes = await fetch('/jsons/kad_udp_responsive_nodes.json?t=' + Date.now());
+                if (latUdpRes.ok) {
+                    const responsiveUdpArray = await latUdpRes.json();
+                    latestUdpLatencies = {};
+                    activeNodesCount = responsiveUdpArray.length;
+
+                    responsiveUdpArray.forEach(rn => {
+                        latestUdpLatencies[rn.ip] = rn.rtt;
+
+                        // Si el nodo fresco NO está en la lista base (nodes.dat), lo inyectamos dinámicamente
+                        const exists = mergedNodes.some(n => n.ip === rn.ip);
+                        if (!exists) {
+                            mergedNodes.push({
+                                ...rn,
+                                size: 0.01, // Por defecto mismo tamaño que los base
+                                isFresh: true
+                            });
+                        } else {
+                            // Si existe, nos aseguramos de que tenga las propiedades de 'rn' (como is_self)
+                            const idx = mergedNodes.findIndex(n => n.ip === rn.ip);
+                            mergedNodes[idx] = { ...mergedNodes[idx], ...rn };
+                        }
                     });
+
+                    updateHeatmapButtonText();
                 }
             } catch (e) { }
 
-            globalNodesArray = newNodesArray; // Volcamos al caché global para que actúe JS al hacer Click
+            globalNodesArray = mergedNodes; // Volcamos al caché global para que actúe JS al hacer Click
 
             // Inyectamos todo el json de memoria plano al renderizador 3D como en la primera versión robusta
-            renderGlobe.pointsData(newNodesArray);
+            renderGlobe.pointsData(mergedNodes);
 
             // Reflejamos los vivos en la UI
-            elMappedNodes.textContent = newNodesArray.length;
+            elMappedNodes.textContent = mergedNodes.length;
 
             // ----------------------------------------------------------------------------------
             // A. Motor Map-Reduce de Top Países (Lista lateral en tiempo real)
             // ----------------------------------------------------------------------------------
             const countryData = {};
-            newNodesArray.forEach(node => {
-                const cname = (node.country && node.country !== "-" && node.country !== "Unknown") ? node.country : i18n[currentLang].unknown;
+            mergedNodes.forEach(node => {
+                const cname = (node.country && node.country !== "-" && node.country !== "Unknown") ? String(node.country) : i18n[currentLang].unknown;
                 if (!countryData[cname]) {
-                    countryData[cname] = { count: 0, code: node.country_code || 'unknown' };
+                    countryData[cname] = { count: 0, code: (node.country_code ? String(node.country_code) : 'unknown') };
                 }
                 countryData[cname].count++;
             });
@@ -484,12 +529,12 @@ async function updateKadNodes() {
 
             // Simulador visual de la red (Omitido temporalmente si estamos estudiando estáticamente un nodo concreto)
             if (!selectedNode) {
-                simulateKadActivity(newNodesArray);
+                simulateKadActivity(mergedNodes);
             }
 
             // Actualizar el gráfico de K-Buckets si tenemos el ID local válido
             if (window.localKadId && window.localKadId !== "Unknown") {
-                updateKBucketsChart(newNodesArray, window.localKadId);
+                updateKBucketsChart(mergedNodes, window.localKadId);
             }
         } else {
             elMappedNodes.textContent = `HTTP ${response.status}`;
@@ -591,7 +636,7 @@ function simulateKadActivity(nodes) {
     simulationInterval = setInterval(() => {
         // 1. Si el Mapa Térmico está activo, desactivamos el tráfico simulado para no ensuciar la visualización RTT
         // 2. Si la red Kad está desconectada, tampoco hay tráfico
-        if (heatMapMode || elStatus.classList.contains('status-disconnected')) {
+        if (heatMapMode || udpHeatMapMode || elStatus.classList.contains('status-disconnected')) {
             // Purgamos los arcos y anillos que pudieran quedar en pantalla
             renderGlobe.arcsData([]).ringsData([]);
             return;

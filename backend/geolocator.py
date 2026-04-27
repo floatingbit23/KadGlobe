@@ -4,7 +4,7 @@ Utiliza la librería IP2Location y la base de datos local DB5 LITE.
 """
 import os
 import json
-import IP2Location # 
+import IP2Location 
 from dotenv import load_dotenv
 
 import builtins
@@ -79,8 +79,8 @@ class KadGeolocator:
                 # Forzamos que lat y lng sean números flotantes (float) para que el filtro posterior funcione bien
                 "lat": float(getattr(rec, 'latitude', 0.0)),
                 "lng": float(getattr(rec, 'longitude', 0.0)),
-                "city": getattr(rec, 'city', "Unknown"),
-                "country": getattr(rec, 'country_long', "Unknown"),
+                "city": str(rec.city) if getattr(rec, 'city', None) else "Unknown",
+                "country": str(rec.country_long) if getattr(rec, 'country_long', None) else "Unknown",
                 "country_code": str(getattr(rec, 'country_short', "unknown")).lower()
             }
 

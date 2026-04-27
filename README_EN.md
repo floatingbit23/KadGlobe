@@ -13,30 +13,54 @@
 The project is built with a robust Python backend and a premium web-based frontend:
 
 *   **Backend (Python)**:
+
     *   **Advanced Scraper**: Logs into the eMule WebUI to capture telemetry (traffic, searches, UDP status), and saves the data in a JSON file.
 
     ![alt text](images/json1.png)
 
-    *   **Identity Extraction**: Reads the 128-bit Kad ID directly from `key_index.dat`.
+    *   **Dynamic Identity**: Automatically detects your public IP and extracts your authentic 128-bit KadID directly from local eMule UDP traffic.
 
-    *   **Geolocation**: Processes `nodes.dat` and uses IP2Location databases to place each contact on the map, and saves the data in a JSON file.
-
+    *   **Geolocation**: Processes `nodes.dat` and uses IP2Location databases to place each contact on the map.
+    
     ![alt text](images/json2.png)
+    
+    *   **Intelligent Kad UDP Probe**: Implements a 4-phase discovery engine:
 
-    *   **ICMP Pinger**: Performs multi-threaded ping sweeps (via OS ICMP) to measure real-world node latency (RTT), and saves the data in a JSON file.
+        1. **Seed**: Retrieves initial contacts from local eMule.
+
+        2. **RTT Selection**: Measures latency (RTT) and selects the **4 fastest nodes**.
+
+        3. **1-hop Crawl**: Requests neighbors from those leaders to expand the map with high-quality, live nodes (up to a maximum of 100 new nodes).
+
+        4. **Sweep**: Final RTT measurement and self-node identification (Black Pillar).
 
     ![alt text](images/json3.png)
 
 *   **Frontend (Web)**:
-    *   **3D Rendering**: Built on **Globe.gl** and **Three.js** for a smooth planet visualization.
-    *   **Glassmorphism UI**: Modern design featuring crystal and blur effects.
+
+    *   **3D Rendering**: Built on **Globe.gl** and **Three.js** for smooth visualization.
+
+    *   **Bilingual UI**: Full support for Spanish and English via a dynamic toggle (ES/EN).
+
+    *   **Real-time Counter**: The "Active Nodes" button displays the exact number of live responders detected in the current cycle.
+    
     *   **Analytics**: Uses **Chart.js** to display the K-Buckets distribution.
 
 ### 3. Components and Features
 
-*   **Heat Map**: When active, the system performs real-time pings. Nodes are color-coded: Green (<150ms), Yellow (<500ms), or Red (>500ms), showing which parts of the world offer the best connectivity.
+*   **Intelligent Heat Map**: When active, the system performs a recursive performance-based discovery. Nodes are color-coded based on their UDP latency: 
+> Green 🟢 (<150ms),
+
+> Yellow 🟡 (<500ms), 
+
+> Red 🔴 (>500ms) 
+
+> White ⚪ (no response). 
+
+> Our own node is highlighted with a black pillar ⬛ on the globe.
 
 ![alt text](images/heatmap.png)
+![alt text](images/self_node.png)
 
 *   **Nodes by Country**: A sidebar that classifies and sorts your contacts by geographic location.
 
@@ -72,8 +96,8 @@ To use KadGlobe, you must ensure the following requirements are met:
     ```
 3.  **Environment Variables**: Configure the `.env` file (you can copy `.env.windows.example` or `.env.linux.example` depending on your OS) with your local paths:
     *   `ADMIN_PASS`: Your eMule WebUI password.
+    *   `WEBUI_PORT`: (Optional) The Web interface port (defaults to `4711`).
     *   `EMULE_NODES_DAT_PATH`: Full path to your `nodes.dat` file.
-    *   `EMULE_KEY_INDEX_PATH`: Path to your `key_index.dat` file.
     *   `IP2LOCATION_DB_PATH`: Path to the IP2Location `.BIN` database file.
 
 ![alt text](images/files.png)
@@ -81,11 +105,15 @@ To use KadGlobe, you must ensure the following requirements are met:
 
 ### 5. _Disclaimer: Data Latency and Persistence_
 
-_It is important to note that the node information visualized in KadGlobe is retrieved by binary parsing of the `nodes.dat` file, retrieved from the user's local storage._
+_KadGlobe retrieves node information from two complementary sources:_
 
-_In the Kademlia protocol, the **active routing table** (the _buckets_) is managed directly in the system memory (RAM) of the eMule process to ensure maximum speed. eMule flushes this data to the hard disk (`nodes.dat`) only periodically or during a controlled shutdown to maintain persistence between sessions._
+- _**Base nodes (offline)**: Obtained by binary parsing of eMule's `nodes.dat` file. These contacts represent a "snapshot" of the routing table from eMule's last shutdown, so the geographic positions and XOR distances on the base map may not reflect the current state of the network in real time._
 
-_Therefore, while the traffic statistics and UDP status are captured in real-time via the eMule's WebUI scraper, the geographic positions and XOR distances represent a "recent snapshot" of your Kad neighborhood rather than a millisecond-accurate live stream. This design choice was made to provide a non-invasive way to audit the network state without the stability risks associated with direct memory hooking or process injection._
+- _**"Fresh" nodes (live)**: For the Heat Map, KadGlobe sends a `KADEMLIA2_BOOTSTRAP_REQ` directly to the local eMule process to obtain **verified, active contacts** from its in-memory routing table. This guarantees that the probed nodes are actually connected to the Kad network at that moment._
+
+_Traffic statistics and connection status are captured in real time via the eMule WebUI scraper. Heat Map latencies are measured using native `KADEMLIA2_PING/PONG` protocol packets (via UDP), providing a true application-level measurement — not just a network-level (ICMP) one._
+
+_This architecture enables non-invasive Kademlia network health monitoring without requiring direct memory hooking or process injection._
 
 ---
 
@@ -114,10 +142,3 @@ Once configured, you can launch all components in a single step:
 > [!CAUTION]
 > **DO NOT run `launcher.sh` with `sudo`.**  
 > Running as root will cause "Permission Denied" errors in `/run/user/0` and "Display not found" errors because GUI applications like aMule must run within your normal user session.
-
-
-> [!IMPORTANT]
-> **Linux Network Permissions**: On Linux, to use the "Heat Map" (ICMP Ping), you must grant Python permissions to open _Raw Sockets_:
-> ```bash
-> sudo setcap cap_net_raw+ep $(readlink -f $(which python3))
-> ```

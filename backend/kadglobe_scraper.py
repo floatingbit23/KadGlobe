@@ -165,24 +165,17 @@ class EMuleWebScraper:
                 pref_path = amule_pref
 
         try:
-            if os.path.exists(pref_path):
-
+            if pref_path and os.path.exists(pref_path):
                 with open(pref_path, "rb") as f:
-
                     # Leo los primeros 16 bytes. Es un hash binario aleatorio único.
                     user_hash = f.read(16)
-
                     if len(user_hash) == 16:
-                        kad_id_hex = binascii.hexlify(user_hash).decode('ascii') # Lo convierto a hexadecimal para que sea legible.
-                        print(f"[+] He sacado tu Kad ID real: {kad_id_hex}") # Lo imprimo para verificar que se ha obtenido correctamente.
+                        kad_id_hex = binascii.hexlify(user_hash).decode('ascii')
                         return kad_id_hex
-            else:
-                print(f"[!] No encuentro el archivo key_index.dat en {pref_path}. Asegúrate de que la ruta en el .env es correcta.")
+        except Exception:
+            pass
 
-        except Exception as e:
-            print(f"[!] Error crítico leyendo tu identidad: {e}")
-
-        return "0" * 32
+        return None
 
     def fetch_stats_kad_data(self):
         """

@@ -11,6 +11,19 @@ import subprocess
 import os
 import sys
 import json
+import platform
+
+# 1. Verificación de Versión de Python (Mínimo 3.7 para diccionarios ordenados y f-strings)
+if sys.version_info < (3, 7):
+    print("\n\033[91m[!] Error Crítico: KadGlobe requiere Python 3.7 o superior.\033[0m")
+    print(f"Tu versión actual: {platform.python_version()}\n")
+    sys.exit(1)
+
+# Importamos el scraper para usar sesiones persistentes (evita miles de logins en eMule)
+from backend.kadglobe_scraper import EMuleWebScraper 
+from dotenv import load_dotenv
+ 
+load_dotenv() # Carga las variables de entorno del archivo .env
 
 # Inicializamos el soporte de colores para la terminal de Windows
 if os.name == 'nt':
@@ -40,6 +53,19 @@ def _color_print(*args, **kwargs):
 
 builtins.print = _color_print
 
+def atomic_write_json(path, data):
+    """Escribe un JSON de forma segura usando un archivo temporal."""
+    temp_path = path + ".tmp"
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(temp_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        os.replace(temp_path, path)
+    except Exception as e:
+        print(f"[!] Error en escritura atómica: {e}")
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
 # Constantes de configuración
 PORT = 8000
 POLL_INTERVAL = 30  # Los 30 segundos originales para eMule Windows
@@ -56,12 +82,6 @@ class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         # Silenciamos los logs de peticiones HTTP para que la terminal esté más limpia
         return
 
-# Importamos el scraper para usar sesiones persistentes (evita miles de logins en eMule)
-sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
-from kadglobe_scraper import EMuleWebScraper
-from dotenv import load_dotenv
-
-load_dotenv()
 
 def is_emule_running():
     # Detectamos si eMule (Windows) o aMule (Linux) está corriendo para sincronizar el apagado
@@ -92,7 +112,8 @@ def run_backend_cronjob():
     # Inicializamos el scraper una sola vez (Sesión Persistente)
     admin_pass = os.getenv("ADMIN_PASS", "")
     ip_address = os.getenv("IP_ADDRESS", "127.0.0.1")
-    scraper = EMuleWebScraper(host=ip_address, port=4711, password=admin_pass)
+    webui_port = int(os.getenv("WEBUI_PORT", 4711))
+    scraper = EMuleWebScraper(host=ip_address, port=webui_port, password=admin_pass)
     
     # Intento de login inicial
     scraper_ready = scraper.login()
@@ -121,22 +142,18 @@ def run_backend_cronjob():
                 # Si obtenemos estadísticas, las guardamos en el JSON
                 if stats:
 
-                    # Guardamos los resultados
-                    output_path = os.path.join(os.path.dirname(__file__), "jsons", "kad_stats.json") # Ruta del archivo JSON
-                    os.makedirs(os.path.dirname(output_path), exist_ok=True) # Crea la carpeta si no existe
-
-                    # Escribimos los resultados en el archivo JSON
-                    with open(output_path, "w", encoding="utf-8") as f:
-                        json.dump(stats, f, indent=4, ensure_ascii=False) # Guardamos los resultados
+                    # Guardamos los resultados de forma atómica
+                    output_path = os.path.join(os.path.dirname(__file__), "jsons", "kad_stats.json")
+                    atomic_write_json(output_path, stats)
 
                 else:
                     scraper_ready = False # Marcamos para re-login en la próxima ronda (en 30 segundos)
             
 
-            print(f"\n[i] Ejecutando ICMP Ping Sweep sobre nodos Kademlia...")
-            subprocess.run([python_exe, "kad_pinger.py"], cwd=backend_dir, check=False)
+            print(f"\n[i] Ejecutando Kad UDP Probe sobre nodos Kademlia...")
+            subprocess.run([python_exe, "kad_udp_pinger.py"], cwd=backend_dir, check=False)
             
-            print(f"\n[i] Telemetrías actualizadas exitosamente en ronda nº{round}.")
+            print(f"\n[i] Telemetrías actualizadas exitosamente en ronda nº{round}. Próxima medición en {POLL_INTERVAL} segundos.")
             round += 1
             
         except Exception as e:

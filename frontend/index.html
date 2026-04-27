@@ -24,12 +24,16 @@
     <div id="statsPanel" class="glass-panel">
         <h1 style="display: flex; justify-content: space-between; align-items: center;">
             KadGlobe
-            <div style="display: flex; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px;">
                 <div class="tooltip-container">
-                    <button id="heatMapToggle" class="lang-btn" data-i18n="heatmap_btn">Mapa Térmico</button>
+                    <button id="heatMapToggle" class="lang-btn" data-i18n="heatmap_btn">Mapa Térmico (UDP)</button>
                     <span class="tooltip-text" id="heatmapTooltip">
-                        <b data-i18n="heatmap_tool_title">Salud de Red</b>
-                        <span data-i18n="heatmap_tool_desc">Mide la latencia real mediante ráfagas ICMP (Ping). Colorea los nodos según su tiempo de respuesta.</span>
+                        <b data-i18n="heatmap_tool_title">Salud de Red Kad (UDP)</b>
+                        <span data-i18n="heatmap_tool_desc" style="white-space: pre-wrap;">Mide la latencia real mediante ráfagas nativas Kademlia (UDP Ping). Colorea los nodos según su tiempo de respuesta:
+🟢: < 150ms (Excelente)
+🟡: < 500ms (Aceptable)
+🔴: > 500ms (Lento)
+⚪: Sin respuesta (Filtrado/Offline)</span>
                     </span>
                 </div>
                 <button id="langToggle" class="lang-btn">EN</button>

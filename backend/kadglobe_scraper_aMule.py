@@ -278,20 +278,16 @@ class AMuleWebScraper:
             pref_path = env_path
 
         try:
-            if os.path.exists(pref_path):
+            if pref_path and os.path.exists(pref_path):
                 with open(pref_path, "rb") as f:
                     user_hash = f.read(16)
                     if len(user_hash) == 16:
                         kad_id_hex = binascii.hexlify(user_hash).decode('ascii')
-                        print(f"[+] Kad ID local: {kad_id_hex}")
                         return kad_id_hex
-            else:
-                print(f"[!] No encuentro key_index.dat en {pref_path}")
+        except Exception:
+            pass
 
-        except Exception as e:
-            print(f"[!] Error leyendo Kad ID: {e}")
-
-        return "0" * 32
+        return None
 
 
 # Ejecucion manual

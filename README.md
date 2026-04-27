@@ -5,6 +5,7 @@
 **KadGlobe** es una herramienta de visualización avanzada en 3D para la red [Kademlia](https://es.wikipedia.org/wiki/Kademlia) en [eMule](https://es.wikipedia.org/wiki/EMule). Permite monitorizar en tiempo real la salud de la red, la distribución geográfica de los nodos y la topología lógica (distancia XOR) de tu tabla de enrutamiento.
 
 ![alt text](images/presentationv2.png)
+![alt text](images/terminal.png)
 
 ### 1. Descripción General
 KadGlobe actúa como un "puesto de mando" visual para eMule. Se conecta a la WebUI de eMule para extraer estadísticas en vivo y analiza archivos de configuración locales (`key_index.dat` y `nodes.dat`) para proyectar tu vecindario Kademlia sobre un globo terráqueo interactivo. Su objetivo es ofrecer transparencia sobre cómo funciona el enrutamiento descentralizado y cuál es el estado real de tus conexiones.
@@ -17,26 +18,50 @@ El proyecto se divide en un backend de orquestación y un frontend de visualizac
     
     ![alt text](images/json1.png)
 
-    *   **Extracción de Identidad**: Lee directamente el Kad ID de 128 bits desde `key_index.dat`.
-    *   **Geolocalización**: Procesa `nodes.dat` y utiliza una base de dato IP2Location para situar cada nodo de la red en el mapa, y guarda los datos en un archivo JSON.
+    *   **Identidad Dinámica**: Detecta automáticamente tu IP pública y extrae tu KadID real de 128 bits directamente desde el tráfico UDP de tu eMule local.
 
+    *   **Geolocalización**: Procesa `nodes.dat` y utiliza una base de dato IP2Location para situar cada nodo de la red en el mapa.
+    
     ![alt text](images/json2.png)
     
-    *   **ICMP Pinger**: Realiza _ping sweeps_ (pasando por el SO) para medir la latencia real (RTT, _Round-Trip Time_) de los nodos, y guarda los datos en un archivo JSON.
+    *   **Kad UDP Probe Inteligente**: Implementa un motor de descubrimiento en 4 fases:
+
+        1. **Semilla (_Seed_)**: Obtiene contactos del eMule local.
+
+        2. **Selección RTT**: Mide la latencia y selecciona a los **4 nodos más rápidos**.
+
+        3. **Crawl 1-hop**: Solicita contactos a esos líderes para expandir el mapa con nodos vivos de alta calidad (hasta un máximo de 100 nuevos nodos).
+
+        4. **Sondeo**: Mide el RTT final e identifica tu propio nodo (Pilar Negro).
 
     ![alt text](images/json3.png)
     
 
 *   **Frontend (Web)**:
-    *   **Visualización 3D**: Basado en **Globe.gl** y **Three.js** para un renderizado fluido del planeta.
-    *   **Interfaz Glassmorphism**: Diseño moderno con efectos de cristal y desenfoque.
+
+    *   **Visualización 3D**: Basado en **Globe.gl** y **Three.js** para un renderizado fluido.
+
+    *   **Interfaz Bilingüe**: Soporte completo para Español e Inglés mediante un selector dinámico (_ES/EN_).
+
+    *   **Contador en Tiempo Real**: El botón de "Nodos Activos" muestra el número exacto de nodos que respondieron detectados en el último ciclo.
+
     *   **Gráficos**: Utiliza **Chart.js** para representar la distribución de K-Buckets.
 
 ### 3. Componentes y Funcionalidades
 
-*   **Mapa Térmico (Heat Map)**: Al activarlo, el sistema realiza pings en tiempo real. Los nodos se colorean: Verde (<150ms), Amarillo (<500ms), Rojo (>500ms) o Blanco (sin respuesta), permitiendo ver qué nodos tienen mejor conectividad contigo a nivel global y en tiempo real.
+*   **Mapa Térmico Inteligente**: Al activarlo, el sistema realiza un descubrimiento recursivo basado en rendimiento. Los nodos se colorean según su latencia UDP: 
+> Verde 🟢 (<150ms),
 
-![alt text](images/heatmap_es.png)
+> Amarillo 🟡 (<500ms), 
+
+> Rojo 🔴 (>500ms) 
+
+> Blanco ⚪ (sin respuesta). 
+
+> Nuestro propio nodo se destaca con un pilar negro ⬛ en el globo.
+
+![alt text](images/heatmap.png)
+![alt text](images/self_node.png)
 
 *   **Nodos por País**: Un panel lateral que clasifica y ordena los nodos por ubicación geográfica.
 
@@ -48,7 +73,7 @@ El proyecto se divide en un backend de orquestación y un frontend de visualizac
 
 *   **Top 10 Vecindario XOR**: Al hacer clic en un nodo, se muestra una ventana con su IP, su ubicación y  su Kad ID. También se se calculan sus 10 vecinos más cercanos criptográficamente (distancia XOR) y se trazan arcos dorados de conexión.
 
-Por ejemplo, para el nodo de Londres:
+Por ejemplo, para un nodo cualquiera en Londres:
 ![alt text](images/node_info.png)
 ![alt text](images/xor_arcs.png)
 
@@ -71,8 +96,8 @@ Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos
     ```
 3.  **Variables de Entorno**: Configura el archivo `.env` (puedes copiar de `.env.windows.example` o `.env.linux.example` según tu sistema) con tus rutas locales:
     *   `ADMIN_PASS`: La contraseña que pusiste en la WebUI de eMule.
+    *   `WEBUI_PORT`: (Opcional) El puerto de la interfaz web (por defecto `4711`).
     *   `EMULE_NODES_DAT_PATH`: Ruta completa a tu archivo `nodes.dat` (ej: `C:\eMule\config\nodes.dat`).
-    *   `EMULE_KEY_INDEX_PATH`: Ruta a tu archivo `key_index.dat`.
     *   `IP2LOCATION_DB_PATH`: Ruta a la base de datos `.BIN` de IP2Location para la geolocalización.
 
 ![alt text](images/files.png)
@@ -80,11 +105,15 @@ Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos
 
 ### 5. _Aclaración sobre la Latencia y Persistencia de Datos_
 
-_Es necesario aclarar que la información de los nodos visualizada en KadGlobe se obtiene mediante el análisis (_parsing binario_) del archivo `nodes.dat`, extraído del almacenamiento local del usuario_.
+_KadGlobe obtiene la información de los nodos de dos fuentes complementarias:_
 
-_En el protocolo Kademlia, la **tabla de enrutamiento activa** (los "buckets") se gestiona directamente en la memoria del sistema (RAM) del proceso de eMule para garantizar la máxima velocidad. eMule vuelca estos datos al disco duro (al `nodes.dat`) solo de forma periódica o durante un cierre controlado para mantener la persistencia entre sesiones._
+- _**Nodos base (offline)**: Se obtienen mediante el análisis binario del archivo `nodes.dat` de eMule. Estos contactos representan una "foto" de la tabla de rutas del último cierre de eMule, por lo que las posiciones geográficas y las distancias XOR del mapa base pueden no reflejar el estado actual de la red en tiempo real._
 
-_Por lo tanto, mientras que las estadísticas de tráfico y el estado de UDP sí se capturan en tiempo real a través del _scrapeo_ de la WebUI de eMule, las posiciones geográficas y las distancias XOR representan una "foto" reciente de tus vecinos en la red Kad, en lugar de una transmisión en tiempo real con precisión de milisegundos. Esta decisión de diseño se tomó para ofrecer una forma no invasiva de auditar el estado de la red sin los riesgos de estabilidad asociados con el acceso directo a la memoria ("memory hooking") o la inyección de procesos invasivos._
+- _**Nodos "frescos" (en vivo)**: Para el Mapa Térmico, KadGlobe envía un `KADEMLIA2_BOOTSTRAP_REQ` directamente al proceso de eMule local para obtener contactos **verificados y activos** de su tabla de rutas en memoria. Esto garantiza que los nodos sondeados están realmente conectados a la red Kad en ese momento._
+
+_Las estadísticas de tráfico y el estado de la conexión se capturan en tiempo real a través del scrapeo de la WebUI de eMule. Las latencias del Heat Map se miden con paquetes `KADEMLIA2_PING/PONG` nativos del protocolo (vía UDP), ofreciendo una medición real a nivel de aplicación — no solo a nivel de red (ICMP)._
+
+_Esta arquitectura permite monitorizar la salud de la red Kademlia de forma no invasiva, sin requerir acceso directo a la memoria ni inyección de procesos._
 
 ---
 
@@ -113,9 +142,3 @@ Una vez configurado, puedes lanzar todos los componentes en un solo paso:
 > [!CAUTION]
 > **NO ejecutes `launcher.sh` con `sudo`.**  
 > Ejecutarlo como root provocará errores de "Permiso denegado" en `/run/user/0` y errores de pantalla (X11) ya que las aplicaciones gráficas como aMule deben correr en tu sesión de usuario normal.
-
-> [!IMPORTANT]
-> **Permisos de red en Linux**: Para usar el "Mapa Térmico" (ICMP Ping) en Linux, debes dar permisos a Python para abrir _Raw Sockets_:
-> ```bash
-> sudo setcap cap_net_raw+ep $(readlink -f $(which python3))
-> ```
