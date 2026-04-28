@@ -79,7 +79,7 @@ As an example, for a random node in London:
 
 *   **ID Status (Kad Status)**: Displays your status in the Kad network, using specific Kademlia terminology.
 
-![alt text](images/status_opened.png)
+![alt text](images/status_connected.png)
 ![alt text](images/status_firewalled.png)
 ![alt text](images/status_disconnected.png)
 

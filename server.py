@@ -11,8 +11,10 @@ import subprocess
 import os
 import sys
 import json
-import platform
-
+import platform # Detecting Linux Version
+import datetime # Para registrar timestamps de los logs
+import builtins
+ 
 # 1. Verificación de Versión de Python (Mínimo 3.7 para diccionarios ordenados y f-strings)
 if sys.version_info < (3, 7):
     print("\n\033[91m[!] Error Crítico: KadGlobe requiere Python 3.7 o superior.\033[0m")
@@ -31,27 +33,30 @@ if os.name == 'nt':
 
 
 # COLORES EN TERMINAL
-import builtins
-_orig_print = builtins.print 
+# Evitamos doble sobreescritura si el módulo se importa en otro que ya lo hizo
+if not getattr(builtins.print, "_kadglobe_logging", False):
+    _orig_print = builtins.print 
 
-def _color_print(*args, **kwargs):
-    text = " ".join(map(str, args))
-    stripped_text = text.lstrip()
-    
-    if stripped_text.startswith("[!]"):
-        # Rojo para avisos y errores
-        _orig_print(f"\033[91m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[+]"):
-        # Verde para éxitos y resultados positivos
-        _orig_print(f"\033[92m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
-        # Blanco brillante para información
-        _orig_print(f"\033[97m{text}\033[0m", **kwargs)
-    else:
-        # Por defecto, blanco estándar
-        _orig_print(text, **kwargs)
+    def _color_print(*args, **kwargs):
+        timestamp = datetime.datetime.now().strftime("[%H:%M:%S] ")
+        text = " ".join(map(str, args))
+        stripped_text = text.lstrip()
+        
+        if stripped_text.startswith("[!]"):
+            # Rojo para avisos y errores
+            _orig_print(f"{timestamp}\033[91m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[+]"):
+            # Verde para éxitos y resultados positivos
+            _orig_print(f"{timestamp}\033[92m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
+            # Blanco brillante para información
+            _orig_print(f"{timestamp}\033[97m{text}\033[0m", **kwargs)
+        else:
+            # Por defecto, blanco estándar con timestamp
+            _orig_print(f"{timestamp}{text}", **kwargs)
 
-builtins.print = _color_print
+    _color_print._kadglobe_logging = True
+    builtins.print = _color_print
 
 def atomic_write_json(path, data):
     """Escribe un JSON de forma segura usando un archivo temporal."""
@@ -61,10 +66,12 @@ def atomic_write_json(path, data):
         with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
         os.replace(temp_path, path)
+        return True
     except Exception as e:
         print(f"[!] Error en escritura atómica: {e}")
         if os.path.exists(temp_path):
             os.remove(temp_path)
+        return False
 
 # Constantes de configuración
 PORT = 8000
@@ -117,6 +124,12 @@ def run_backend_cronjob():
     
     # Intento de login inicial
     scraper_ready = scraper.login()
+    client_version = "eMule"
+
+    # Se informa de la versión del cliente eMule.
+    if scraper_ready:
+        client_version = scraper.fetch_emule_version()
+        print(f"[+] Versión del cliente: {client_version}")
 
     round = 1 # Contador de rondas
     
@@ -128,6 +141,7 @@ def run_backend_cronjob():
             os._exit(0)
 
         try:
+            success = True
             print(f"\n[i] Escaneando estadísticas en vivo del WebUI...")
             
             # Si la sesión se perdió o falló el login, reintentamos el login
@@ -136,24 +150,31 @@ def run_backend_cronjob():
 
             # Si la sesión es válida, obtenemos las estadísticas
             if scraper_ready:
-
                 stats = scraper.fetch_kad_stats()
 
                 # Si obtenemos estadísticas, las guardamos en el JSON
                 if stats:
-
                     # Guardamos los resultados de forma atómica
                     output_path = os.path.join(os.path.dirname(__file__), "jsons", "kad_stats.json")
-                    atomic_write_json(output_path, stats)
-
+                    if not atomic_write_json(output_path, stats):
+                        success = False
                 else:
-                    scraper_ready = False # Marcamos para re-login en la próxima ronda (en 30 segundos)
+                    scraper_ready = False # Marcamos para re-login en la próxima ronda
+                    success = False
+            else:
+                success = False
             
 
             print(f"\n[i] Ejecutando Kad UDP Probe sobre nodos Kademlia...")
-            subprocess.run([python_exe, "kad_udp_pinger.py"], cwd=backend_dir, check=False)
+            pinger_proc = subprocess.run([python_exe, "kad_udp_pinger.py"], cwd=backend_dir, check=False)
+            if pinger_proc.returncode != 0:
+                success = False
             
-            print(f"\n[i] Telemetrías actualizadas exitosamente en ronda nº{round}. Próxima medición en {POLL_INTERVAL} segundos.")
+            if success:
+                print(f"\n[+] Telemetrías actualizadas exitosamente en ronda nº{round} ({client_version}). Próxima medición en {POLL_INTERVAL} segundos...")
+            else:
+                print(f"\n[!] La ronda nº{round} finalizó con errores parciales. Se reintentará en {POLL_INTERVAL} segundos...")
+            
             round += 1
             
         except Exception as e:

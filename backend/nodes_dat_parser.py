@@ -21,15 +21,26 @@ import struct
 import socket
 import binascii
 
+import datetime
 import builtins
-_orig_print = builtins.print
-def _color_print(*args, **kwargs):
-    text = " ".join(map(str, args))
-    if text.lstrip().startswith("[!]"):
-        _orig_print(f"\033[91m{text}\033[0m", **kwargs)
-    else:
-        _orig_print(f"\033[92m{text}\033[0m", **kwargs)
-builtins.print = _color_print
+if not getattr(builtins.print, "_kadglobe_logging", False):
+    _orig_print = builtins.print
+    def _color_print(*args, **kwargs):
+        timestamp = datetime.datetime.now().strftime("[%H:%M:%S] ")
+        text = " ".join(map(str, args))
+        stripped_text = text.lstrip()
+        
+        if stripped_text.startswith("[!]"):
+            _orig_print(f"{timestamp}\033[91m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[+]"):
+            _orig_print(f"{timestamp}\033[92m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
+            _orig_print(f"{timestamp}\033[97m{text}\033[0m", **kwargs)
+        else:
+            _orig_print(f"{timestamp}{text}", **kwargs)
+    
+    _color_print._kadglobe_logging = True
+    builtins.print = _color_print
 
 def parse_nodes_dat(file_path="nodes.dat"): # si no se especifica una ruta, se asume que el archivo está en el directorio actual
 

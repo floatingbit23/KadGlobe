@@ -115,6 +115,27 @@ class AMuleWebScraper:
             print(f"[!] No he podido conectar con amuleweb: {e}")
             return False
 
+    def fetch_emule_version(self):
+        """
+        Extrae la versión de aMule desde la interfaz web.
+        """
+        if not self.logged_in:
+            return "aMule (Desconocida)"
+
+        try:
+            # En amuleweb, la versión suele aparecer en el login o en el pie de página
+            response = self.session.get(self.base_url + "/stats.php", timeout=5)
+            full_text = response.text
+            
+            # Buscamos patrones como "aMule 2.3.3"
+            match = re.search(r'(aMule\s+[\d\.]+[a-z]?)', full_text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+                
+            return "aMule"
+        except Exception:
+            return "aMule"
+
     def fetch_kad_stats(self):
         """
         Recopila estadisticas de Kad de tres fuentes de amuleweb:

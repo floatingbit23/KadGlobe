@@ -8,26 +8,30 @@ import IP2Location
 from dotenv import load_dotenv
 
 import builtins
-_orig_print = builtins.print
+import datetime
+if not getattr(builtins.print, "_kadglobe_logging", False):
+    _orig_print = builtins.print
 
-def _color_print(*args, **kwargs):
-    text = " ".join(map(str, args))
-    stripped_text = text.lstrip()
-    
-    if stripped_text.startswith("[!]"):
-        # Rojo para avisos y errores
-        _orig_print(f"\033[91m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[+]"):
-        # Verde para éxitos y resultados positivos
-        _orig_print(f"\033[92m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
-        # Blanco brillante para información de pasos
-        _orig_print(f"\033[97m{text}\033[0m", **kwargs)
-    else:
-        # Por defecto, blanco estándar
-        _orig_print(text, **kwargs)
+    def _color_print(*args, **kwargs):
+        timestamp = datetime.datetime.now().strftime("[%H:%M:%S] ")
+        text = " ".join(map(str, args))
+        stripped_text = text.lstrip()
+        
+        if stripped_text.startswith("[!]"):
+            # Rojo para avisos y errores
+            _orig_print(f"{timestamp}\033[91m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[+]"):
+            # Verde para éxitos y resultados positivos
+            _orig_print(f"{timestamp}\033[92m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
+            # Blanco brillante para información de pasos
+            _orig_print(f"{timestamp}\033[97m{text}\033[0m", **kwargs)
+        else:
+            # Por defecto, blanco estándar con timestamp
+            _orig_print(f"{timestamp}{text}", **kwargs)
 
-builtins.print = _color_print
+    _color_print._kadglobe_logging = True
+    builtins.print = _color_print
 
 # Importo el parseador que ya construimos para obtener los nodos (para compatibilidad con pytest)
 try:

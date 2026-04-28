@@ -16,26 +16,30 @@ from dotenv import load_dotenv
 
 # Configuro mi sistema de impresión con colores para que los logs sean legibles.
 import builtins
-_orig_print = builtins.print
+import datetime
+if not getattr(builtins.print, "_kadglobe_logging", False):
+    _orig_print = builtins.print
 
-def _color_print(*args, **kwargs):
-    text = " ".join(map(str, args))
-    stripped_text = text.lstrip()
-    
-    if stripped_text.startswith("[!]"):
-        # Rojo para avisos y errores
-        _orig_print(f"\033[91m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[+]"):
-        # Verde para éxitos y resultados positivos
-        _orig_print(f"\033[92m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
-        # Blanco brillante para información de pasos
-        _orig_print(f"\033[97m{text}\033[0m", **kwargs)
-    else:
-        # Por defecto, blanco estándar
-        _orig_print(text, **kwargs)
+    def _color_print(*args, **kwargs):
+        timestamp = datetime.datetime.now().strftime("[%H:%M:%S] ")
+        text = " ".join(map(str, args))
+        stripped_text = text.lstrip()
+        
+        if stripped_text.startswith("[!]"):
+            # Rojo para avisos y errores
+            _orig_print(f"{timestamp}\033[91m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[+]"):
+            # Verde para éxitos y resultados positivos
+            _orig_print(f"{timestamp}\033[92m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
+            # Blanco brillante para información de pasos
+            _orig_print(f"{timestamp}\033[97m{text}\033[0m", **kwargs)
+        else:
+            # Por defecto, blanco estándar con timestamp
+            _orig_print(f"{timestamp}{text}", **kwargs)
 
-builtins.print = _color_print
+    _color_print._kadglobe_logging = True
+    builtins.print = _color_print
 
 
 # Cargo mi archivo .env para leer la contraseña de la WebUI y las rutas de los archivos.
@@ -94,6 +98,83 @@ class EMuleWebScraper:
         except requests.exceptions.RequestException as e: # Si hay un error de conexión...
             print(f"[!] No he podido ni conectar con eMule: {e}")
             return False
+
+    def fetch_version_via_udp(self):
+        """
+        Intenta obtener la versión de eMule enviando un paquete Kademlia UDP.
+        """
+        import socket
+        
+        KAD_PROTOCOL_ID = 0xE4
+        KADEMLIA2_BOOTSTRAP_REQ = 0x01
+        KADEMLIA2_BOOTSTRAP_RES = 0x09
+        
+        # Puerto UDP estándar de eMule para Kad
+        UDP_PORT = 16005 
+        
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.settimeout(2)
+            sock.sendto(bytes([KAD_PROTOCOL_ID, KADEMLIA2_BOOTSTRAP_REQ]), ("127.0.0.1", UDP_PORT))
+            data, addr = sock.recvfrom(1024)
+            sock.close()
+            
+            if len(data) >= 21 and data[0] == KAD_PROTOCOL_ID and data[1] == KADEMLIA2_BOOTSTRAP_RES:
+                kad_ver = data[20]
+                mapping = {
+                    6: "eMule v0.48a",
+                    7: "eMule v0.49c",
+                    8: "eMule v0.50a",
+                    9: "aMule / v0.60",
+                    10: "eMule v0.60d+ (Community Edition)"
+                }
+                return mapping.get(kad_ver, f"eMule (Kad v{kad_ver})")
+        except Exception:
+            pass
+        return None
+
+    def fetch_emule_version(self):
+        """
+        Extrae la versión del cliente eMule desde la interfaz web.
+        """
+        if not self.session_id:
+            return "Desconocida"
+
+        try:
+            # Consultamos la página principal (Transfer) que suele tener la versión
+            target_url = f"{self.base_url}/?ses={self.session_id}&w=transfer"
+            response = self.session.get(target_url, headers=self.headers, timeout=5)
+            
+            # 1. Intentar extraer del <title> (visto en eMule.tmpl)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            if soup.title and soup.title.string:
+                title_text = soup.title.string
+                # Patrón: "eMule v0.50a - WebControl"
+                match_title = re.search(r'(.+?)\s+-\s+WebControl', title_text, re.IGNORECASE)
+                if match_title:
+                    return match_title.group(1).strip()
+            
+            # 2. Intentar buscar en el texto completo (HTML bruto)
+            # Buscamos patrones como "eMule v0.50a" o similares
+            match = re.search(r'(eMule\s+v[\d\.]+[a-z]?)', response.text, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+            
+            # 3. Nuevo Fallback: UDP Probe (Más fiable si el WebUI está modificado)
+            udp_ver = self.fetch_version_via_udp()
+            if udp_ver:
+                return udp_ver
+
+            # 4. Fallback: buscar en el texto visible
+            full_text = soup.get_text()
+            match_any = re.search(r'(v\d+\.\d+[a-z]?)', full_text)
+            if match_any:
+                return f"eMule {match_any.group(1).strip()}"
+                
+            return "eMule (Versión no detectada)"
+            
+        except Exception:
+            return "eMule"
 
     def fetch_kad_stats(self):
 

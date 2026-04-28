@@ -331,22 +331,70 @@ async function updateKadStats() {
             let displayStatus = data.status || i18n[currentLang].unknown;
             elStatus.classList.remove('status-connected', 'status-disconnected', 'status-firewalled');
 
+            let isDisconnected = false;
+            let isFirewalled = false;
             if (data.status) {
                 const statusLower = data.status.toLowerCase();
                 // Importante: Chequear 'disconnect' ANTES que 'connect' porque 'disconnected' contiene ambos
-                if (statusLower.includes('disconnect')) {
+                if (statusLower.includes('disconnect') || statusLower.includes('desconectado')) {
                     elStatus.classList.add('status-disconnected');
                     displayStatus = i18n[currentLang].status_disconnected;
-                } else if (statusLower.includes('connect')) {
-                    elStatus.classList.add('status-connected');
-                    displayStatus = i18n[currentLang].status_connected;
-                } else if (statusLower.includes('firewall')) {
+                    isDisconnected = true;
+                } else if (statusLower.includes('firewall') || statusLower.includes('cortafuego')) {
                     elStatus.classList.add('status-firewalled');
                     displayStatus = i18n[currentLang].status_firewalled;
+                    isFirewalled = true;
+                } else if (statusLower.includes('connect') || statusLower.includes('conectado')) {
+                    elStatus.classList.add('status-connected');
+                    displayStatus = i18n[currentLang].status_connected;
                 }
             }
 
             elStatus.textContent = displayStatus;
+
+            // Bloquear botón "Nodos Activos" si Kad está desconectado
+            const btnHeatMap = document.getElementById('heatMapToggle');
+            if (btnHeatMap) {
+                if (isDisconnected) {
+                    btnHeatMap.disabled = true;
+                    btnHeatMap.style.opacity = '0.3';
+                    btnHeatMap.style.filter = 'grayscale(1)';
+                    btnHeatMap.style.cursor = 'not-allowed';
+                    btnHeatMap.title = currentLang === 'es' ? ' ❌ Función deshabilitada: Kad desconectado!' : ' ❌ Function disabled: Kad is not connected!';
+
+                    // Si el modo térmico estaba activo, lo apagamos forzosamente para evitar confusión
+                    if (heatMapMode) {
+                        heatMapMode = false;
+                        btnHeatMap.style.background = '';
+                        btnHeatMap.style.borderColor = '';
+                        btnHeatMap.style.color = '';
+                        btnHeatMap.style.boxShadow = '';
+                        if (typeof renderGlobe !== 'undefined') {
+                            renderGlobe.pointColor(getPointColor);
+                            renderGlobe.pointAltitude(getPointAltitude);
+                            renderGlobe.pointsData([...globalNodesArray]);
+                        }
+                    }
+                } else if (isFirewalled) {
+                    // Si está Firewalled, permitimos el uso pero avisamos
+                    btnHeatMap.disabled = false;
+                    btnHeatMap.style.opacity = '1';
+                    btnHeatMap.style.filter = 'none';
+                    btnHeatMap.style.cursor = 'pointer';
+                    btnHeatMap.title = currentLang === 'es' ?
+                        '⚠️ ¡Atención! Estás Tras Cortafuegos (Firewalled). La visibilidad de red puede ser limitada.' :
+                        '⚠️ Warning! You are Firewalled. Network visibility might be limited.';
+                    btnHeatMap.style.boxShadow = '0 0 10px rgba(255, 204, 0, 0.4)'; // Brillo amarillo de advertencia
+                } else {
+                    // Estado óptimo: Conectado / Abierto
+                    btnHeatMap.disabled = false;
+                    btnHeatMap.style.opacity = '1';
+                    btnHeatMap.style.filter = 'none';
+                    btnHeatMap.style.cursor = 'pointer';
+                    btnHeatMap.style.boxShadow = '';
+                    btnHeatMap.title = '';
+                }
+            }
 
             // Lógica de historial de contactos para inyectar diferencias (+N / -N)
             const currentContacts = parseInt(data.contacts || '0', 10);
@@ -367,21 +415,6 @@ async function updateKadStats() {
             previousContacts = currentContacts; // Actualizamos la memoria
 
             elSearches.textContent = data.active_searches || '0'; // Default numeric fallback
-
-            // Gestión de estilos dinámicos según el estado (Connected, Disconnected, Firewalled)
-            elStatus.classList.remove('status-connected', 'status-disconnected', 'status-firewalled');
-
-            if (data.status) {
-                const statusLower = data.status.toLowerCase();
-                // Importante: Chequear 'disconnect' ANTES que 'connect' porque 'disconnected' contiene ambos
-                if (statusLower.includes('disconnect') || statusLower.includes('desconectado')) {
-                    elStatus.classList.add('status-disconnected');
-                } else if (statusLower.includes('firewall') || statusLower.includes('cortafuego')) {
-                    elStatus.classList.add('status-firewalled');
-                } else if (statusLower.includes('connect') || statusLower.includes('conectado')) {
-                    elStatus.classList.add('status-connected');
-                }
-            }
 
             // Inyectamos las nuevas estadísticas enriquecidas (Phase 13+14)
             if (data.kad_status) {
@@ -579,9 +612,9 @@ function updateKBucketsChart(nodes, localId) {
         if (bucketCounts[i] > 0) {
             // Calcular la probabilidad matemática de caer en esta cubeta (1 / 2^(128-i))
             const probPct = (1 / Math.pow(2, 128 - i)) * 100;
-            const probStr = probPct >= 1 ? `${Math.round(probPct)}%` : 
-                           (probPct >= 0.01 ? `${probPct.toFixed(2)}%` : `<0.01%`);
-            
+            const probStr = probPct >= 1 ? `${Math.round(probPct)}%` :
+                (probPct >= 0.01 ? `${probPct.toFixed(2)}%` : `<0.01%`);
+
             // Usamos un array para que Chart.js ponga el Bx en una línea y el % debajo
             labels.push([`B${i}`, probStr]);
             dataValues.push(bucketCounts[i]);

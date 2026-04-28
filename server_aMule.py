@@ -92,6 +92,10 @@ def run_backend_cronjob():
     
     # Login inicial
     scraper_ready = scraper.login()
+    client_version = "aMule"
+    if scraper_ready:
+        client_version = scraper.fetch_emule_version()
+        print(f"[+] Versión del cliente: {client_version}")
 
     round = 1 
     
@@ -103,6 +107,7 @@ def run_backend_cronjob():
             os._exit(0)
 
         try:
+            success = True
             print(f"\n[i] Escaneando estadísticas en vivo del WebUI (Ronda {round})...")
             
             # Reintento de login si la sesión se perdió
@@ -119,11 +124,21 @@ def run_backend_cronjob():
                         json.dump(stats, f, indent=4, ensure_ascii=False)
                 else:
                     scraper_ready = False # Forzamos re-login en la próxima ronda si falla
+                    success = False
+            else:
+                success = False
             
             print(f"\n[i] Ejecutando ICMP Ping Sweep sobre nodos Kademlia...")
-            subprocess.run([python_exe, "kad_pinger.py"], cwd=backend_dir, check=False)
+            # Nota: kad_pinger.py debe retornar un código de salida distinto de 0 en caso de fallo
+            pinger_proc = subprocess.run([python_exe, "kad_pinger.py"], cwd=backend_dir, check=False)
+            if pinger_proc.returncode != 0:
+                success = False
             
-            print(f"\n[i] Telemetrías actualizadas exitosamente en ronda nº{round}.")
+            if success:
+                print(f"\n[+] Telemetrías actualizadas exitosamente en ronda nº{round} ({client_version}). Próxima medición en {POLL_INTERVAL} segundos...")
+            else:
+                print(f"\n[!] La ronda nº{round} finalizó con errores parciales. Se reintentará en {POLL_INTERVAL} segundos...")
+                
             round += 1
             
         except Exception as e:

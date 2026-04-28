@@ -79,7 +79,7 @@ Por ejemplo, para un nodo cualquiera en Londres:
 
 *   **Estado de la ID (Kad Status)**: Diferencia entre estado "Abierto (Open)" y "Tras cortafuegos (Firewalled)" usando terminología específica de Kademlia.
 
-![alt text](images/status_opened.png)
+![alt text](images/status_connected.png)
 ![alt text](images/status_firewalled.png)
 ![alt text](images/status_disconnected.png)
 

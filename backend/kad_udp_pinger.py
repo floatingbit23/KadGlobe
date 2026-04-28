@@ -1,12 +1,14 @@
 import json
 import time
 import os
+import sys
 import socket
 import struct
 import random
 import requests
 from concurrent.futures import ThreadPoolExecutor
 import builtins
+import datetime
 
 """
 Kad UDP Probe — Descubrimiento inteligente de nodos activos, Crawl recursivo y medición de latencia.
@@ -25,22 +27,25 @@ Opcodes utilizados (definidos en eMule en el archivo "opcodes.h"):
   - 0x61: KADEMLIA2_PONG           (respuesta de vida, incluye puerto UDP)
 """
 
-_orig_print = builtins.print
+if not getattr(builtins.print, "_kadglobe_logging", False):
+    _orig_print = builtins.print
 
-def _color_print(*args, **kwargs):
-    text = " ".join(map(str, args))
-    stripped_text = text.lstrip()
-    
-    if stripped_text.startswith("[!]"):
-        _orig_print(f"\033[91m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[+]"):
-        _orig_print(f"\033[92m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
-        _orig_print(f"\033[97m{text}\033[0m", **kwargs)
-    else:
-        _orig_print(text, **kwargs)
+    def _color_print(*args, **kwargs):
+        timestamp = datetime.datetime.now().strftime("[%H:%M:%S] ")
+        text = " ".join(map(str, args))
+        stripped_text = text.lstrip()
+        
+        if stripped_text.startswith("[!]"):
+            _orig_print(f"{timestamp}\033[91m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[+]"):
+            _orig_print(f"{timestamp}\033[92m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
+            _orig_print(f"{timestamp}\033[97m{text}\033[0m", **kwargs)
+        else:
+            _orig_print(f"{timestamp}{text}", **kwargs)
 
-builtins.print = _color_print
+    _color_print._kadglobe_logging = True
+    builtins.print = _color_print
 
 import random
 
@@ -109,10 +114,13 @@ def send_bootstrap_req(ip, port, timeout=TIMEOUT_S):
         
         # Validar header
         if len(data) < 23 or data[0] != KAD_PROTOCOL_ID or data[1] != KADEMLIA2_BOOTSTRAP_RES:
-            return [], None
+            return [], None, 0
         
         # Extraer el KadID del emisor (Bytes 2 al 18)
         sender_id = data[2:18].hex()
+        
+        # Extraer la versión del emisor (Byte 20)
+        sender_version = data[20]
         
         # Parsear contactos (Offset 21: Cantidad de contactos uint16 LE)
         contact_count = struct.unpack('<H', data[21:23])[0]
@@ -139,10 +147,10 @@ def send_bootstrap_req(ip, port, timeout=TIMEOUT_S):
             })
             offset += CONTACT_SIZE
             
-        return found, sender_id
+        return found, sender_id, sender_version
         
     except Exception as e:
-        return [], None
+        return [], None, 0
     finally:
         if sock: sock.close()
 
@@ -152,7 +160,7 @@ def discover_nodes_expanded():
     Fase 1.5: Pregunta a 4 de esos nodos por sus contactos (Expansión 1-hop).
     """
     print(f"\n[*] Fase 1: Solicitando semilla al eMule local (127.0.0.1:{EMULE_LOCAL_UDP_PORT})...")
-    seed_nodes = send_bootstrap_req('127.0.0.1', EMULE_LOCAL_UDP_PORT)
+    seed_nodes, _, _ = send_bootstrap_req('127.0.0.1', EMULE_LOCAL_UDP_PORT)
     
     if not seed_nodes:
         print("[!] No se pudo contactar con eMule local. ¿Está abierto?")
@@ -183,7 +191,7 @@ def discover_nodes_expanded():
     print(f"[*] Fase 1.5: Expandiendo horizonte vía {len(targets)} vecinos remotos...")
     
     for t in targets:
-        remote_contacts = send_bootstrap_req(t['ip'], t['udp_port'], timeout=2.0)
+        remote_contacts, _, _ = send_bootstrap_req(t['ip'], t['udp_port'], timeout=2.0)
         new_found = 0
         for rc in remote_contacts:
             if rc['ip'] not in all_discovered:
@@ -326,12 +334,27 @@ def udp_ping_node(node):
 def ping_all_nodes():
     print(f"\n[i] Ejecutando Kad UDP Probe (Modo Inteligente RTT-Selection)...")
     
-    # 1. Semilla inicial (eMule local)
+    # 1. Seed inicial (eMule local)
     print(f"[*] Fase 1: Solicitando semilla al eMule local (127.0.0.1:{EMULE_LOCAL_UDP_PORT})...")
-    seed, dynamic_id = send_bootstrap_req('127.0.0.1', EMULE_LOCAL_UDP_PORT)
+    seed, dynamic_id, kad_ver = send_bootstrap_req('127.0.0.1', EMULE_LOCAL_UDP_PORT)
+
+    # Mapeo de versiones conocidas
+    KAD_VERSION_MAP = {
+        6: "v0.48a",
+        7: "v0.49c",
+        8: "v0.50a",
+        9: "v0.60 / aMule",
+        10: "v0.60d / v0.70 (Community Edition)"
+    }
+    
+    ver_str = KAD_VERSION_MAP.get(kad_ver, f"Desconocida (Kad Ver: {kad_ver})")
+
+    # Sale del script si no hay seed (es decir si no se pudo contactar con el cliente eMule local)
     if not seed:
-        print("[!] No se pudo contactar con eMule local. Abortando.")
-        return
+        print("[!] No se pudo contactar con el cliente eMule local. Abortando.")
+        sys.exit(1) 
+
+    print(f"[+] Conectado a eMule (Kad Version: {kad_ver} -> {ver_str})")
 
     # Auto-identificación de nuestro nodo
     my_ip = None
@@ -383,7 +406,7 @@ def ping_all_nodes():
     
     print(f"\n[*] Fase 3: Expandiendo horizonte vía los líderes más rápidos...")
     for leader in fastest_leaders:
-        remote_contacts, _ = send_bootstrap_req(leader['ip'], leader['udp_port'], timeout=2.0)
+        remote_contacts, _, _ = send_bootstrap_req(leader['ip'], leader['udp_port'], timeout=2.0)
         new_found = 0
         for rc in remote_contacts:
             if rc['ip'] not in all_discovered:
