@@ -139,6 +139,7 @@ Una vez configurado, puedes lanzar todos los componentes en un solo paso:
 **Windows**: Ejecuta [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat).  
 **Linux**: Ejecuta [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh).
 
+
 > [!CAUTION]
 > **NO ejecutes `launcher.sh` con `sudo`.**  
 > Ejecutarlo como root provocará errores de "Permiso denegado" en `/run/user/0` y errores de pantalla (X11) ya que las aplicaciones gráficas como aMule deben correr en tu sesión de usuario normal.

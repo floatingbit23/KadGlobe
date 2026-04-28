@@ -139,6 +139,7 @@ Once configured, you can launch all components in a single step:
 **Windows**: Run [Script.bat](https://github.com/floatingbit23/KadGlobe/blob/main/Script.bat).  
 **Linux**: Run [launcher.sh](https://github.com/floatingbit23/KadGlobe/blob/main/launcher.sh).
 
+
 > [!CAUTION]
 > **DO NOT run `launcher.sh` with `sudo`.**  
 > Running as root will cause "Permission Denied" errors in `/run/user/0` and "Display not found" errors because GUI applications like aMule must run within your normal user session.

@@ -29,8 +29,11 @@ def _color_print(*args, **kwargs):
 
 builtins.print = _color_print
 
-# Importo el parseador que ya construimos para obtener los nodos
-from nodes_dat_parser import parse_nodes_dat
+# Importo el parseador que ya construimos para obtener los nodos (para compatibilidad con pytest)
+try:
+    from backend.nodes_dat_parser import parse_nodes_dat
+except ImportError:
+    from nodes_dat_parser import parse_nodes_dat
 
 # Cargo la configuración del entorno (.env)
 load_dotenv()
