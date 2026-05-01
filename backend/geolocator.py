@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 
 import builtins
 import datetime
+
+DEFAULT_NODES_DAT = "nodes.dat"
+
 if not getattr(builtins.print, "_kadglobe_logging", False):
     _orig_print = builtins.print
 
@@ -105,7 +108,7 @@ class KadGeolocator:
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         
         if nodes_file is None:
-            nodes_file = os.path.join(project_root, "nodes.dat")
+            nodes_file = os.path.join(project_root, DEFAULT_NODES_DAT)
         if output_file is None:
             output_file = os.path.join(project_root, "jsons", "kad_nodes_geospatial.json")
         
@@ -179,7 +182,7 @@ if __name__ == "__main__":
         
         # Lógica de detección automática para Linux (aMule)
         if os.name != "nt": # Si no estamos en Windows...
-            amule_path = os.path.expanduser("~/.aMule/nodes.dat")
+            amule_path = os.path.expanduser(f"~/.aMule/{DEFAULT_NODES_DAT}")
             if os.path.exists(amule_path):
                 nodes_path = amule_path
                 print(f"[*] Detectado sistema Linux. Usando ruta de aMule: {nodes_path}")
@@ -187,10 +190,10 @@ if __name__ == "__main__":
         # Si aún no tenemos ruta válida, probamos el relativo local
         if not nodes_path or not os.path.exists(nodes_path):
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            nodes_path = os.path.join(project_root, "nodes.dat")
+            nodes_path = os.path.join(project_root, DEFAULT_NODES_DAT)
             
             if not os.path.exists(nodes_path): 
-                nodes_path = "nodes.dat" # Prueba en el actual por si acaso
+                nodes_path = DEFAULT_NODES_DAT # Prueba en el actual por si acaso
         
     geo.process_kad_nodes(nodes_file=nodes_path) # Proceso el archivo nodes.dat
 

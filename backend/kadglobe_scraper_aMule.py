@@ -21,27 +21,32 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 # Colores en terminal
+import datetime
 import builtins
-_orig_print = builtins.print
 
-def _color_print(*args, **kwargs):
-    text = " ".join(map(str, args))
-    stripped_text = text.lstrip()
-    
-    if stripped_text.startswith("[!]"):
-        # Rojo para avisos y errores
-        _orig_print(f"\033[91m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[+]"):
-        # Verde para éxitos y resultados positivos
-        _orig_print(f"\033[92m{text}\033[0m", **kwargs)
-    elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
-        # Blanco brillante para información de pasos
-        _orig_print(f"\033[97m{text}\033[0m", **kwargs)
-    else:
-        # Por defecto, blanco estándar
-        _orig_print(text, **kwargs)
+if not getattr(builtins.print, "_kadglobe_logging", False):
+    _orig_print = builtins.print
 
-builtins.print = _color_print
+    def _color_print(*args, **kwargs):
+        timestamp = datetime.datetime.now().strftime("[%H:%M:%S] ")
+        text = " ".join(map(str, args))
+        stripped_text = text.lstrip()
+        
+        if stripped_text.startswith("[!]"):
+            # Rojo para avisos y errores
+            _orig_print(f"{timestamp}\033[91m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[+]"):
+            # Verde para éxitos y resultados positivos
+            _orig_print(f"{timestamp}\033[92m{text}\033[0m", **kwargs)
+        elif stripped_text.startswith("[*]") or stripped_text.startswith("[i]"):
+            # Blanco brillante para información de pasos
+            _orig_print(f"{timestamp}\033[97m{text}\033[0m", **kwargs)
+        else:
+            # Por defecto, blanco estándar
+            _orig_print(f"{timestamp}{text}", **kwargs)
+
+    _color_print._kadglobe_logging = True
+    builtins.print = _color_print
 
 load_dotenv()
 
@@ -254,9 +259,10 @@ class AMuleWebScraper:
             if contacts == "0":
                 contacts = find(r'Nodes\s*:\s*(\d+)')
 
-            # Overhead de Kad en paquetes
-            kad_session = find(r'Kad Overhead \(Packets\):\s*[\d.,]+\s*\w*\s*\(([\d.,]+\s*\w*)\)')
-            all_matches = re.findall(r'Kad Overhead \(Packets\):\s*[\d.,]+\s*\w*\s*\(([\d.,]+\s*\w*)\)', full_text, re.IGNORECASE)
+            # Overhead de Kad en paquetes (Patrón endurecido ReDoS safe y flexible)
+            overhead_pattern = r'Kad Overhead \(Packets\):\s*[\d.,]+(?:\s+[^\s()]+)?\s*\(([\d.,]+(?:\s+[^\s()]+)?)\)'
+            kad_session = find(overhead_pattern, full_text)
+            all_matches = re.findall(overhead_pattern, full_text, re.IGNORECASE)
             kad_total = all_matches[1].strip() if len(all_matches) >= 2 else kad_session
 
             # Porcentaje de clientes Kad

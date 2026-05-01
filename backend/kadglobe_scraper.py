@@ -149,8 +149,8 @@ class EMuleWebScraper:
             soup = BeautifulSoup(response.text, 'html.parser')
             if soup.title and soup.title.string:
                 title_text = soup.title.string
-                # Patrón: "eMule v0.50a - WebControl"
-                match_title = re.search(r'(.+?)\s+-\s+WebControl', title_text, re.IGNORECASE)
+                # Patrón: "eMule v0.50a - WebControl" (Hardened against ReDoS)
+                match_title = re.search(r'^([^\n-]+?)\s+-\s+WebControl', title_text, re.IGNORECASE)
                 if match_title:
                     return match_title.group(1).strip()
             
@@ -286,9 +286,11 @@ class EMuleWebScraper:
                 m = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
                 return m.group(1).strip() if m else "0"
 
-            kad_session = find(r'Kad Overhead \(Packets\):\s*[\d.,]+\s*\w+\s*\(([\d.,]+\s*\w*)\)', lines)
+            # Patrón endurecido ReDoS safe y flexible con unidades opcionales
+            overhead_pattern = r'Kad Overhead \(Packets\):\s*[\d.,]+(?:\s+[^\s()]+)?\s*\(([\d.,]+(?:\s+[^\s()]+)?)\)'
+            kad_session = find(overhead_pattern, lines)
             
-            all_matches = re.findall(r'Kad Overhead \(Packets\):\s*[\d.,]+\s*\w+\s*\(([\d.,]+\s*\w*)\)', lines, re.IGNORECASE)
+            all_matches = re.findall(overhead_pattern, lines, re.IGNORECASE)
             kad_total = all_matches[1].strip() if len(all_matches) >= 2 else kad_session
 
             # Calculo cuántos de tus clientes son estrictamente Kad.

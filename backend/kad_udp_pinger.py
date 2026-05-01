@@ -5,7 +5,7 @@ import os
 import sys
 import socket
 import struct
-import random
+import secrets
 import requests
 from concurrent.futures import ThreadPoolExecutor
 import builtins
@@ -50,8 +50,6 @@ if not getattr(builtins.print, "_kadglobe_logging", False):
 
     _color_print._kadglobe_logging = True
     builtins.print = _color_print
-
-import random
 
 # Caché en memoria para no geolocalizar la misma IP varias veces en una ronda
 GEO_CACHE = {}
@@ -191,7 +189,8 @@ def discover_nodes_expanded():
 
     # 3. Expansión (Crawl 1-hop)
     # Seleccionamos 4 vecinos remotos elegidos al azar para mayor diversidad
-    targets = random.sample(seed_nodes, min(len(seed_nodes), 4))
+    # Usamos secrets para una selección segura e impredecible (Best Practice)
+    targets = secrets.SystemRandom().sample(seed_nodes, min(len(seed_nodes), 4))
     print(f"[*] Fase 1.5: Expandiendo horizonte vía {len(targets)} vecinos remotos...")
     
     for t in targets:
@@ -385,7 +384,8 @@ def ping_all_nodes():
             print(f"    - {l['ip']} (RTT: {l['rtt']}ms)")
     else:
         print("[!] Ningún nodo de la semilla respondió al ping inicial. Usando fallback aleatorio.")
-        fastest_leaders = random.sample(seed_geolocated, min(len(seed_geolocated), 4))
+        # Usamos secrets para una selección segura (Best Practice)
+        fastest_leaders = secrets.SystemRandom().sample(seed_geolocated, min(len(seed_geolocated), 4))
 
     # 3. Fase de Expansión (Crawl)
     # Incluimos los resultados del pre-ping en el set global
