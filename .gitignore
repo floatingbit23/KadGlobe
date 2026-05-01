@@ -17,3 +17,9 @@ __pycache__/
 
 # WebUI
 eMule.tmpl
+*.html
+*.log
+.idea/
+.vscode/
+node_modules/
+dist/

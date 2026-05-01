@@ -193,9 +193,9 @@ if (heatMapToggle) {
 // 1. Configuración de Globe.gl y Three.js
 const renderGlobe = Globe()
     (document.getElementById('globeViz'))
-    .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg') // Textura HD
-    .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')    // Relieve topográfico
-    .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')   // Fondo estelar
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg') // Textura HD
+    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')    // Relieve topográfico
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')   // Fondo estelar
 
     // Configuración para los puntos y pilares de los Nodos Kad (Nodos Conocidos)
     // HE QUITADO pointsMerge(true) para que Globe.gl envíe los eventos de Click y el ratón reconozca los pilares individuales.

@@ -195,7 +195,7 @@ class EMuleWebScraper:
             full_text = soup.get_text(separator=' ', strip=True) # Extraigo todo el texto de la página.
             
             # Busco el estado de Kad (Connected, Firewalled, etc.)
-            match_status = re.search(r'Kad\s+Status\s+([A-Za-z]+)', full_text, re.IGNORECASE)
+            match_status = re.search(r'(?:Kad|Kademlia).*?Status\s+([A-Za-z]+)', full_text, re.IGNORECASE)
             status = match_status.group(1).strip() if match_status else "Desconectado"
             
             # Extraigo el número de contactos y búsquedas activas.

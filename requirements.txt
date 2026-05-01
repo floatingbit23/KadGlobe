@@ -5,3 +5,5 @@ IP2Location==8.10.2
 scapy==2.7.0
 ping3==5.1.5
 pytest==8.2.0
+pre-commit==3.7.1
+

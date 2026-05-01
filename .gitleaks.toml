@@ -1,0 +1,14 @@
+# Gitleaks configuration for KadGlobe
+[allowlist]
+description = "Allowlist for example environment files and non-sensitive data"
+paths = [
+    '''.env.windows.example''',
+    '''.env.linux.example''',
+    '''frontend/index.html''',
+    '''README.md''',
+    '''README_EN.md'''
+]
+regexes = [
+    '''ADMIN_PASS=.*''',
+    '''[a-f0-9]{32}''' # Allow Kad IDs which are 32-char hex
+]

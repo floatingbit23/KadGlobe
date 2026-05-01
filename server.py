@@ -79,12 +79,54 @@ POLL_INTERVAL = 30  # Los 30 segundos originales para eMule Windows
 
 class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
-    def end_headers(self): 
+    # Directorios permitidos (protección contra ataque de Directory Traversal)
+    ALLOWED_DIRS = ('frontend', 'jsons', 'images')
+
+    def do_GET(self):
+        """Sobreescribimos do_GET para añadir validación de ruta."""
+
+        # Proteccion estricta contra Directory Traversal (Local File Inclusion Attack)
+        if '..' in self.path:
+            self.send_response(400)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'400 Bad Request: Directory Traversal Detected')
+            return
+
+        # Resolvemos la ruta solicitada de forma segura
+        requested = self.path.split('?')[0].lstrip('/')
+        # Permitimos la raíz / (redirige a frontend)
+        if not requested or requested == 'frontend' or any(requested.startswith(d + '/') or requested == d for d in self.ALLOWED_DIRS):
+            super().do_GET()
+        else:
+            self.send_response(403)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'403 Forbidden')
+
+    def end_headers(self):
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         self.send_header('Expires', '0')
         self.send_header('Pragma', 'no-cache')
+
+        # --- SECURITY HEADERS ---
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('Referrer-Policy', 'no-referrer')
+
+        # CSP: permite solo recursos locales y CDNs conocidos (unpkg, jsdelivr)
+        self.send_header(
+            'Content-Security-Policy',
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: blob: https://unpkg.com https://cdn.jsdelivr.net https://flagcdn.com; "
+            "connect-src 'self' https://unpkg.com; "
+            "worker-src 'self' blob:; "
+            "frame-ancestors 'none'"
+        )
         super().end_headers()
-    
+
     def log_message(self, format, *args):
         # Silenciamos los logs de peticiones HTTP para que la terminal esté más limpia
         return
@@ -142,7 +184,7 @@ def run_backend_cronjob():
 
         try:
             success = True
-            print(f"\n[i] Escaneando estadísticas en vivo del WebUI...")
+            print("\n[i] Escaneando estadísticas en vivo del WebUI...")
             
             # Si la sesión se perdió o falló el login, reintentamos el login
             if not scraper_ready:
@@ -165,7 +207,7 @@ def run_backend_cronjob():
                 success = False
             
 
-            print(f"\n[i] Ejecutando Kad UDP Probe sobre nodos Kademlia...")
+            print("\n[i] Ejecutando Kad UDP Probe sobre nodos Kademlia...")
             pinger_proc = subprocess.run([python_exe, "kad_udp_pinger.py"], cwd=backend_dir, check=False)
             if pinger_proc.returncode != 0:
                 success = False
@@ -203,4 +245,4 @@ if __name__ == "__main__":
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print(f"\n[*] Recibida orden de apagado. Cerrando el servidor...")
+            print("\n[*] Recibida orden de apagado. Cerrando el servidor...")
