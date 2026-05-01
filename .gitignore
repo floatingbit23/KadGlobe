@@ -15,6 +15,10 @@ server.pid
 __pycache__/
 *.pyc
 
+# SonarQube local
+scratch/
+*sonar*
+
 # WebUI
 eMule.tmpl
 *.html

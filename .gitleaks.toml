@@ -10,5 +10,7 @@ paths = [
 ]
 regexes = [
     '''ADMIN_PASS=.*''',
-    '''[a-f0-9]{32}''' # Allow Kad IDs which are 32-char hex
+    '''[a-f0-9]{32}''', # Allow Kad IDs which are 32-char hex
+    '''sqp_[a-f0-9]{40}''' # Detect SonarQube tokens
 ]
+
