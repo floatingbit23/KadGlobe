@@ -74,8 +74,9 @@ def atomic_write_json(path, data):
         return False
 
 # Constantes de configuración
-PORT = 8000
+PORT = int(os.getenv("KADGLOBE_HTTP_PORT", 8000))
 POLL_INTERVAL = 30  # Los 30 segundos originales para eMule Windows
+
 
 class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -173,7 +174,7 @@ def run_backend_cronjob():
         client_version = scraper.fetch_emule_version()
         print(f"[+] Versión del cliente: {client_version}")
 
-    round = 1 # Contador de rondas
+    round_num = 1 # Contador de rondas
     
     while True: 
         # Comprobamos si eMule sigue abierto antes de procesar
@@ -213,11 +214,11 @@ def run_backend_cronjob():
                 success = False
             
             if success:
-                print(f"\n[+] Telemetrías actualizadas exitosamente en ronda nº{round} ({client_version}). Próxima medición en {POLL_INTERVAL} segundos...")
+                print(f"\n[+] Telemetrías actualizadas exitosamente en ronda nº{round_num} ({client_version}). Próxima medición en {POLL_INTERVAL} segundos...")
             else:
-                print(f"\n[!] La ronda nº{round} finalizó con errores parciales. Se reintentará en {POLL_INTERVAL} segundos...")
+                print(f"\n[!] La ronda nº{round_num} finalizó con errores parciales. Se reintentará en {POLL_INTERVAL} segundos...")
             
-            round += 1
+            round_num += 1
             
         except Exception as e:
             print(f"[!] Error de ejecución en el daemon thread: {e}")

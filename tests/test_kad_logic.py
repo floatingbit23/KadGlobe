@@ -12,6 +12,10 @@ from backend.geolocator import KadGeolocator
 
 # 1. Verificar la lógica XOR y Buckets
 def test_xor_logic():
+    """
+    Objetivo: Validar los cálculos matemáticos de distancia lógica y asignación de buckets en Kademlia.
+    Funciones: get_kad_distance(), get_kad_bucket()
+    """
     id_self = "00000000000000000000000000000000"
     id_far  = "80000000000000000000000000000000" # MSB diferente -> Bucket 127
     id_near = "00000000000000000000000000000001" # LSB diferente -> Bucket 0
@@ -23,16 +27,26 @@ def test_xor_logic():
 
 # 2. Verificar robustez del parser de nodes.dat
 def test_parser_robustness(tmp_path):
+    """
+    Objetivo: Comprobar la resiliencia del parser binario ante archivos inexistentes o corruptos.
+    Funciones: parse_nodes_dat()
+    """
     # Test con archivo inexistente
-    assert parse_nodes_dat("non_existent_file.dat") == []
+    nodes = parse_nodes_dat("non_existent_file.dat")
+    assert nodes == []
     
     # Test con archivo corrupto (demasiado pequeño)
     corrupt_file = tmp_path / "corrupt.dat"
     corrupt_file.write_bytes(b"\x00\x00\x01") # Solo 3 bytes
-    assert parse_nodes_dat(str(corrupt_file)) == []
+    nodes = parse_nodes_dat(str(corrupt_file))
+    assert nodes == []
 
 # 3. Verificar geolocalización (Mockeando IP2Location para no depender del binario)
 def test_geolocator_valid_coords():
+    """
+    Objetivo: Validar que el geolocalizador traduce correctamente los datos del binario a un diccionario estructurado.
+    Funciones: KadGeolocator.get_location()
+    """
     geo = KadGeolocator()
     # Forzamos un mock en el objeto db si existe, o simulamos uno
     geo.db = MagicMock()
@@ -47,12 +61,16 @@ def test_geolocator_valid_coords():
     geo.db.get_all.return_value = mock_rec
     
     result = geo.get_location("1.1.1.1")
-    assert result["lat"] == 40.4167
-    assert result["lng"] == -3.7033
+    assert result["lat"] == pytest.approx(40.4167)
+    assert result["lng"] == pytest.approx(-3.7033)
     assert result["country"] == "Spain"
 
 # 4. Verificar manejo de IPs inválidas o sin datos
 def test_geolocator_invalid_ip():
+    """
+    Objetivo: Asegurar que el sistema maneja IPs desconocidas devolviendo coordenadas 0.0.
+    Funciones: KadGeolocator.get_location()
+    """
     geo = KadGeolocator()
     geo.db = MagicMock()
     
@@ -63,5 +81,5 @@ def test_geolocator_invalid_ip():
     geo.db.get_all.return_value = mock_rec
     
     result = geo.get_location("invalid_ip")
-    assert result["lat"] == 0.0
-    assert result["lng"] == 0.0
+    assert result["lat"] == pytest.approx(0.0)
+    assert result["lng"] == pytest.approx(0.0)

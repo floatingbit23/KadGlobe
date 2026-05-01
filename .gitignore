@@ -16,8 +16,14 @@ __pycache__/
 *.pyc
 
 # SonarQube local
+sonar*
+.sonar/
+coverage.xml
+.coverage
+
+# Testing
 scratch/
-*sonar*
+conftest.py
 
 # WebUI
 eMule.tmpl

@@ -84,7 +84,7 @@ class EMuleWebScraper:
             response = self.session.post(self.base_url + "/", data=payload, headers=self.headers, timeout=5)
             
             # eMule redirige usando un meta-refresh con el ID de sesión. Lo extraigo con esta regex.
-            match = re.search(r'\?ses=([A-Za-z0-9_]+)', response.text)
+            match = re.search(r'\?ses=(\w+)', response.text)
             
             if match: 
                 self.session_id = match.group(1) 
@@ -116,7 +116,7 @@ class EMuleWebScraper:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.settimeout(2)
             sock.sendto(bytes([KAD_PROTOCOL_ID, KADEMLIA2_BOOTSTRAP_REQ]), ("127.0.0.1", UDP_PORT))
-            data, addr = sock.recvfrom(1024)
+            data, _ = sock.recvfrom(1024)
             sock.close()
             
             if len(data) >= 21 and data[0] == KAD_PROTOCOL_ID and data[1] == KADEMLIA2_BOOTSTRAP_RES:
@@ -195,7 +195,7 @@ class EMuleWebScraper:
             full_text = soup.get_text(separator=' ', strip=True) # Extraigo todo el texto de la página.
             
             # Busco el estado de Kad (Connected, Firewalled, etc.)
-            match_status = re.search(r'(?:Kad|Kademlia).*?Status\s+([A-Za-z]+)', full_text, re.IGNORECASE)
+            match_status = re.search(r'(?:Kad|Kademlia).*?Status\s+([A-Z]+)', full_text, re.IGNORECASE)
             status = match_status.group(1).strip() if match_status else "Desconectado"
             
             # Extraigo el número de contactos y búsquedas activas.

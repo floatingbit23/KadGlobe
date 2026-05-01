@@ -1,3 +1,4 @@
+import math
 import json
 import time
 import os
@@ -10,6 +11,9 @@ from concurrent.futures import ThreadPoolExecutor
 import builtins
 import datetime
 
+from dotenv import load_dotenv
+
+load_dotenv() # Cargamos variables desde .env (puertos, etc.)
 """
 Kad UDP Probe — Descubrimiento inteligente de nodos activos, Crawl recursivo y medición de latencia.
 
@@ -81,7 +85,7 @@ KADEMLIA2_PING             = 0x60   # Ping (sin payload, 2 bytes totales)
 KADEMLIA2_PONG             = 0x61   # Pong (respuesta esperada)
 
 # Puerto UDP del eMule local (configurado en eMule -> Opciones -> Conexión)
-EMULE_LOCAL_UDP_PORT = 16005
+EMULE_LOCAL_UDP_PORT = int(os.getenv("EMULE_KAD_UDP_PORT", 16005))
 
 # Tamaño de cada contacto en el BOOTSTRAP_RES: 16B KadID + 4B IP + 2B UDP + 2B TCP + 1B version = 25 bytes
 CONTACT_SIZE = 25
@@ -110,7 +114,7 @@ def send_bootstrap_req(ip, port, timeout=TIMEOUT_S):
         # Enviar BOOTSTRAP_REQ (2 bytes, sin payload)
         sock.sendto(bytes([KAD_PROTOCOL_ID, KADEMLIA2_BOOTSTRAP_REQ]), (ip, port))
         
-        data, addr = sock.recvfrom(4096)
+        data, _ = sock.recvfrom(4096)
         
         # Validar header
         if len(data) < 23 or data[0] != KAD_PROTOCOL_ID or data[1] != KADEMLIA2_BOOTSTRAP_RES:
@@ -127,7 +131,7 @@ def send_bootstrap_req(ip, port, timeout=TIMEOUT_S):
         
         found = []
         offset = 23
-        for i in range(contact_count):
+        for _ in range(contact_count):
             if offset + CONTACT_SIZE > len(data): break
             
             kad_id = data[offset:offset+16].hex()
@@ -149,7 +153,7 @@ def send_bootstrap_req(ip, port, timeout=TIMEOUT_S):
             
         return found, sender_id, sender_version
         
-    except Exception as e:
+    except Exception:
         return [], None, 0
     finally:
         if sock: sock.close()
@@ -243,7 +247,7 @@ def geolocate_nodes(nodes):
                 }
                 
                 # Descartar nodos con coordenadas 0,0 (no geolocalizados)
-                if geo_data["lat"] == 0.0 and geo_data["lng"] == 0.0:
+                if math.isclose(geo_data["lat"], 0.0) and math.isclose(geo_data["lng"], 0.0):
                     continue
                 
                 node.update(geo_data)
@@ -286,7 +290,7 @@ def udp_ping_node(node):
         start_time = time.time()
         sock.sendto(packet, (ip, port))
         
-        data, addr = sock.recvfrom(1024)
+        data, _ = sock.recvfrom(1024)
         rtt_seconds = time.time() - start_time
         rtt_ms = int(rtt_seconds * 1000)
         
@@ -332,7 +336,7 @@ def udp_ping_node(node):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def ping_all_nodes():
-    print(f"\n[i] Ejecutando Kad UDP Probe (Modo Inteligente RTT-Selection)...")
+    print("\n[i] Ejecutando Kad UDP Probe (Modo Inteligente RTT-Selection)...")
     
     # 1. Seed inicial (eMule local)
     print(f"[*] Fase 1: Solicitando semilla al eMule local (127.0.0.1:{EMULE_LOCAL_UDP_PORT})...")
@@ -362,7 +366,8 @@ def ping_all_nodes():
         try:
             my_ip = requests.get(provider, timeout=3).text.strip()
             if my_ip: break
-        except: continue
+        except Exception:
+            continue
 
     # 2. Pre-Ping para elegir líderes por RTT
     print(f"\n[*] Fase 2: Midiendo RTT de los {len(seed)} nodos de la semilla...")
@@ -404,7 +409,7 @@ def ping_all_nodes():
         })
         print(f"\n[+] Identidad confirmada para: {my_ip} (Pilar destacado)")
     
-    print(f"\n[*] Fase 3: Expandiendo horizonte vía los líderes más rápidos...")
+    print("\n[*] Fase 3: Expandiendo horizonte vía los líderes más rápidos...")
     for leader in fastest_leaders:
         remote_contacts, _, _ = send_bootstrap_req(leader['ip'], leader['udp_port'], timeout=2.0)
         new_found = 0
@@ -455,7 +460,7 @@ def ping_all_nodes():
     # Guardar resultados de forma atómica
     atomic_write_json(OUTPUT_FILE, final_json_list)
 
-    print(f"\n[+] Kad UDP Probe Inteligente finalizado.")
+    print("\n[+] Kad UDP Probe Inteligente finalizado.")
     print(f"    - Nodos totales descubiertos: {len(all_discovered)}")
     print(f"    - Nodos vivos (PONG): {len(final_json_list)}")
     print(f"    - Resultados guardados en: {OUTPUT_FILE}")

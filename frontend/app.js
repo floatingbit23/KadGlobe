@@ -16,8 +16,19 @@ const elOverhead = document.getElementById('kadOverhead');
 const elFirewallRow = document.getElementById('kadFirewallRow');
 const elFwUdp = document.getElementById('kadFwUdp');
 const elFwTcp = document.getElementById('kadFwTcp');
-const elSourcesRow = document.getElementById('kadSourcesRow');
 const elSources = document.getElementById('kadSources');
+const elSourcesRow = document.getElementById('kadSourcesRow');
+
+/**
+ * Generador de números aleatorios criptográficamente seguro (CSPRNG).
+ * Reemplaza a Math.random() para cumplir con auditorías de seguridad (SonarQube).
+ * @returns {number} Un número decimal entre 0 y 1.
+ */
+function secureRandom() {
+    const array = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(array);
+    return array[0] / (0xffffffff + 1);
+}
 
 // --- DICCIONARIO i18n ---
 let currentLang = 'es';
@@ -89,7 +100,7 @@ const i18n = {
 
 function applyTranslations() {
     document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
+        const key = el.dataset.i18n;
         if (i18n[currentLang][key]) {
             el.textContent = i18n[currentLang][key];
         }
@@ -178,7 +189,7 @@ if (heatMapToggle) {
             heatMapToggle.style.boxShadow = '';
         }
 
-        if (typeof renderGlobe !== 'undefined') {
+        if (renderGlobe !== undefined) {
             renderGlobe.pointColor(getPointColor);
             renderGlobe.pointAltitude(getPointAltitude); // Actualizamos también la altura
             if (heatMapMode) {
@@ -207,13 +218,27 @@ const renderGlobe = Globe()
 
 
     // Tarjeta emergente (Tooltip) que aparece al pasar el ratón por los nodos
-    .pointLabel(d => `
-        <div style="background: rgba(10, 15, 30, 0.9); padding: 10px; border-radius: 8px; border: 1px solid #4facfe; color: white; font-family: Inter, sans-serif;">
-            <b style="font-size: 14px;">${d.is_self ? i18n[currentLang].self_node_label : (d.city !== "-" && d.city !== "Unknown" ? d.city : i18n[currentLang].unknown_f)}</b><br/>
-            <i style="color: #ccc;">${d.country !== "-" && d.country !== "Unknown" ? d.country : i18n[currentLang].unknown}</i><br/>
-            <small style="color: #666; margin-top: 4px; display: block;">ID: ${d.id.substring(0, 8)}...</small>
-        </div>
-    `)
+    .pointLabel(d => {
+        let title = i18n[currentLang].unknown_f;
+        if (d.is_self) {
+            title = i18n[currentLang].self_node_label;
+        } else if (d.city !== "-" && d.city !== "Unknown") {
+            title = d.city;
+        }
+            
+        let countryLabel = i18n[currentLang].unknown;
+        if (d.country !== "-" && d.country !== "Unknown") {
+            countryLabel = d.country;
+        }
+
+        return `
+            <div style="background: rgba(10, 15, 30, 0.9); padding: 10px; border-radius: 8px; border: 1px solid #4facfe; color: white; font-family: Inter, sans-serif;">
+                <b style="font-size: 14px;">${title}</b><br/>
+                <i style="color: #ccc;">${countryLabel}</i><br/>
+                <small style="color: #666; margin-top: 4px; display: block;">ID: ${d.id.substring(0, 8)}...</small>
+            </div>
+        `;
+    })
     // Al hacer click en el punto geográfico, llamamos a la función para invocar el Modal
     .onPointClick(point => openNodeModal(point));
 
@@ -252,7 +277,11 @@ function openNodeModal(node) {
     });
 
     // 3. Ordenar BigInts de MENOR (Más cercano lógicamente) a MAYOR distancia
-    neighbors.sort((a, b) => (a.dist < b.dist ? -1 : (a.dist > b.dist ? 1 : 0)));
+    neighbors.sort((a, b) => {
+        if (a.dist < b.dist) return -1;
+        if (a.dist > b.dist) return 1;
+        return 0;
+    });
 
     // Extraer los 15 Vecinos Lógicos Más Cercanos (independientemente del país en el que estén)
     const closest15 = neighbors.slice(0, 15);
@@ -318,145 +347,160 @@ setTimeout(() => {
 
 let previousContacts = null;
 
-// A. Función que obtiene el estado general de Kad
+// A. Función que obtiene el estado general de Kad (Refactorizada para reducir complejidad)
 async function updateKadStats() {
     try {
-        // Añadimos cache-buster (?t=) para garantizar que el navegador descarga de Python y no usa memoria caché local
         const response = await fetch('/jsons/kad_stats.json?t=' + Date.now());
-
-        if (response.ok) {
-            const data = await response.json();
-
-            // Re-traducción del estado en crudo del eMule WebUI
-            let displayStatus = data.status || i18n[currentLang].unknown;
-            elStatus.classList.remove('status-connected', 'status-disconnected', 'status-firewalled');
-
-            let isDisconnected = false;
-            let isFirewalled = false;
-            if (data.status) {
-                const statusLower = data.status.toLowerCase();
-                // Importante: Chequear 'disconnect' ANTES que 'connect' porque 'disconnected' contiene ambos
-                if (statusLower.includes('disconnect') || statusLower.includes('desconectado')) {
-                    elStatus.classList.add('status-disconnected');
-                    displayStatus = i18n[currentLang].status_disconnected;
-                    isDisconnected = true;
-                } else if (statusLower.includes('firewall') || statusLower.includes('cortafuego')) {
-                    elStatus.classList.add('status-firewalled');
-                    displayStatus = i18n[currentLang].status_firewalled;
-                    isFirewalled = true;
-                } else if (statusLower.includes('connect') || statusLower.includes('conectado')) {
-                    elStatus.classList.add('status-connected');
-                    displayStatus = i18n[currentLang].status_connected;
-                }
-            }
-
-            elStatus.textContent = displayStatus;
-
-            // Bloquear botón "Nodos Activos" si Kad está desconectado
-            const btnHeatMap = document.getElementById('heatMapToggle');
-            if (btnHeatMap) {
-                if (isDisconnected) {
-                    btnHeatMap.disabled = true;
-                    btnHeatMap.style.opacity = '0.3';
-                    btnHeatMap.style.filter = 'grayscale(1)';
-                    btnHeatMap.style.cursor = 'not-allowed';
-                    btnHeatMap.title = currentLang === 'es' ? ' ❌ Función deshabilitada: Kad desconectado!' : ' ❌ Function disabled: Kad is not connected!';
-
-                    // Si el modo térmico estaba activo, lo apagamos forzosamente para evitar confusión
-                    if (heatMapMode) {
-                        heatMapMode = false;
-                        btnHeatMap.style.background = '';
-                        btnHeatMap.style.borderColor = '';
-                        btnHeatMap.style.color = '';
-                        btnHeatMap.style.boxShadow = '';
-                        if (typeof renderGlobe !== 'undefined') {
-                            renderGlobe.pointColor(getPointColor);
-                            renderGlobe.pointAltitude(getPointAltitude);
-                            renderGlobe.pointsData([...globalNodesArray]);
-                        }
-                    }
-                } else if (isFirewalled) {
-                    // Si está Firewalled, permitimos el uso pero avisamos
-                    btnHeatMap.disabled = false;
-                    btnHeatMap.style.opacity = '1';
-                    btnHeatMap.style.filter = 'none';
-                    btnHeatMap.style.cursor = 'pointer';
-                    btnHeatMap.title = currentLang === 'es' ?
-                        '⚠️ ¡Atención! Estás Tras Cortafuegos (Firewalled). La visibilidad de red puede ser limitada.' :
-                        '⚠️ Warning! You are Firewalled. Network visibility might be limited.';
-                    btnHeatMap.style.boxShadow = '0 0 10px rgba(255, 204, 0, 0.4)'; // Brillo amarillo de advertencia
-                } else {
-                    // Estado óptimo: Conectado / Abierto
-                    btnHeatMap.disabled = false;
-                    btnHeatMap.style.opacity = '1';
-                    btnHeatMap.style.filter = 'none';
-                    btnHeatMap.style.cursor = 'pointer';
-                    btnHeatMap.style.boxShadow = '';
-                    btnHeatMap.title = '';
-                }
-            }
-
-            // Lógica de historial de contactos para inyectar diferencias (+N / -N)
-            const currentContacts = parseInt(data.contacts || '0', 10);
-            elContacts.textContent = currentContacts;
-
-            if (previousContacts !== null && elContactsDiff) {
-                const diff = currentContacts - previousContacts;
-                if (diff > 0) {
-                    elContactsDiff.textContent = `(+${diff})`;
-                    elContactsDiff.style.color = '#00e676'; // Verde matrix
-                } else if (diff < 0) {
-                    elContactsDiff.textContent = `(${diff})`; // El '-' ya va incluido en diff
-                    elContactsDiff.style.color = '#ff4d4d'; // Rojo alerta
-                } else {
-                    elContactsDiff.textContent = ''; // Lo ocultamos si no han entrado nuevos
-                }
-            }
-            previousContacts = currentContacts; // Actualizamos la memoria
-
-            elSearches.textContent = data.active_searches || '0'; // Default numeric fallback
-
-            // Inyectamos las nuevas estadísticas enriquecidas (Phase 13+14)
-            if (data.kad_status) {
-                const ksLower = data.kad_status.toLowerCase();
-                let displayKadStatus = data.kad_status;
-
-                // Traducción dinámica para evitar el mix de idiomas (Phase 15 fix)
-                if (ksLower.includes('firewall')) {
-                    displayKadStatus = i18n[currentLang].status_firewalled;
-                } else if (ksLower.includes('open') || ksLower.includes('abierto')) {
-                    displayKadStatus = i18n[currentLang].status_open;
-                } else if (ksLower.includes('disconnect') || ksLower.includes('desconectado')) {
-                    displayKadStatus = i18n[currentLang].status_disconnected;
-                }
-
-                elId.textContent = displayKadStatus;
-                elIdRow.style.display = 'flex';
-            }
-            if (data.kad_overhead_session_pkts !== undefined) {
-                elOverhead.textContent = data.kad_overhead_session_pkts;
-                elOverheadRow.style.display = 'flex';
-            }
-            if (data.kad_firewalled_udp_pct !== undefined) {
-                elFwUdp.textContent = data.kad_firewalled_udp_pct;
-                elFwTcp.textContent = data.kad_firewalled_tcp_pct;
-                elFirewallRow.style.display = 'flex';
-            }
-            if (data.kad_sources_found !== undefined) {
-                elSources.textContent = data.kad_sources_found;
-                elSourcesRow.style.display = 'flex';
-            }
-
-            // Guardamos el local_id para los cálculos de buckets
-            if (data.local_id) {
-                window.localKadId = data.local_id;
-            }
-        } else {
+        if (!response.ok) {
             elStatus.textContent = `Error HTTP: ${response.status}`;
+            return;
+        }
+
+        const data = await response.json();
+        const statusFlags = updateStatusUI(data);
+
+        updateHeatmapButton(statusFlags.isDisconnected, statusFlags.isFirewalled);
+        updateContactsUI(data);
+        updateExtendedStatsUI(data);
+
+        if (data.local_id) {
+            globalThis.localKadId = data.local_id;
         }
     } catch (e) {
         elStatus.textContent = `[JS Error] ${e.message}`;
         console.warn('[!] Error obteniendo kad_stats.json:', e);
+    }
+}
+
+
+// Helpers para updateKadStats (Reducción de Complejidad Cognitiva)
+function updateStatusUI(data) {
+    let displayStatus = data.status || i18n[currentLang].unknown;
+    elStatus.classList.remove('status-connected', 'status-disconnected', 'status-firewalled');
+
+    let isDisconnected = false;
+    let isFirewalled = false;
+
+    if (data.status) {
+        const statusLower = data.status.toLowerCase();
+        if (statusLower.includes('disconnect') || statusLower.includes('desconectado')) {
+            elStatus.classList.add('status-disconnected');
+            displayStatus = i18n[currentLang].status_disconnected;
+            isDisconnected = true;
+        } else if (statusLower.includes('firewall') || statusLower.includes('cortafuego')) {
+            elStatus.classList.add('status-firewalled');
+            displayStatus = i18n[currentLang].status_firewalled;
+            isFirewalled = true;
+        } else if (statusLower.includes('connect') || statusLower.includes('conectado')) {
+            elStatus.classList.add('status-connected');
+            displayStatus = i18n[currentLang].status_connected;
+        }
+    }
+
+    elStatus.textContent = displayStatus;
+    return { isDisconnected, isFirewalled };
+}
+
+function updateHeatmapButton(isDisconnected, isFirewalled) {
+    const btnHeatMap = document.getElementById('heatMapToggle');
+    if (!btnHeatMap) return;
+
+    if (isDisconnected) {
+        disableHeatmapButton(btnHeatMap);
+    } else {
+        enableHeatmapButton(btnHeatMap, isFirewalled);
+    }
+}
+
+function disableHeatmapButton(btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.3';
+    btn.style.filter = 'grayscale(1)';
+    btn.style.cursor = 'not-allowed';
+    btn.title = currentLang === 'es' ? ' ❌ Función deshabilitada: Kad desconectado!' : ' ❌ Function disabled: Kad is not connected!';
+
+    if (heatMapMode) {
+        resetHeatmapUI(btn);
+    }
+}
+
+function resetHeatmapUI(btn) {
+    heatMapMode = false;
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    btn.style.boxShadow = '';
+    if (renderGlobe !== undefined) {
+        renderGlobe.pointColor(getPointColor);
+        renderGlobe.pointAltitude(getPointAltitude);
+        renderGlobe.pointsData([...globalNodesArray]);
+    }
+}
+
+function enableHeatmapButton(btn, isFirewalled) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.filter = 'none';
+    btn.style.cursor = 'pointer';
+    if (isFirewalled) {
+        btn.title = currentLang === 'es' ?
+            '⚠️ ¡Atención! Estás Tras Cortafuegos (Firewalled). La visibilidad de red puede ser limitada.' :
+            '⚠️ Warning! You are Firewalled. Network visibility might be limited.';
+        btn.style.boxShadow = '0 0 10px rgba(255, 204, 0, 0.4)';
+    } else {
+        btn.title = '';
+        btn.style.boxShadow = '';
+    }
+}
+
+function updateContactsUI(data) {
+    const currentContacts = Number.parseInt(data.contacts || '0', 10);
+    elContacts.textContent = currentContacts;
+
+    if (previousContacts !== null && elContactsDiff) {
+        const diff = currentContacts - previousContacts;
+        if (diff > 0) {
+            elContactsDiff.textContent = `(+${diff})`;
+            elContactsDiff.style.color = '#00e676';
+        } else if (diff < 0) {
+            elContactsDiff.textContent = `(${diff})`;
+            elContactsDiff.style.color = '#ff4d4d';
+        } else {
+            elContactsDiff.textContent = '';
+        }
+    }
+    previousContacts = currentContacts;
+    elSearches.textContent = data.active_searches || '0';
+}
+
+function updateExtendedStatsUI(data) {
+    if (data.kad_status) {
+        const ksLower = data.kad_status.toLowerCase();
+        let displayKadStatus = data.kad_status;
+
+        if (ksLower.includes('firewall')) {
+            displayKadStatus = i18n[currentLang].status_firewalled;
+        } else if (ksLower.includes('open') || ksLower.includes('abierto')) {
+            displayKadStatus = i18n[currentLang].status_open;
+        } else if (ksLower.includes('disconnect') || ksLower.includes('desconectado')) {
+            displayKadStatus = i18n[currentLang].status_disconnected;
+        }
+
+        elId.textContent = displayKadStatus;
+        elIdRow.style.display = 'flex';
+    }
+    if (data.kad_overhead_session_pkts !== undefined) {
+        elOverhead.textContent = data.kad_overhead_session_pkts;
+        elOverheadRow.style.display = 'flex';
+    }
+    if (data.kad_firewalled_udp_pct !== undefined) {
+        elFwUdp.textContent = data.kad_firewalled_udp_pct;
+        elFwTcp.textContent = data.kad_firewalled_tcp_pct;
+        elFirewallRow.style.display = 'flex';
+    }
+    if (data.kad_sources_found !== undefined) {
+        elSources.textContent = data.kad_sources_found;
+        elSourcesRow.style.display = 'flex';
     }
 }
 
@@ -467,12 +511,8 @@ let simulationInterval = null;
 
 // Función matemática base del artículo Kademlia P2P (Restamos 128-bits usando BigInt nativo de ES6)
 function getKadDistance(hex1, hex2) {
-    if (!hex1 || !hex1.match(/^[0-9a-fA-F]+$/) || !hex2 || !hex2.match(/^[0-9a-fA-F]+$/)) return BigInt(0);
-    try {
-        return BigInt('0x' + hex1) ^ BigInt('0x' + hex2);
-    } catch (e) {
-        return BigInt(0);
-    }
+    if (!hex1?.match(/^[0-9a-fA-F]+$/) || !hex2?.match(/^[0-9a-fA-F]+$/)) return BigInt(0);
+    return BigInt('0x' + hex1) ^ BigInt('0x' + hex2);
 }
 
 // B. Función que obtiene todas las ubicaciones y recrea los nodos en el globo
@@ -496,24 +536,26 @@ async function updateKadNodes() {
                     responsiveUdpArray.forEach(rn => {
                         latestUdpLatencies[rn.ip] = rn.rtt;
 
-                        // Si el nodo fresco NO está en la lista base (nodes.dat), lo inyectamos dinámicamente
                         const exists = mergedNodes.some(n => n.ip === rn.ip);
-                        if (!exists) {
+                        if (exists) {
+                            // Si existe, nos aseguramos de que tenga las propiedades de 'rn' (como is_self)
+                            const idx = mergedNodes.findIndex(n => n.ip === rn.ip);
+                            mergedNodes[idx] = { ...mergedNodes[idx], ...rn };
+                        } else {
+                            // Si el nodo fresco NO está en la lista base (nodes.dat), lo inyectamos dinámicamente
                             mergedNodes.push({
                                 ...rn,
                                 size: 0.01, // Por defecto mismo tamaño que los base
                                 isFresh: true
                             });
-                        } else {
-                            // Si existe, nos aseguramos de que tenga las propiedades de 'rn' (como is_self)
-                            const idx = mergedNodes.findIndex(n => n.ip === rn.ip);
-                            mergedNodes[idx] = { ...mergedNodes[idx], ...rn };
                         }
                     });
 
                     updateHeatmapButtonText();
                 }
-            } catch (e) { }
+            } catch (e) {
+                console.warn("UDP telemetry not available yet or error fetching:", e);
+            }
 
             globalNodesArray = mergedNodes; // Volcamos al caché global para que actúe JS al hacer Click
 
@@ -566,8 +608,8 @@ async function updateKadNodes() {
             }
 
             // Actualizar el gráfico de K-Buckets si tenemos el ID local válido
-            if (window.localKadId && window.localKadId !== "Unknown") {
-                updateKBucketsChart(mergedNodes, window.localKadId);
+            if (globalThis.localKadId && globalThis.localKadId !== "Unknown") {
+                updateKBucketsChart(mergedNodes, globalThis.localKadId);
             }
         } else {
             elMappedNodes.textContent = `HTTP ${response.status}`;
@@ -612,8 +654,12 @@ function updateKBucketsChart(nodes, localId) {
         if (bucketCounts[i] > 0) {
             // Calcular la probabilidad matemática de caer en esta cubeta (1 / 2^(128-i))
             const probPct = (1 / Math.pow(2, 128 - i)) * 100;
-            const probStr = probPct >= 1 ? `${Math.round(probPct)}%` :
-                (probPct >= 0.01 ? `${probPct.toFixed(2)}%` : `<0.01%`);
+            let probStr = "<0.01%";
+            if (probPct >= 1) {
+                probStr = `${Math.round(probPct)}%`;
+            } else if (probPct >= 0.01) {
+                probStr = `${probPct.toFixed(2)}%`;
+            }
 
             // Usamos un array para que Chart.js ponga el Bx en una línea y el % debajo
             labels.push([`B${i}`, probStr]);
@@ -627,7 +673,11 @@ function updateKBucketsChart(nodes, localId) {
         subtitleEl.textContent = `Total: ${validNodesCount} | XOR Distance`;
     }
 
-    if (!bucketsChart) {
+    if (bucketsChart) {
+        bucketsChart.data.labels = labels;
+        bucketsChart.data.datasets[0].data = dataValues;
+        bucketsChart.update();
+    } else {
         bucketsChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -670,10 +720,6 @@ function updateKBucketsChart(nodes, localId) {
                 }
             }
         });
-    } else {
-        bucketsChart.data.labels = labels;
-        bucketsChart.data.datasets[0].data = dataValues;
-        bucketsChart.update();
     }
 }
 
@@ -697,12 +743,12 @@ function simulateKadActivity(nodes) {
         const rings = [];
 
         // Simulo un máximo de 5-10 consultas concurrentes en la red
-        const numQueries = Math.floor(Math.random() * 5) + 5;
+        const numQueries = Math.floor(secureRandom() * 5) + 5;
 
         for (let i = 0; i < numQueries; i++) {
             // Elige un nodo origen y un destino al azar simulando el enrutamiento Kademlia
-            const source = nodes[Math.floor(Math.random() * nodes.length)];
-            const target = nodes[Math.floor(Math.random() * nodes.length)];
+            const source = nodes[Math.floor(secureRandom() * nodes.length)];
+            const target = nodes[Math.floor(secureRandom() * nodes.length)];
 
             if (source && target && source !== target) {
                 // Arco de Luz Saliente (Consulta FIND_NODE)
@@ -718,9 +764,9 @@ function simulateKadActivity(nodes) {
                 rings.push({
                     lat: target.lat,
                     lng: target.lng,
-                    maxR: Math.random() * 3 + 2,
-                    propagationSpeed: Math.random() * 2 + 1,
-                    repeatPeriod: 600 + Math.random() * 800
+                    maxR: secureRandom() * 3 + 2,
+                    propagationSpeed: secureRandom() * 2 + 1,
+                    repeatPeriod: 600 + secureRandom() * 800
                 });
             }
         }
@@ -744,8 +790,8 @@ function simulateKadActivity(nodes) {
 // 4. Ejecución inicial y Polling cíclico
 // Ejecuto ambas extracciones inmediatamente al cargar la página
 applyTranslations();
-updateKadStats();
-updateKadNodes();
+await updateKadStats();
+await updateKadNodes();
 
 // Repito la extracción de ambos archivos locales cada 10 segundos
 // Así "simulo" reactividad cuando mi script Python los sobreescriba

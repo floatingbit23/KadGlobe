@@ -45,9 +45,10 @@ def _color_print(*args, **kwargs):
 
 builtins.print = _color_print
 
-# CONFIGURACION
-PORT = 8000
-POLL_INTERVAL = 60 
+# Constantes de configuracion
+PORT = int(os.getenv("KADGLOBE_HTTP_PORT", 8000))
+WEBUI_PORT = int(os.getenv("WEBUI_PORT", 4712))  # aMule suele usar el 4712
+POLL_INTERVAL = 15  # aMule es mas rapido procesando peticiones
 
 class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self): 
@@ -97,7 +98,7 @@ def run_backend_cronjob():
         client_version = scraper.fetch_emule_version()
         print(f"[+] Versión del cliente: {client_version}")
 
-    round = 1 
+    round_num = 1 
     
     while True: 
         # Comprobamos si aMule sigue abierto antes de procesar
@@ -108,7 +109,7 @@ def run_backend_cronjob():
 
         try:
             success = True
-            print(f"\n[i] Escaneando estadísticas en vivo del WebUI (Ronda {round})...")
+            print(f"\n[i] Escaneando estadísticas en vivo del WebUI (Ronda {round_num})...")
             
             # Reintento de login si la sesión se perdió
             if not scraper_ready:
@@ -128,18 +129,18 @@ def run_backend_cronjob():
             else:
                 success = False
             
-            print(f"\n[i] Ejecutando ICMP Ping Sweep sobre nodos Kademlia...")
+            print("\n[i] Ejecutando ICMP Ping Sweep sobre nodos Kademlia...")
             # Nota: kad_pinger.py debe retornar un código de salida distinto de 0 en caso de fallo
             pinger_proc = subprocess.run([python_exe, "kad_pinger.py"], cwd=backend_dir, check=False)
             if pinger_proc.returncode != 0:
                 success = False
             
             if success:
-                print(f"\n[+] Telemetrías actualizadas exitosamente en ronda nº{round} ({client_version}). Próxima medición en {POLL_INTERVAL} segundos...")
+                print(f"\n[+] Telemetrías actualizadas exitosamente en ronda nº{round_num} ({client_version}). Próxima medición en {POLL_INTERVAL} segundos...")
             else:
-                print(f"\n[!] La ronda nº{round} finalizó con errores parciales. Se reintentará en {POLL_INTERVAL} segundos...")
+                print(f"\n[!] La ronda nº{round_num} finalizó con errores parciales. Se reintentará en {POLL_INTERVAL} segundos...")
                 
-            round += 1
+            round_num += 1
             
         except Exception as e:
             print(f"[!] Error de ejecución en el daemon thread: {e}")
@@ -167,4 +168,4 @@ if __name__ == "__main__":
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print(f"\n[*] Recibida orden de apagado. Cerrando el servidor...")
+            print("\n[*] Recibida orden de apagado. Cerrando el servidor...")

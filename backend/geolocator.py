@@ -2,6 +2,7 @@
 Módulo para coordinar la traducción de las IPs que extraemos de `nodes.dat` en coordenadas geográficas reales de latitud y longitud. 
 Utiliza la librería IP2Location y la base de datos local DB5 LITE.
 """
+import math
 import os
 import json
 import IP2Location 
@@ -128,7 +129,7 @@ class KadGeolocator:
             loc = self.get_location(node['ip']) # Obtengo la información de la IP
             
             # Solo guardamos nodos con coordenadas válidas (que no sean 0,0)
-            if loc and (loc['lat'] != 0.000000 or loc['lng'] != 0.000000):
+            if loc and (not math.isclose(loc['lat'], 0.0) or not math.isclose(loc['lng'], 0.0)):
 
                 geospatial_nodes.append({ # Añadimos los nodos con su información geográfica a la lista
                     "id": node['id'], # ID de la IP

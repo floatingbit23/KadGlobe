@@ -94,11 +94,15 @@ To use KadGlobe, you must ensure the following requirements are met:
     ```bash
     pip install -r requirements.txt
     ```
-3.  **Environment Variables**: Configure the `.env` file (you can copy `.env.windows.example` or `.env.linux.example` depending on your OS) with your local paths:
-    *   `ADMIN_PASS`: Your eMule WebUI password.
-    *   `WEBUI_PORT`: (Optional) The Web interface port (defaults to `4711`).
-    *   `EMULE_NODES_DAT_PATH`: Full path to your `nodes.dat` file.
-    *   `IP2LOCATION_DB_PATH`: Path to the IP2Location `.BIN` database file.
+3.  **Environment Variables**: Configure the `.env` file (you can copy from `.env.windows.example` or `.env.linux.example` depending on your system) to customize behavior:
+    *   `ADMIN_PASS`: The password you set in the eMule WebUI.
+    *   `KADGLOBE_HTTP_PORT`: (Optional) The port where you will view the map (default `8000`).
+    *   `WEBUI_PORT`: (Optional) The eMule/aMule WebUI port (default `4711` for eMule, `4712` for aMule).
+    *   `EMULE_KAD_UDP_PORT`: (Optional) Your Kademlia network UDP port (default `16005`).
+    *   `IP2LOCATION_DB_PATH`: Path to the IP2Location `.BIN` database for geolocation.
+    *   `EMULE_NODES_DAT_PATH`: (Optional) Path to your `nodes.dat`. If left empty, it will attempt auto-detection.
+    *   `EMULE_KEY_INDEX_PATH`: (Optional) Path to `key_index.dat`. Only needed to force your exact KadID in the UI (pinger auto-detects it via UDP).
+
 
 ![alt text](images/files.png)
 ![alt text](images/database.png)
