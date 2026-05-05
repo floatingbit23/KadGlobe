@@ -2,8 +2,7 @@
 # ========================================================
 #       KadGlobe Provisioning / Configurador Inicial
 # ========================================================
-# Este script automatiza la instalación de dependencias,
-# prepara la estructura de carpetas y gestiona la BBDD.
+# Este script automatiza la instalación de dependencias, prepara la estructura de carpetas y gestiona la BBDD.
 
 echo "========================================="
 echo "      KadGlobe: Sistema de Configuración"

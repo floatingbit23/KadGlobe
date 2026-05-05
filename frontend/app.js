@@ -225,7 +225,7 @@ const renderGlobe = Globe()
         } else if (d.city !== "-" && d.city !== "Unknown") {
             title = d.city;
         }
-            
+
         let countryLabel = i18n[currentLang].unknown;
         if (d.country !== "-" && d.country !== "Unknown") {
             countryLabel = d.country;
@@ -509,10 +509,11 @@ let globalNodesArray = [];
 let selectedNode = null;
 let simulationInterval = null;
 
-// Función matemática base del artículo Kademlia P2P (Restamos 128-bits usando BigInt nativo de ES6)
+// Función matemática base (XOR distance) del artículo Kademlia P2P (Restamos 128-bits usando BigInt nativo de ES6)
 function getKadDistance(hex1, hex2) {
+    // Si no son válidos, devolvemos distancia 0
     if (!hex1?.match(/^[0-9a-fA-F]+$/) || !hex2?.match(/^[0-9a-fA-F]+$/)) return BigInt(0);
-    return BigInt('0x' + hex1) ^ BigInt('0x' + hex2);
+    return BigInt('0x' + hex1) ^ BigInt('0x' + hex2); // ^ representa el operador XOR
 }
 
 // B. Función que obtiene todas las ubicaciones y recrea los nodos en el globo

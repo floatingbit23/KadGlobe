@@ -155,7 +155,7 @@ class KadGeolocator:
                 json.dump(geospatial_nodes, f, indent=4, ensure_ascii=False) # Guardo los nodos en el archivo JSON
             
             print(f"\n[+] ¡Éxito! Se han guardado {len(geospatial_nodes)} nodos geolocalizados en '{output_file}'.")
-            print(f"[!] Se han descartado {wasted_nodes} nodos.\n")
+            print(f"[!] Se han descartado {wasted_nodes} nodos tras no poder geolocalizar sus IPs.\n")
         
         except Exception as e: 
             print(f"[!] Error al guardar el archivo JSON: {e}")

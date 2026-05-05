@@ -96,7 +96,7 @@ CATEGORY_TIMEOUT    = "TIMEOUT"      # Sin respuesta (nodo apagado, IP cambió, 
 CATEGORY_ERROR      = "NET_ERROR"    # Error de red inesperado
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Fase 1: Descubrimiento de nodos frescos via Bootstrap
+# Fase 1: Descubrimiento de nodos "frescos" via Bootstrap
 # ─────────────────────────────────────────────────────────────────────────────
 
 def send_bootstrap_req(ip, port, timeout=TIMEOUT_S):
@@ -305,7 +305,8 @@ def udp_ping_node(node):
                 "city": node.get("city", "Unknown"),
                 "country": node.get("country", ""),
                 "country_code": node.get("country_code", "unknown"),
-                "rtt": rtt_ms
+                "rtt": rtt_ms,
+                "kad_version": node.get("kad_version", 0)
             }
             return (result, CATEGORY_PONG, f"RTT={rtt_ms}ms")
         
@@ -335,7 +336,8 @@ def udp_ping_node(node):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def ping_all_nodes():
-    print("\n[i] Ejecutando Kad UDP Probe (Modo Inteligente RTT-Selection)...")
+
+    print("\n[i] Ejecutando Kad UDP Probe (Modo Inteligente, RTT-Selection)...")
     
     # 1. Seed inicial (eMule local)
     print(f"[*] Fase 1: Solicitando semilla al eMule local (127.0.0.1:{EMULE_LOCAL_UDP_PORT})...")
@@ -381,7 +383,8 @@ def ping_all_nodes():
     if fastest_leaders:
         print(f"[+] Líderes de expansión seleccionados (Top {len(fastest_leaders)} por RTT):")
         for l in fastest_leaders:
-            print(f"    - {l['ip']} (RTT: {l['rtt']}ms)")
+            kv = l.get('kad_version', '?')
+            print(f"    - {l['ip']} (RTT: {l['rtt']}ms, KadV: {kv})")
     else:
         print("[!] Ningún nodo de la semilla respondió al ping inicial. Usando fallback aleatorio.")
         # Usamos secrets para una selección segura (Best Practice)
@@ -407,18 +410,24 @@ def ping_all_nodes():
             "is_self": True,
             "client_id": dynamic_id or "fca7f58bab6d4199d227ea423f9a8155" # ID dinámico o fallback
         })
-        print(f"\n[+] Identidad confirmada para: {my_ip} (Pilar destacado)")
+        short_id = all_discovered[my_ip]["client_id"][:16] + "..."
+        print(f"\n[+] Identidad confirmada para: {my_ip} (ID: {short_id}) (Pilar destacado)")
     
     print("\n[*] Fase 3: Expandiendo horizonte vía los líderes más rápidos...")
     for leader in fastest_leaders:
-        remote_contacts, _, _ = send_bootstrap_req(leader['ip'], leader['udp_port'], timeout=2.0)
+        remote_contacts, _, sender_ver = send_bootstrap_req(leader['ip'], leader['udp_port'], timeout=2.0)
+        
+        # Actualizamos la versión real del líder (ya que el PONG no la da, pero el Bootstrap RES sí)
+        if sender_ver and leader['ip'] in all_discovered:
+            all_discovered[leader['ip']]['kad_version'] = sender_ver
+
         new_found = 0
         for rc in remote_contacts:
             if rc['ip'] not in all_discovered:
                 all_discovered[rc['ip']] = rc
                 new_found += 1
         if new_found > 0:
-            print(f"    [+] {leader['ip']} entregó {new_found} nuevos vecinos.")
+            print(f"    [+] {leader['ip']} (KadV: {sender_ver or '?'}) entregó {new_found} nuevos vecinos.")
 
     # 4. Fase de Sondeo Final
     new_nodes = [n for n in all_discovered.values() if 'category' not in n]
@@ -452,6 +461,7 @@ def ping_all_nodes():
                 "country": n.get("country", "Unknown"),
                 "country_code": n.get("country_code", "unknown"),
                 "rtt": n["rtt"],
+                "kad_version": master_data.get("kad_version", 0),
                 "is_self": master_data.get("is_self", False),
                 "is_fresh": True
             })
