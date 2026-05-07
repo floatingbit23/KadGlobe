@@ -23,6 +23,7 @@ if sys.version_info < (3, 7):
 
 # Importamos el scraper para usar sesiones persistentes (evita miles de logins en eMule)
 from backend.kadglobe_scraper import EMuleWebScraper 
+from backend.ids_engine import KadIDSEngine
 from dotenv import load_dotenv
  
 load_dotenv() # Carga las variables de entorno del archivo .env
@@ -59,7 +60,16 @@ if not getattr(builtins.print, "_kadglobe_logging", False):
     builtins.print = _color_print
 
 def atomic_write_json(path, data):
-    """Escribe un JSON de forma segura usando un archivo temporal."""
+    """
+    Escribe un JSON de forma segura usando un archivo temporal.
+
+    Args:
+        path (str): Ruta final del archivo.
+        data (dict): Diccionario de datos a escribir.
+
+    Returns:
+        bool: True si la operación fue exitosa, False en caso contrario.
+    """
     temp_path = path + ".tmp"
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -134,7 +144,12 @@ class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def is_emule_running():
-    # Detectamos si eMule (Windows) o aMule (Linux) está corriendo para sincronizar el apagado
+    """
+    Detecta si eMule (Windows) o aMule (Linux) está corriendo para sincronizar el apagado.
+
+    Returns:
+        bool: True si el proceso está activo o si hay error al detectarlo (por seguridad), False si no está corriendo.
+    """
     try:
         if os.name == 'nt':
             # Comprobamos emule.exe en Windows
@@ -148,6 +163,11 @@ def is_emule_running():
         return True # En caso de error en el comando, asumimos que sigue activo
 
 def run_backend_cronjob():
+    """
+    Orquestador principal que ejecuta las tareas de scraping, pinging y análisis IDS en bucle.
+    Mantiene la sesión persistente con el WebUI de eMule y actualiza los archivos JSON de telemetría.
+    """
+    
     backend_dir = os.path.join(os.path.dirname(__file__), 'backend')
     python_exe = sys.executable
 
@@ -164,6 +184,9 @@ def run_backend_cronjob():
     ip_address = os.getenv("IP_ADDRESS", "127.0.0.1")
     webui_port = int(os.getenv("WEBUI_PORT", 4711))
     scraper = EMuleWebScraper(host=ip_address, port=webui_port, password=admin_pass)
+    
+    # Inicializamos el motor IDS
+    ids_engine = KadIDSEngine()
     
     # Intento de login inicial
     scraper_ready = scraper.login()
@@ -214,7 +237,39 @@ def run_backend_cronjob():
                 success = False
             
             if success:
+
+                print("\n[i] Ejecutando motor de detección de intrusiones (IDS)...")
+
+                try:
+
+                    # Cargamos los nodos geolocalizados y los nodos UDP para el análisis
+                    nodes_path = os.path.join(os.path.dirname(__file__), "jsons", "kad_nodes_geospatial.json")
+                    udp_nodes_path = os.path.join(os.path.dirname(__file__), "jsons", "kad_udp_responsive_nodes.json")
+                    
+                    nodes = []
+                    udp_nodes = []
+                    
+                    # Comprueba que los archivos existen y los carga
+
+                    if os.path.exists(nodes_path):
+                        with open(nodes_path, 'r', encoding='utf-8') as f:
+                            nodes = json.load(f)
+                    
+                    if os.path.exists(udp_nodes_path):
+                        with open(udp_nodes_path, 'r', encoding='utf-8') as f:
+                            udp_nodes = json.load(f)
+                    
+                    # Ejecutamos el análisis IDS
+                    ids_engine.analyze(stats, nodes, udp_nodes)
+
+                    print("[+] Análisis IDS completado exitosamente.")
+
+                except Exception as e:
+                    print(f"[!] Error durante el análisis IDS: {e}")
+
+
                 print(f"\n[+] Telemetrías actualizadas exitosamente en ronda nº{round_num} ({client_version}). Próxima medición en {POLL_INTERVAL} segundos...")
+            
             else:
                 print(f"\n[!] La ronda nº{round_num} finalizó con errores parciales. Se reintentará en {POLL_INTERVAL} segundos...")
             

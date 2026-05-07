@@ -33,3 +33,6 @@ eMule.tmpl
 .vscode/
 node_modules/
 dist/
+
+# AI
+.planning/
