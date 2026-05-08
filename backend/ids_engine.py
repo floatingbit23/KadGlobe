@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+import statistics
 from . import kad_utils
 
 class KadIDSEngine:
@@ -101,6 +102,8 @@ class KadIDSEngine:
         Convierte representaciones textuales de eMule (ej: '14.24 k', '1.2 M')
         en enteros (bytes) para permitir operaciones matemáticas en el motor.
 
+        Ejemplo: "150 k" (kilobytes) -> 150000 (bytes)
+
         Args:
             overhead_str (str): Cadena de texto con el tráfico (ej. "150 k").
 
@@ -139,20 +142,23 @@ class KadIDSEngine:
             return 0
 
 
-    def _update_history(self, stats):
+    def _update_history(self, stats, bucket_counts=None):
         """
         Gestiona la serie temporal de datos con una ventana deslizante.
 
         Args:
             stats (dict): Estadísticas actuales del cliente.
+            bucket_counts (dict, optional): Distribución actual de nodos por bucket.
         """
 
         entry = {
             "timestamp": datetime.now().isoformat(), # Marca temporal del registro
             "contacts": stats.get("contacts", 0), # Número de contactos
-            "overhead": self._parse_overhead(stats.get("kad_overhead_session_pkts", "0")), # Overhead en bytes
-            "active_searches": stats.get("active_searches", 0) # Número de búsquedas activas
+            "overhead": self._parse_overhead(stats.get("kad_overhead_session_pkts", "0")), # Overhead (en bytes), es decir, tráfico de control de la red Kad
+            "active_searches": stats.get("active_searches", 0), # Número de búsquedas activas
+            "bucket_counts": bucket_counts or {} # Distribución de buckets (para detección de Poisoning)
         }
+        
         self.history.append(entry)
         
         # Mantiene el historial bajo el límite definido (60 muestras)
@@ -175,14 +181,14 @@ class KadIDSEngine:
             nodes (list): Lista de nodos geolocalizados.
 
         Returns:
-            tuple: (list de alertas, float p_value_placeholder)
+            tuple: (list de alertas, float p_value_placeholder, dict bucket_counts)
         """
 
         # KadID local
         local_id = stats.get("local_id")
 
         if not local_id or not nodes:
-            return [], 1.0
+            return [], 1.0, {}
 
         total_nodes = len(nodes) # Total de nodos 
 
@@ -327,7 +333,208 @@ class KadIDSEngine:
         # Retornamos p-value simplificado (0.001 si chi_cuadrado (chi_sq) es muy alto)
         p_val = 0.001 if chi_sq > 168 else 1.0
 
-        return alerts, p_val
+        return alerts, p_val, observed
+
+
+    def _detect_poisoning(self, stats, bucket_counts):
+
+        """
+        Detector de Routing Table Poisoning.
+        
+        Identifica buckets con una población inusualmente alta comparándolos con el resto 
+        de la tabla actual (Local) y con su propio historial (Temporal).
+        
+        Args:
+            stats (dict): Estadísticas actuales -> Estructura: {'local_id': '...','contacts': 100...}.
+            bucket_counts (dict): Conteo de nodos por bucket -> Estructura: {bucket_index: node_count}.
+            
+        Returns:
+            list: Lista de alertas de Poisoning encontradas.
+        """
+        
+        alerts = []
+
+        if not bucket_counts:
+            return []
+
+        # 1. Análisis Local
+        # Compara el número de nodos en cada bucket contra la media y desviación del conjunto actual
+        
+        counts = list(bucket_counts.values())
+
+        # Si hay al menos dos buckets
+        if len(counts) > 1:
+
+            # Calculamos la media y la desviación estándar de los nodos en los buckets
+            local_mean = statistics.mean(counts)
+            local_std = statistics.stdev(counts) if len(counts) > 1 else 0
+            
+            # Recorremos los buckets
+            for bucket_idx, count in bucket_counts.items():
+
+                # Filtro de población mínima en el bucket
+                if count < 5: 
+                    continue
+                    
+                # Z-score local
+                z_local = kad_utils.z_score(count, local_mean, local_std)
+
+                # 2. Análisis Temporal
+                # Compara el número de nodos en este bucket contra su propio historial
+
+                historical_counts = []
+
+                for entry in self.history:
+
+                    # Notar que las claves en JSON son strings
+                    b_hist = entry.get("bucket_counts", {})
+
+                    # Obtenemos el conteo del bucket histórico
+                    historical_counts.append(b_hist.get(str(bucket_idx), b_hist.get(bucket_idx, 0)))
+                
+                z_temporal = 0
+
+                # Si hay al menos 8 muestras históricas para calcular la desviación
+                if len(historical_counts) > 8: 
+                    
+                    # Media y desviación estándar de la historia del bucket
+                    temp_mean = statistics.mean(historical_counts)
+
+                    # Usamos un floor de 0.5 para evitar el bloqueo por estabilidad perfecta
+                    temp_std = max(statistics.stdev(historical_counts), 0.5) if len(historical_counts) > 1 else 0.5
+                    
+                    # Z-score temporal
+                    z_temporal = kad_utils.z_score(count, temp_mean, temp_std)
+                
+                # 3. Evaluación de Severidad
+
+                # Tomamos el máximo Z-score entre local y temporal
+                max_z = max(z_local, z_temporal)
+                
+                # Evaluamos si hay anomalía
+                if max_z > 2.0:
+                    # Definimos la severidad
+                    severity = "critical" if max_z > 4.0 else "warning"
+                    
+                    # Añadimos la alerta
+                    alerts.append({
+                        "type": "poisoning",
+                        "severity": severity,
+                        "title_es": "Envenenamiento de Bucket detectado" if severity == "critical" else "Población anómala en bucket",
+                        "title_en": "Bucket Poisoning detected" if severity == "critical" else "Anomalous bucket population",
+                        "detail_es": f"Bucket {bucket_idx} tiene {count} nodos (Z-Score: {max_z:.2f}).",
+                        "detail_en": f"Bucket {bucket_idx} has {count} nodes (Z-Score: {max_z:.2f}).",
+                        "indicator": {"bucket": bucket_idx, "count": count, "z_score": max_z},
+                        "recommendation_es": "Alerta de envenenamiento masivo. El tráfico de búsqueda hacia estos IDs podría estar siendo interceptado.",
+                        "recommendation_en": "Massive poisoning alert. Search traffic towards these IDs might be intercepted."
+                    })
+        
+        return alerts
+
+
+    def _detect_dos(self):
+
+        """
+        Detector de Lookup DoS e inundación de tráfico.
+        Analiza la tasa de cambio del Overhead (tráfico de control de la red Kad) y la compara con la media histórica para detectar anomalías de volumen.
+        
+        Returns:
+            list: Lista de alertas de DoS encontradas.
+        """
+        
+        alerts = []
+        
+        if len(self.history) < 3:
+            return []
+
+        # 1. Cálculo de deltas (tasas de cambio)
+        # Necesitamos calcular el salto de overhead entre muestras consecutivas
+        rates = []
+
+        for i in range(1, len(self.history)):
+            
+            prev = self.history[i-1].get("overhead", 0)
+            curr = self.history[i].get("overhead", 0)
+            
+            delta = curr - prev
+            
+            # Si el delta es negativo, asumimos reinicio de eMule y usamos 0
+            rates.append(max(delta, 0))
+
+        if not rates:
+            return []
+
+        tasa_actual = rates[-1]
+        active_searches = self.history[-1].get("active_searches", 0)
+
+        # 2. Análisis de Tendencia (Media de las últimas 20 muestras)
+        # Tomamos las últimas 20 tasas (sin contar la actual) para la referencia
+        ref_rates = rates[-21:-1] if len(rates) > 1 else []
+        
+        if len(ref_rates) >= 5: # Necesitamos un mínimo de datos para que la media sea fiable
+
+            ref_mean = statistics.mean(ref_rates)
+            
+            # Suelo de 100 bytes para evitar alertas por ruidos mínimos en redes muy inactivas
+            ref_mean = max(ref_mean, 100) 
+            
+            ratio = tasa_actual / ref_mean
+
+            # Solo alertamos si NO hay búsquedas activas significativas que justifiquen el tráfico
+            if active_searches < 3:
+
+                if ratio > 10.0:
+                    severity = "critical"
+                elif ratio > 3.0:
+                    severity = "warning"
+                else:
+                    severity = None
+
+                if severity:
+                    alerts.append({
+                        "type": "dos",
+                        "severity": severity,
+                        "title_es": "Ataque DoS Detectado" if severity == "critical" else "Tráfico de control anómalo",
+                        "title_en": "DoS Attack Detected" if severity == "critical" else "Anomalous control traffic",
+                        "detail_es": f"El overhead está creciendo a una tasa de {tasa_actual} bytes ({ratio:.1f}x la media).",
+                        "detail_en": f"Overhead is growing at a rate of {tasa_actual} bytes ({ratio:.1f}x mean).",
+                        "indicator": {"rate": tasa_actual, "ratio": ratio, "searches": active_searches},
+                        "recommendation_es": "Se ha detectado una inundación de peticiones Kad. El nodo podría estar bajo un ataque de denegación de servicio.",
+                        "recommendation_en": "A flood of Kad requests has been detected. The node might be under a denial of service attack."
+                    })
+
+        # 3. Detector de Crecimiento Exponencial (Sostenido por 2 saltos consecutivos)
+        # Si la tasa se dobla en cada ciclo: Muestra_N > 2*Muestra_N-1 > 4*Muestra_N-2
+        if len(rates) >= 3 and active_searches < 3:
+
+            m1 = rates[-3]
+            m2 = rates[-2]
+            m3 = rates[-1]
+
+            # Solo analizamos si el tráfico es significativo (> 500 bytes de delta)
+            if m1 > 500 and m2 / m1 > 2.0 and m3 / m2 > 2.0:
+
+                # Si ya hay una alerta de DoS por ratio, no duplicamos, pero subimos severidad
+                existing_dos = [a for a in alerts if a["type"] == "dos"]
+                
+                if not existing_dos:
+                    alerts.append({
+                        "type": "dos",
+                        "severity": "critical",
+                        "title_es": "Crecimiento Exponencial de Tráfico",
+                        "title_en": "Exponential Traffic Growth",
+                        "detail_es": "El tráfico Kad está escalando de forma exponencial sin búsquedas activas.",
+                        "detail_en": "Kad traffic is scaling exponentially without active searches.",
+                        "indicator": {"m1": m1, "m2": m2, "m3": m3},
+                        "recommendation_es": "Alerta crítica: El volumen de paquetes Kad está explotando. Posible inundación masiva.",
+                        "recommendation_en": "Critical alert: Kad packet volume is exploding. Possible massive flood."
+                    })
+                else:
+                    # Si ya existe, nos aseguramos que sea critical
+                    existing_dos[0]["severity"] = "critical"
+                    existing_dos[0]["detail_es"] += " Detectado crecimiento exponencial."
+
+        return alerts
 
 
     # Función principal
@@ -348,18 +555,22 @@ class KadIDSEngine:
             dict: Diccionario con las alertas y estadísticas actualizadas
         """
 
-        # Actualiza el historial con las estadísticas actuales
-        self._update_history(stats)
-        
+        # Fase 1: Análisis de Sybil/Eclipse
+        eclipse_alerts, chi_p, bucket_counts = self._detect_eclipse(stats, nodes)
+
         alerts = []
-        
-        # --- Fase 1: Detector Sybil/Eclipse ---
-
-        # Realizamos el análisis de Sybil/Eclipse
-        eclipse_alerts, chi_p = self._detect_eclipse(stats, nodes)  # chi_p es el p-value simplificado
-
-
         alerts.extend(eclipse_alerts) # Agregamos las alertas de Sybil/Eclipse
+
+        # Fase 2: Detector de Poisoning
+        poisoning_alerts = self._detect_poisoning(stats, bucket_counts)
+        alerts.extend(poisoning_alerts)
+
+        # Fase 3: Monitor de Lookup DoS
+        dos_alerts = self._detect_dos()
+        alerts.extend(dos_alerts)
+
+        # Actualiza el historial con las estadísticas actuales y la distribución de buckets
+        self._update_history(stats, bucket_counts)
         
         # Lógica de Severidad Global con Cooldown de 3 ciclos (90 segundos)
         current_max_severity = "ok"
@@ -400,7 +611,7 @@ class KadIDSEngine:
             "stats": {
                 "chi_squared_p_value": chi_p,
                 "contacts_cv": 0.0,
-                "overhead_rate": 0.0
+                "overhead_rate": self.history[-1].get("overhead", 0) - self.history[-2].get("overhead", 0) if len(self.history) > 1 else 0.0
             }
         }
         
