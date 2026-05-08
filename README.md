@@ -67,9 +67,12 @@ El proyecto se divide en un backend de orquestación y un frontend de visualizac
 
 ![alt text](images/ranking.png)
 
-*   **Distribución K-Buckets**: Un histograma que muestra cuántos "contactos" (nodos) tienes en cada "cubo" de enrutamiento (distancia XOR 0-128). Es normal ver más nodos en los buckets lejanos (122-128) y muy pocos en los cercanos (<=121).
+*   **Distribución K-Buckets**: Un histograma que muestra cuántos "contactos" (nodos) tienes en cada "cubo" (_bucket_) de enrutamiento (distancia XOR $0-127$). Es normal ver más nodos en los buckets lejanos ($B0$, $B1$, etc.) y muy pocos en los cercanos ($B123$ a $B127$).
 
 ![alt text](images/kbuckets.png)
+
+> Nota: Ten en cuenta que la probabilidad de que un nodo caiga en $B0$ es 50%, en $B1$ es 25%, en $B2$ es 12.5%, etc. Por eso virtualmente no verás nodos en los buckets más cercanos (la probabilidad es ínfima). La fórmula es: 
+$$P(Bi) = \frac{1}{2^{i+1}}$$
 
 *   **Top 10 Vecindario XOR**: Al hacer clic en un nodo, se muestra una ventana con su IP, su ubicación y  su Kad ID. También se se calculan sus 10 vecinos más cercanos criptográficamente (distancia XOR) y se trazan arcos dorados de conexión.
 

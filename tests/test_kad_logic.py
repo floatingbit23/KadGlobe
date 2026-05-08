@@ -17,13 +17,13 @@ def test_xor_logic():
     Funciones: get_kad_distance(), get_kad_bucket()
     """
     id_self = "00000000000000000000000000000000"
-    id_far  = "80000000000000000000000000000000" # MSB diferente -> Bucket 127
-    id_near = "00000000000000000000000000000001" # LSB diferente -> Bucket 0
+    id_far  = "80000000000000000000000000000000" # MSB diferente -> Bucket 0 (lejano)
+    id_near = "00000000000000000000000000000001" # LSB diferente -> Bucket 127 (cercano)
     
-    assert get_kad_bucket(id_self, id_far) == 127
-    assert get_kad_bucket(id_self, id_near) == 0
+    assert get_kad_bucket(id_self, id_far) == 0
+    assert get_kad_bucket(id_self, id_near) == 127
     assert get_kad_distance(id_self, id_self) == 0
-    assert get_kad_bucket(id_self, id_self) == 0
+    assert get_kad_bucket(id_self, id_self) == 127
 
 # 2. Verificar robustez del parser de nodes.dat
 def test_parser_robustness(tmp_path):

@@ -66,10 +66,12 @@ The project is built with a robust Python backend and a premium web-based fronte
 
 ![alt text](images/ranking.png)
 
-*   **K-Buckets Distribution**: A histogram showing how many contacts you have in each routing "bucket" (XOR distance 0-128).
+*   **K-Buckets Distribution**: A histogram showing how many contacts (nodes) you have in each routing "bucket" (XOR distance $0-127$). It is expected to see more contacts in far buckets ($B0$, $B1$, etc.) and very few in near ones ($B123$ to $B127$).
 
 ![alt text](images/kbuckets.png)
 
+> Note: Keep in mind that the probability of a node falling into $B0$ is 50%, into $B1$ is 25%, into $B2$ is 12.5%, etc. Therefore, you will virtually never see nodes in the nearest buckets (the probability is infinitesimal). The formula is: 
+$$P(Bi) = \frac{1}{2^{i+1}}$$
 
 *   **Top 10 XOR Neighborhood**: Clicking a node calculates its 10 mathematically closest neighbors and traces golden connection arcs.
 

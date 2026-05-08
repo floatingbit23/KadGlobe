@@ -634,10 +634,9 @@ function updateKBucketsChart(nodes, localId) {
         const dist = getKadDistance(localId, node.id);
         if (dist === 0n) return; // Somos nosotros o misma ID
 
-        // El bucket es la posición del bit más significativo (log2)
-        // En JS con BigInt: toString(2).length - 1
-        const bucketIndex = dist.toString(2).length - 1;
-        if (bucketIndex >= 0 && bucketIndex <= 128) {
+        // El bucket es (127 - log2(dist)) para que B0 sea el más lejano
+        const bucketIndex = 127 - (dist.toString(2).length - 1);
+        if (bucketIndex >= 0 && bucketIndex <= 127) {
             bucketCounts[bucketIndex]++;
         }
     });
@@ -651,10 +650,10 @@ function updateKBucketsChart(nodes, localId) {
     const dataValues = [];
     let validNodesCount = 0;
 
-    for (let i = 0; i <= 128; i++) {
+    for (let i = 0; i <= 127; i++) {
         if (bucketCounts[i] > 0) {
-            // Calcular la probabilidad matemática de caer en esta cubeta (1 / 2^(128-i))
-            const probPct = (1 / Math.pow(2, 128 - i)) * 100;
+            // Probabilidad invertida: B0 = 50%, B1 = 25%...
+            const probPct = (1 / Math.pow(2, i + 1)) * 100;
             let probStr = "<0.01%";
             if (probPct >= 1) {
                 probStr = `${Math.round(probPct)}%`;

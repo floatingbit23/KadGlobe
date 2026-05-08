@@ -16,14 +16,25 @@ def get_kad_distance(id1_hex, id2_hex):
 def get_kad_bucket(id1_hex, id2_hex):
     """
     Calcula el K-Bucket (0-127) para una distancia dada. Corresponde a la posición del bit más significativo del XOR.
+
+    El k-bucket B0 es para las IDs más lejanas, en las que el primer bit (Most Significant Bit) ya es diferente.
+    El k-bucket B127 es para las IDs más cercanas, en las que solo el último bit (Least Significant Bit) es diferente.
     """
     distance = get_kad_distance(id1_hex, id2_hex)
-    if distance is None or distance == 0:
-        return 0
+
+    # Si la distancia es None, retorna bucket B127 (corresponde a IDs casi iguales -> distancia = 0)
+    if distance is None:
+        return 127
     
-    # En Python, bit_length() devuelve la posición del bit más alto (1-based)
-    # El bucket 0 es distancia 1 (bit_length 1), el 127 es bit_length 128.
-    return distance.bit_length() - 1
+    # Calcula la posición del bit más significativo del XOR
+    bit_pos = distance.bit_length() - 1
+    
+    # Caso especial para distancia = 0
+    if bit_pos < 0: 
+        bit_pos = 0 
+
+    # Invierte la posición para obtener el índice del bucket (0-127)
+    return 127 - bit_pos
 
 
 def chi_squared_buckets(observed, expected): 

@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from . import kad_utils
 
 class KadIDSEngine:
     """
@@ -160,6 +161,175 @@ class KadIDSEngine:
         
         self._save_history()
 
+
+    def _detect_eclipse(self, stats, nodes):
+
+        """
+        Detector de Ataques Sybil/Eclipse.
+        
+        Analiza la distribución de buckets y la proximidad de IDs para identificar
+        intentos de aislamiento del nodo o inundación de identidades falsas.
+
+        Args:
+            stats (dict): Estadísticas del cliente (debe contener 'local_id').
+            nodes (list): Lista de nodos geolocalizados.
+
+        Returns:
+            tuple: (list de alertas, float p_value_placeholder)
+        """
+
+        # KadID local
+        local_id = stats.get("local_id")
+
+        if not local_id or not nodes:
+            return [], 1.0
+
+        total_nodes = len(nodes) # Total de nodos 
+
+        observed = {} # Diccionario para contar nodos observados en cada bucket
+        proximity_buckets = [117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127] # Zona de riesgo (ahora en índices altos)
+        proximity_count = 0 # Contador de nodos en buckets cercanos
+
+        subnet_groups = {} # Diccionario para agrupar nodos por subred
+        
+        # 1. Clasificación de nodos por bucket y subred
+        for node in nodes:
+
+            node_id = node.get("id")
+            node_ip = node.get("ip", "")
+            
+            if not node_id:
+                continue
+            
+            # Calcula el bucket al que pertenece el nodo
+            bucket = kad_utils.get_kad_bucket(local_id, node_id)
+
+            # Cuenta cuántos nodos hay en cada bucket
+            observed[bucket] = observed.get(bucket, 0) + 1
+            
+            # Conteo de proximidad a la zona de riesgo
+            if bucket in proximity_buckets:
+                proximity_count += 1
+                
+            # Agrupación por subred /24 en buckets cercanos (B117-B127)
+            if bucket >= 117 and node_ip:
+
+                """
+                La subred /24 es la "huella dactilar" de una ubicación física o un servidor específico. 
+                Si vemos una concentración de nodos ahí, es casi seguro que se trata de un ataque desde una granja de servidores o una infraestructura controlada.
+                """
+
+                # Por ejemplo: "200.74.56.12" se convierte en "200.74.56"
+                subnet = ".".join(node_ip.split(".")[:3])
+                
+                # Si el bucket no existe, se crea
+                if bucket not in subnet_groups:
+                    subnet_groups[bucket] = {}
+
+                # Cuenta cuántos nodos hay en cada subred
+                subnet_groups[bucket][subnet] = subnet_groups[bucket].get(subnet, 0) + 1
+
+        # 2. Cálculo de distribución esperada P(bucket_i) = 1/2^(i+1)
+        expected = {}
+
+        """
+        Probabilidad de que un nodo caiga en cada bucket:
+        B0 (lejano) = 0.5 (50% de los nodos estarán en el bucket B0)
+        B1 (medio) = 0.25 (25% de los nodos estarán en el bucket B1)
+        B2 (medio-lejano) = 0.125 (12.5% de los nodos estarán en el bucket B2)
+        B3 (medio-lejano) = 0.0625 (6.25% de los nodos estarán en el bucket B3)
+        ...
+        ...
+        B127 (cercano) ~ 0 (0% de los nodos estarán en el bucket B127)
+        """
+
+        # Recorre los 128 buckets y calcula la probabilidad de que cada uno tenga un nodo
+        for i in range(128):
+            prob = 1.0 / (2**(i+1)) # Probabilidad teórica de que un nodo caiga en el bucket i
+            expected[i] = total_nodes * prob # Número esperado de nodos en el bucket i
+
+        # 3. Test Chi-cuadrado
+
+        chi_sq = kad_utils.chi_squared_buckets(observed, expected)
+        
+        alerts = []
+        
+        """
+        Como tenemos 128 buckets, los grados de libertad (GL) son 127.
+        Un $p < 0.01$ significa que hay menos de un 1% de probabilidad de que la diferencia que estamos viendo sea por pura suerte o azar.
+
+        Umbral de Chi-cuadrado para 127 GL -> p < 0.01 es ~168.9
+        - Cualquier valor > 168.9 es sospechoso.
+        - Nota: Usamos un umbral conservador (250.0) ya que KadGlobe es muy sensible a los cambios naturales en la red. 
+            Sigue siendo extremadamente sensible para detectar un ataque real, pero nos da un colchón de seguridad mucho mayor contra los falsos positivos.
+        """
+
+        if chi_sq > 250.0:
+
+            alerts.append({
+                "type": "eclipse",
+                "severity": "info",
+                "title_es": "Distribución anómala de buckets",
+                "title_en": "Anomalous bucket distribution",
+                "detail_es": f"Test Chi-cuadrado: {chi_sq:.2f}. Los IDs no siguen una distribución aleatoria.",
+                "detail_en": f"Chi-squared test: {chi_sq:.2f}. IDs do not follow a random distribution.",
+                "indicator": {"chi_sq": chi_sq},
+                "recommendation_es": "Monitorea la tabla de rutas; un atacante podría estar preparando un ataque de aislamiento (Eclipse).",
+                "recommendation_en": "Monitor the routing table; an attacker might be preparing an isolation attack (Eclipse)."
+            })
+
+        # 4. Alerta de Proximidad Crítica
+
+        if proximity_count > 5:
+
+            alerts.append({
+                "type": "eclipse",
+                "severity": "critical",
+                "title_es": "Ataque Eclipse Detectado",
+                "title_en": "Eclipse Attack Detected",
+                "detail_es": f"Se han detectado {proximity_count} nodos en buckets de proximidad crítica (B117-B127).",
+                "detail_en": f"Detected {proximity_count} nodes in critical proximity buckets (B117-B127).",
+                "indicator": {"proximity_count": proximity_count},
+                "recommendation_es": "¡Peligro! Tu nodo está rodeado. Considera reiniciar la red Kad.",
+                "recommendation_en": "Danger! Your node is surrounded. Consider restarting the Kad network."
+            })
+
+        elif proximity_count > 3:
+
+            alerts.append({
+                "type": "eclipse",
+                "severity": "warning",
+                "title_es": "Concentración sospechosa de IDs",
+                "title_en": "Suspicious ID concentration",
+                "detail_es": f"{proximity_count} nodos detectados inusualmente cerca de tu ID.",
+                "detail_en": f"{proximity_count} nodes detected unusually close to your ID.",
+                "indicator": {"proximity_count": proximity_count},
+            })
+
+
+        # 5. Detección de Sybil (Concentración por Subred /24)
+
+        for bucket, subnets in subnet_groups.items():
+            for subnet, count in subnets.items():
+                if count > 3:
+                    alerts.append({
+                        "type": "sybil",
+                        "severity": "warning",
+                        "title_es": "Nodos Sybil detectados",
+                        "title_en": "Sybil nodes detected",
+                        "detail_es": f"Concentración de {count} nodos de la misma subred {subnet}.x en el bucket {bucket}.",
+                        "detail_en": f"Concentration of {count} nodes from same {subnet}.x subnet in bucket {bucket}.",
+                        "indicator": {"subnet": subnet, "bucket": bucket, "count": count},
+                        "recommendation_es": "Posible ataque Sybil. Considera purgar la tabla de rutas y reconectarte.",
+                        "recommendation_en": "Possible Sybil attack. Consider purging the routing table and reconnecting."
+                    })
+
+        # Retornamos p-value simplificado (0.001 si chi_cuadrado (chi_sq) es muy alto)
+        p_val = 0.001 if chi_sq > 168 else 1.0
+
+        return alerts, p_val
+
+
     # Función principal
     def analyze(self, stats, nodes, udp_nodes):
 
@@ -182,8 +352,14 @@ class KadIDSEngine:
         self._update_history(stats)
         
         alerts = []
+        
+        # --- Fase 1: Detector Sybil/Eclipse ---
 
-        # En la Fase 0 solo preparamos la estructura
+        # Realizamos el análisis de Sybil/Eclipse
+        eclipse_alerts, chi_p = self._detect_eclipse(stats, nodes)  # chi_p es el p-value simplificado
+
+
+        alerts.extend(eclipse_alerts) # Agregamos las alertas de Sybil/Eclipse
         
         # Lógica de Severidad Global con Cooldown de 3 ciclos (90 segundos)
         current_max_severity = "ok"
@@ -221,8 +397,8 @@ class KadIDSEngine:
             "timestamp": datetime.now().isoformat(),
             "global_severity": current_max_severity,
             "alerts": alerts,
-            "stats": { # Placeholders para métricas calculadas en fases siguientes
-                "chi_squared_p_value": 1.0,
+            "stats": {
+                "chi_squared_p_value": chi_p,
                 "contacts_cv": 0.0,
                 "overhead_rate": 0.0
             }
