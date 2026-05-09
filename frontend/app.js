@@ -221,21 +221,21 @@ function renderIDSAlerts(data) {
         // Secure DOM Construction (Anti-XSS)
         const headerDiv = document.createElement('div');
         headerDiv.className = 'alert-title';
-        
+
         const titleSpan = document.createElement('span');
         titleSpan.textContent = `${icon} ${title}`;
-        
+
         const badgeSpan = document.createElement('span');
         badgeSpan.className = `ids-badge severity-${alert.severity}`;
         badgeSpan.textContent = alert.severity.toUpperCase();
-        
+
         headerDiv.appendChild(titleSpan);
         headerDiv.appendChild(badgeSpan);
-        
+
         const detailDiv = document.createElement('div');
         detailDiv.className = 'alert-detail';
         detailDiv.textContent = detail;
-        
+
         const recoDiv = document.createElement('div');
         recoDiv.className = 'alert-recommendation';
         const recoB = document.createElement('b');
@@ -307,45 +307,57 @@ let heatMapMode = false;
 let latestUdpLatencies = {};
 
 function getPointColor(node) {
-    if (node.is_self) return '#000000'; // Negro profundo para nosotros (tu cliente)
+    let color = '#00f2fe'; // Color base por defecto
 
-    // RESALTADO IDS: Si el nodo está implicado en una alerta crítica/warning
-    const idsAlert = globalThis.activeIDSAlerts.find(a => a.target_ip === node.ip || a.target_id === node.id);
-    if (idsAlert) {
-        return '#9d00ff'; // VIOLETA IDS
+    if (node.is_self) {
+        color = '#000000';
+    } else {
+        // RESALTADO IDS: Si el nodo está implicado en una alerta crítica/warning
+        const idsAlert = globalThis.activeIDSAlerts.find(a => a.target_ip === node.ip || a.target_id === node.id);
+        if (idsAlert) {
+            color = '#9d00ff'; // VIOLETA IDS
+        } else if (heatMapMode) {
+            // MODO TÉRMICO (Semáforo UDP Kad RTT)
+            const ms = latestUdpLatencies[node.ip];
+            if (ms === undefined) {
+                color = 'rgba(255, 255, 255, 0.9)'; // Sin respuesta
+            } else if (ms < 150) {
+                color = '#00ff00';      // Excelente
+            } else if (ms < 500) {
+                color = '#ffcc00';      // Aceptable
+            } else {
+                color = '#ff3333';      // Lento
+            }
+        }
     }
 
-    if (!heatMapMode) {
-        return '#00f2fe'; // Azul brillante estático (Clásico)
+    // Efecto de PARPADEO para el nodo seleccionado (Petición de Usuario)
+    if (node === selectedNode && !blinkState) {
+        return 'rgba(255, 255, 255, 0.2)'; // Color tenue durante el parpadeo
     }
 
-    // MODO TÉRMICO (Semáforo UDP Kad RTT)
-    const ms = latestUdpLatencies[node.ip];
-    if (ms === undefined) {
-        return 'rgba(255, 255, 255, 0.9)'; // Sin respuesta
-    }
-
-    if (ms < 150) return '#00ff00';      // Excelente
-    if (ms < 500) return '#ffcc00';      // Aceptable
-    return '#ff3333';                    // Lento
+    return color;
 }
 
 function getPointAltitude(d) {
-    if (d.is_self) return 0.05; // El pilar más alto para nosotros
+    let alt = d.size || 0.01;
 
-    // RESALTADO IDS: Los nodos sospechosos se elevan para ser visibles
-    const idsAlert = globalThis.activeIDSAlerts.find(a => a.target_ip === d.ip || a.target_id === d.id);
-    if (idsAlert) {
-        return idsAlert.severity === 'critical' ? 0.08 : 0.05;
-    }
-
-    if (heatMapMode) {
-        // En modo "Nodos Activos", destacamos los que tienen latencia medida o son frescos
-        if (d.isFresh || latestUdpLatencies[d.ip] !== undefined) {
-            return 0.03; // Pilar para nodos activos (reducido a la mitad)
+    if (d.is_self) {
+        alt = 0.05; // El pilar más alto para nosotros
+    } else {
+        // RESALTADO IDS: Los nodos sospechosos se elevan para ser visibles
+        const idsAlert = globalThis.activeIDSAlerts.find(a => a.target_ip === d.ip || a.target_id === d.id);
+        if (idsAlert) {
+            alt = idsAlert.severity === 'critical' ? 0.08 : 0.05;
+        } else if (heatMapMode) {
+            // En modo "Nodos Activos", destacamos los que tienen latencia medida o son frescos
+            if (d.isFresh || latestUdpLatencies[d.ip] !== undefined) {
+                alt = 0.03; // Pilar para nodos activos (reducido a la mitad)
+            }
         }
     }
-    return d.size || 0.01; // Tamaño normal (base)
+
+    return alt;
 }
 
 const heatMapToggle = document.getElementById('heatMapToggle');
@@ -388,35 +400,20 @@ const renderGlobe = Globe()
     .pointLat('lat')
     .pointLng('lng')
     .pointAltitude(getPointAltitude) // Evaluación dinámica del tamaño (crece en modo Activos)
-    .pointRadius(0.2)                // Ancho del radio del pilar
+    .pointRadius(0.2)                // Ancho del radio del pilar (vuelto a estático)
     .pointColor(getPointColor)       // Color atado la evaluación dinámica en caliente
 
-
-    // Tarjeta emergente (Tooltip) que aparece al pasar el ratón por los nodos
-    .pointLabel(d => {
-        let title = i18n[currentLang].unknown_f;
-        if (d.is_self) {
-            title = i18n[currentLang].self_node_label;
-        } else if (d.city !== "-" && d.city !== "Unknown") {
-            title = d.city;
-        }
-
-        let countryLabel = i18n[currentLang].unknown;
-        if (d.country !== "-" && d.country !== "Unknown") {
-            countryLabel = d.country;
-        }
-
-        // Usamos escapeHTML porque pointLabel requiere devolver una cadena HTML
-        return `
-            <div class="node-label-container">
-                <b class="node-label-title">${escapeHTML(title)}</b><br/>
-                <i class="node-label-country">${escapeHTML(countryLabel)}</i><br/>
-                <small class="node-label-id">${escapeHTML(d.id.substring(0, 8))}...</small>
-            </div>
-        `;
-    })
-    // Al hacer click en el punto geográfico, llamamos a la función para invocar el Modal
+    // Click en el nodo
     .onPointClick(point => openNodeModal(point));
+
+// --- MOTOR DE PARPADEO (Blink) ---
+let blinkState = true;
+setInterval(() => {
+    if (selectedNode) {
+        blinkState = !blinkState;
+        renderGlobe.pointColor(renderGlobe.pointColor()); // Forzar refresco de colores
+    }
+}, 400);
 
 // Variables del Modal
 const nodeModal = document.getElementById('nodeModal');
@@ -469,13 +466,13 @@ function openNodeModal(node) {
         const li = document.createElement('li');
         const city = neighbor.obj.city && neighbor.obj.city !== "-" ? neighbor.obj.city : "?";
         const country = neighbor.obj.country && neighbor.obj.country !== "-" ? neighbor.obj.country : "?";
-        
+
         const idxSpan = document.createElement('span');
         idxSpan.textContent = `#${index + 1}`;
-        
+
         const infoSpan = document.createElement('span');
         infoSpan.textContent = ` ${neighbor.obj.ip} (${city}, ${country})`;
-        
+
         li.appendChild(idxSpan);
         li.appendChild(infoSpan);
         elXorNeighborsList.appendChild(li);
@@ -770,10 +767,10 @@ async function updateKadNodes() {
             sortedCountries.forEach(([countryName, data]) => {
                 const li = document.createElement('li');
                 li.classList.add('country-item');
-                
+
                 const leftSide = document.createElement('div');
                 leftSide.classList.add('country-item-left');
-                
+
                 if (data.code !== 'unknown' && data.code !== '-') {
                     const flag = document.createElement('img');
                     flag.src = `https://flagcdn.com/24x18/${data.code.toLowerCase()}.png`;
@@ -1073,7 +1070,7 @@ function makeDraggable(el, handle) {
     function dragMouseDown(e) {
         const clientX = e.clientX ?? e.touches?.[0]?.clientX;
         const clientY = e.clientY ?? e.touches?.[0]?.clientY;
-        
+
         const rect = el.getBoundingClientRect();
         const startX = clientX;
         const startY = clientY;
@@ -1090,10 +1087,10 @@ function makeDraggable(el, handle) {
             moveEvent.preventDefault();
             const curX = moveEvent.clientX ?? moveEvent.touches?.[0]?.clientX;
             const curY = moveEvent.clientY ?? moveEvent.touches?.[0]?.clientY;
-            
+
             const dx = curX - startX;
             const dy = curY - startY;
-            
+
             el.style.top = (initialTop + dy) + "px";
             el.style.left = (initialLeft + dx) + "px";
         }

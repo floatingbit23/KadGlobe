@@ -650,19 +650,6 @@ body {
 .text-muted-faint { color: rgba(255,255,255,0.4); }
 .fs-12 { font-size: 12px; }
 
-/* Tooltip (Globe Label) Styles */
-.node-label-container {
-    background: rgba(10, 15, 30, 0.9);
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #4facfe;
-    color: white;
-    font-family: Inter, sans-serif;
-}
-.node-label-title { font-size: 14px; }
-.node-label-country { color: #ccc; }
-.node-label-id { color: #666; margin-top: 4px; display: block; }
-
 /* Country List Styles */
 .country-item-left { display: flex; align-items: center; }
 .country-flag { margin-right: 8px; border-radius: 2px; }
