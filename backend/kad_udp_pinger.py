@@ -145,7 +145,7 @@ def send_bootstrap_req(ip, port, timeout=TIMEOUT_S):
                 "udp_port": udp_p,
                 "tcp_port": tcp_p,
                 "client_id": kad_id,
-                "kad_version": ver
+                "version": ver
             })
             offset += CONTACT_SIZE
             
@@ -162,7 +162,7 @@ def discover_nodes_expanded():
     Fase 1.5: Pregunta a 4 de esos nodos por sus contactos (Expansión 1-hop).
     """
     print(f"\n[*] Fase 1: Solicitando semilla al eMule local (127.0.0.1:{EMULE_LOCAL_UDP_PORT})...")
-    seed_nodes, _, _ = send_bootstrap_req('127.0.0.1', EMULE_LOCAL_UDP_PORT)
+    seed_nodes, my_id, my_ver = send_bootstrap_req('127.0.0.1', EMULE_LOCAL_UDP_PORT)
     
     if not seed_nodes:
         print("[!] No se pudo contactar con eMule local. ¿Está abierto?")
@@ -179,8 +179,8 @@ def discover_nodes_expanded():
                 "ip": my_public_ip,
                 "udp_port": EMULE_LOCAL_UDP_PORT,
                 "tcp_port": 0,
-                "client_id": "SELF",
-                "kad_version": 0,
+                "client_id": my_id or "SELF",
+                "version": my_ver,
                 "is_self": True
             }
             print(f"[+] Tu nodo identificado: {my_public_ip} (Pilar destacado)")
@@ -306,7 +306,7 @@ def udp_ping_node(node):
                 "country": node.get("country", ""),
                 "country_code": node.get("country_code", "unknown"),
                 "rtt": rtt_ms,
-                "kad_version": node.get("kad_version", 0)
+                "version": node.get("version", 0)
             }
             return (result, CATEGORY_PONG, f"RTT={rtt_ms}ms")
         
@@ -383,7 +383,7 @@ def ping_all_nodes():
     if fastest_leaders:
         print(f"[+] Líderes de expansión seleccionados (Top {len(fastest_leaders)} por RTT):")
         for l in fastest_leaders:
-            kv = l.get('kad_version', '?')
+            kv = l.get('version', '?')
             print(f"    - {l['ip']} (RTT: {l['rtt']}ms, KadV: {kv})")
     else:
         print("[!] Ningún nodo de la semilla respondió al ping inicial. Usando fallback aleatorio.")
@@ -408,8 +408,15 @@ def ping_all_nodes():
         
         all_discovered[my_ip].update({
             "is_self": True,
+            "category": CATEGORY_PONG,
+            "version": kad_ver if kad_ver else all_discovered[my_ip].get("version", 0),
             "client_id": dynamic_id or "fca7f58bab6d4199d227ea423f9a8155" # ID dinámico o fallback
         })
+        # Intentamos geolocalizar nuestra propia IP para que no falten coordenadas en el JSON final
+        self_node_list = geolocate_nodes([all_discovered[my_ip]])
+        if self_node_list:
+            all_discovered[my_ip].update(self_node_list[0])
+
         short_id = all_discovered[my_ip]["client_id"][:16] + "..."
         print(f"\n[+] Identidad confirmada para: {my_ip} (ID: {short_id}) (Pilar destacado)")
     
@@ -419,7 +426,7 @@ def ping_all_nodes():
         
         # Actualizamos la versión real del líder (ya que el PONG no la da, pero el Bootstrap RES sí)
         if sender_ver and leader['ip'] in all_discovered:
-            all_discovered[leader['ip']]['kad_version'] = sender_ver
+            all_discovered[leader['ip']]['version'] = sender_ver
 
         new_found = 0
         for rc in remote_contacts:
@@ -455,13 +462,13 @@ def ping_all_nodes():
                 "ip": ip,
                 "udp_port": n["udp_port"],
                 "id": n.get("client_id", n.get("id", "Error")),
-                "lat": n["lat"],
-                "lng": n["lng"],
+                "lat": n.get("lat", 0.0),
+                "lng": n.get("lng", 0.0),
                 "city": n.get("city", "Unknown"),
                 "country": n.get("country", "Unknown"),
                 "country_code": n.get("country_code", "unknown"),
-                "rtt": n["rtt"],
-                "kad_version": master_data.get("kad_version", 0),
+                "rtt": n.get("rtt", 0),
+                "version": master_data.get("version", 0),
                 "is_self": master_data.get("is_self", False),
                 "is_fresh": True
             })

@@ -221,7 +221,8 @@ def run_backend_cronjob():
 
                 # Si obtenemos estadísticas, las guardamos en el JSON
                 if stats:
-                    # Guardamos los resultados de forma atómica
+                    # Inyectamos la versión del cliente para que el frontend la tenga disponible para el nodo local
+                    stats["client_version"] = client_version
                     output_path = os.path.join(os.path.dirname(__file__), "jsons", "kad_stats.json")
                     if not atomic_write_json(output_path, stats):
                         success = False

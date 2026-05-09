@@ -104,8 +104,8 @@ def parse_nodes_dat(file_path="nodes.dat"): # si no se especifica una ruta, se a
             # Desempaqueto el chunk de datos
             node_id_bytes, ip_int, udp_port, tcp_port, node_version = struct.unpack("<16sIHHB", chunk[0:25])
 
-            # Convierto el ID del nodo a formato hexadecimal
-            node_id_hex = binascii.hexlify(node_id_bytes).decode('ascii')
+            # Convierto el ID del nodo a formato hexadecimal (invirtiendo bytes para coincidir con la UI de eMule/Big-Endian)
+            node_id_hex = binascii.hexlify(node_id_bytes[::-1]).decode('ascii')
 
             # Convierto el entero de la IP a una cadena con formato decimal con puntos.
             # Lo empaqueto forzando little-endian, y luego lo traduzco a una cadena legible.

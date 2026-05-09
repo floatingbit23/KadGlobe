@@ -19,6 +19,12 @@ const elFwTcp = document.getElementById('kadFwTcp');
 const elSources = document.getElementById('kadSources');
 const elSourcesRow = document.getElementById('kadSourcesRow');
 
+// Buscador
+const elSearchBar = document.getElementById('searchBar');
+const elSearchInput = document.getElementById('searchInput');
+const elClearSearch = document.getElementById('clearSearch');
+const elSearchResults = document.getElementById('searchResults');
+
 /**
  * Generador de números aleatorios criptográficamente seguro (CSPRNG).
  * Reemplaza a Math.random() para cumplir con auditorías de seguridad (SonarQube).
@@ -45,6 +51,31 @@ function escapeHTML(str) {
         .replaceAll("'", '&#039;');
 }
 
+/**
+ * Calcula la distancia XOR entre dos IDs hexadecimales (128 bits).
+ * Utiliza BigInt para manejar la precisión necesaria.
+ */
+function getKadDistance(id1, id2) {
+    try {
+        if (!id1 || !id2) return null;
+        return BigInt('0x' + id1) ^ BigInt('0x' + id2);
+    } catch (e) {
+        return null;
+    }
+}
+
+/**
+ * Calcula el índice del K-Bucket (0-127) basado en la distancia XOR.
+ * B0: Vecindario más cercano (LSB).
+ * B127: Vecindario más lejano (MSB).
+ */
+function getKadBucket(id1, id2) {
+    const distance = getKadDistance(id1, id2);
+    if (distance === null || distance === 0n) return 0;
+    // La posición del bit más significativo nos da el bucket
+    return distance.toString(2).length - 1;
+}
+
 // --- DICCIONARIO i18n ---
 let currentLang = 'es';
 
@@ -66,6 +97,8 @@ const i18n = {
         "modal_title": "Información del Nodo",
         "modal_xor": "● Proyectando Vecindario Kad (XOR)",
         "modal_loc": "Ubicación:",
+        "modal_ip": "IP:",
+        "modal_id": "Kad Node ID:",
         "unknown": "Desconocido",
         "unknown_f": "Desconocida",
         "status_connected": "Conectado",
@@ -85,7 +118,12 @@ const i18n = {
         "ids_critical": "CRÍTICO",
         "ids_last_update": "Última actualización:",
         "ids_no_alerts": "No hay amenazas detectadas en este momento.",
-        "ids_reco_title": "Recomendación:"
+        "ids_reco_title": "Recomendación:",
+        "search_placeholder": "Buscar por Kad ID o IP...",
+        "search_no_results": "Sin resultados",
+        "modal_bucket": "K-Bucket:",
+        "modal_version": "Versión Kad:",
+        "modal_xor_dist": "Distancia XOR:"
     },
     en: {
         "net_status": "Kademlia Network Status:",
@@ -104,6 +142,8 @@ const i18n = {
         "modal_title": "Node Information",
         "modal_xor": "● Projecting Kad Neighborhood (XOR)",
         "modal_loc": "Location:",
+        "modal_ip": "IP:",
+        "modal_id": "Kad Node ID:",
         "unknown": "Unknown",
         "unknown_f": "Unknown",
         "status_connected": "Connected",
@@ -123,7 +163,10 @@ const i18n = {
         "ids_critical": "CRITICAL",
         "ids_last_update": "Last update:",
         "ids_no_alerts": "No threats detected at this time.",
-        "ids_reco_title": "Recommendation:"
+        "ids_reco_title": "Recommendation:",
+        "search_placeholder": "Search by Kad ID or IP...",
+        "search_no_results": "No results",
+        "modal_bucket": "K-Bucket:"
     }
 };
 
@@ -135,10 +178,134 @@ function applyTranslations() {
         }
     });
 
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.dataset.i18nPlaceholder;
+        if (i18n[currentLang][key]) {
+            el.placeholder = i18n[currentLang][key];
+        }
+    });
+
     const btn = document.getElementById('langToggle');
     if (btn) btn.textContent = currentLang === 'es' ? 'EN' : 'ES';
 
     updateHeatmapButtonText();
+}
+
+/**
+ * Filtra el array global de nodos por KadID o IP.
+ * @param {string} query Texto de búsqueda.
+ * @returns {Array} Máximo 5 resultados que coinciden.
+ */
+function filterNodes(query) {
+    if (!query || query.length < 1) return [];
+
+    const q = query.toLowerCase();
+
+    // --- CASO ESPECIAL 1: Búsqueda por Máscara de Subred (ej. /24, /16) ---
+    // Filtra nodos que comparten subred con el nodo local
+    if (q.startsWith('/') && q.length > 1) {
+        const mask = parseInt(q.substring(1), 10);
+        const selfNode = globalNodesArray.find(n => n.is_self);
+
+        if (selfNode?.ip && !Number.isNaN(mask)) {
+            const octets = selfNode.ip.split('.');
+            let prefix = "";
+
+            if (mask >= 24) prefix = octets.slice(0, 3).join('.') + '.';
+            else if (mask >= 16) prefix = octets.slice(0, 2).join('.') + '.';
+            else if (mask >= 8) prefix = octets.slice(0, 1).join('.') + '.';
+
+            if (prefix) {
+                return globalNodesArray.filter(n => n.ip?.startsWith(prefix)).slice(0, 10);
+            }
+        }
+    }
+
+    if (query.length < 1) return [];
+
+    // --- CASO ESPECIAL 2: Nodo Local (localhost / 127.0.0.1) ---
+    let results = [];
+    let selfNodeResult = null;
+
+    if ('127.0.0.1'.startsWith(q) || 'localhost'.startsWith(q)) {
+        selfNodeResult = globalNodesArray.find(n => n.is_self);
+    }
+
+    results = globalNodesArray.filter(node => {
+        if (node.is_self && selfNodeResult) return false;
+        return node.id?.toLowerCase().startsWith(q) || node.ip?.startsWith(q);
+    });
+
+    if (selfNodeResult) {
+        results.unshift(selfNodeResult);
+    }
+
+    return results.slice(0, 5);
+}
+
+/**
+ * Renderiza los resultados en el dropdown del buscador.
+ * @param {Array} results Lista de nodos filtrados.
+ */
+function renderSearchResults(results) {
+    elSearchResults.innerHTML = '';
+
+    if (results.length === 0) {
+        if (elSearchInput.value.length >= 1) {
+            const noResults = document.createElement('li');
+            noResults.className = 'search-no-results';
+            noResults.textContent = i18n[currentLang].search_no_results;
+            elSearchResults.appendChild(noResults);
+            elSearchResults.classList.remove('hidden');
+        } else {
+            elSearchResults.classList.add('hidden');
+        }
+        return;
+    }
+
+    results.forEach(node => {
+        const li = document.createElement('li');
+        li.className = 'search-result-item';
+
+        // KadID completo (escapado)
+        const displayId = escapeHTML(node.id || 'N/A');
+        const displayIp = escapeHTML(node.ip || 'N/A');
+
+        // Si es el nodo local, añadimos la etiqueta especial
+        const selfLabel = node.is_self ? `<span class="self-node-tag">${i18n[currentLang].self_node_label}</span><br>` : '';
+
+        li.innerHTML = `${selfLabel}<strong>ID:</strong> ${displayId}<br><small>IP: ${displayIp}</small>`;
+
+        li.addEventListener('click', () => {
+            selectAndFocusNode(node);
+        });
+
+        elSearchResults.appendChild(li);
+    });
+
+    elSearchResults.classList.remove('hidden');
+}
+
+/**
+ * Selecciona un nodo, enfoca la cámara y abre su modal.
+ * @param {Object} node Nodo seleccionado.
+ */
+function selectAndFocusNode(node) {
+    // 1. Limpiar UI de búsqueda
+    elSearchResults.classList.add('hidden');
+
+    // 2. Establecer como nodo seleccionado para el motor de parpadeo
+    selectedNode = node;
+
+    // 3. Enfocar cámara (Vista regional: altitude 1.5)
+    renderGlobe.pointOfView({
+        lat: node.lat,
+        lng: node.lng,
+        altitude: 1.5
+    }, 1200);
+
+    // 4. Abrir modal con info
+    openNodeModal(node);
 }
 
 let activeNodesCount = 0;
@@ -331,7 +498,7 @@ function getPointColor(node) {
         }
     }
 
-    // Efecto de PARPADEO para el nodo seleccionado (Petición de Usuario)
+    // Efecto de PARPADEO para el nodo seleccionado
     if (node === selectedNode && !blinkState) {
         return 'rgba(255, 255, 255, 0.2)'; // Color tenue durante el parpadeo
     }
@@ -420,6 +587,10 @@ const nodeModal = document.getElementById('nodeModal');
 const modalIp = document.getElementById('modalIp');
 const modalLocation = document.getElementById('modalLocation');
 const modalId = document.getElementById('modalId');
+const modalBucket = document.getElementById('modalBucket');
+const selfNodeTag = document.getElementById('selfNodeTag');
+const modalVersion = document.getElementById('modalVersion');
+const modalXorDist = document.getElementById('modalXorDist');
 const btnCloseModal = document.getElementById('closeModal');
 
 // Función asíncrona y UI para abrir/cerrar el modal
@@ -429,6 +600,50 @@ function openNodeModal(node) {
     const country = (node.country && node.country !== "-" && node.country !== "null") ? node.country : "?";
     modalLocation.textContent = `${city}, ${country}`;
     modalId.textContent = node.id || "Error";
+
+    // La versión se muestra siempre, sea el nodo local o uno remoto.
+    // SISTEMA DE FALLBACK: Si es el nodo local y no tiene versión, usamos la capturada de las estadísticas generales (WebUI).
+    let vText = i18n[currentLang].unknown;
+    if (node.version) {
+        vText = `Protocol v${node.version}`;
+    } else if (node.is_self && globalThis.localKadVersion) {
+        vText = globalThis.localKadVersion;
+        // Si el texto es puramente numérico (ej: "10"), le añadimos el prefijo de Protocolo.
+        // Usamos Number.isFinite para evitar negaciones innecesarias y ser más estrictos.
+        if (Number.isFinite(Number(vText)) && vText.toString().length <= 2) {
+            vText = `Protocol v${vText}`;
+        }
+    }
+    modalVersion.textContent = vText;
+
+    // Cálculo y visualización de métricas relativas (Bucket y Distancia XOR)
+    const selfNode = globalNodesArray.find(n => n.is_self);
+
+    if (node.is_self || !selfNode) {
+        // Para el nodo local o si no hay referencia local, no aplica el cálculo relativo
+        modalBucket.textContent = "-";
+        modalXorDist.textContent = "-";
+    } else {
+        const bucket = getKadBucket(selfNode.id, node.id);
+        modalBucket.textContent = `B${bucket}`;
+
+        const distBigInt = getKadDistance(selfNode.id, node.id);
+        if (distBigInt === null) {
+            modalXorDist.textContent = "-";
+        } else {
+            // Formateo a 32 caracteres hex con ceros a la izquierda (natural order)
+            modalXorDist.textContent = distBigInt.toString(16).padStart(32, '0').toUpperCase();
+        }
+    }
+
+    // Restaurar etiqueta en el modal si es el nodo local (Petición de Usuario Reimplementada)
+    if (selfNodeTag) {
+        if (node.is_self) {
+            selfNodeTag.classList.remove('hidden');
+        } else {
+            selfNodeTag.classList.add('hidden');
+        }
+    }
 
     nodeModal.classList.remove('modal-hidden');
 
@@ -471,10 +686,19 @@ function openNodeModal(node) {
         idxSpan.textContent = `#${index + 1}`;
 
         const infoSpan = document.createElement('span');
-        infoSpan.textContent = ` ${neighbor.obj.ip} (${city}, ${country})`;
+        infoSpan.className = 'xor-neighbor-link';
+        infoSpan.textContent = ` ${neighbor.obj.ip}`;
+        infoSpan.title = "Enfocar nodo";
+        infoSpan.addEventListener('click', () => {
+            selectAndFocusNode(neighbor.obj);
+        });
+
+        const geoSpan = document.createElement('span');
+        geoSpan.textContent = ` (${city}, ${country})`;
 
         li.appendChild(idxSpan);
         li.appendChild(infoSpan);
+        li.appendChild(geoSpan);
         elXorNeighborsList.appendChild(li);
     });
 
@@ -546,6 +770,9 @@ async function updateKadStats() {
 
         if (data.local_id) {
             globalThis.localKadId = data.local_id;
+        }
+        if (data.client_version) {
+            globalThis.localKadVersion = data.client_version;
         }
     } catch (e) {
         elStatus.textContent = `[JS Error] ${e.message}`;
@@ -690,13 +917,6 @@ let globalNodesArray = [];
 let selectedNode = null;
 let simulationInterval = null;
 
-// Función matemática base (XOR distance) del artículo Kademlia P2P (Restamos 128-bits usando BigInt nativo de ES6)
-function getKadDistance(hex1, hex2) {
-    // Si no son válidos, devolvemos distancia 0
-    if (!hex1?.match(/^[0-9a-fA-F]+$/) || !hex2?.match(/^[0-9a-fA-F]+$/)) return BigInt(0);
-    return BigInt('0x' + hex1) ^ BigInt('0x' + hex2); // ^ representa el operador XOR
-}
-
 // B. Función que obtiene todas las ubicaciones y recrea los nodos en el globo
 async function updateKadNodes() {
     try {
@@ -827,13 +1047,12 @@ function updateKBucketsChart(nodes, localId) {
     const bucketCounts = new Array(129).fill(0);
 
     nodes.forEach(node => {
-        const dist = getKadDistance(localId, node.id);
-        if (dist === 0n) return; // Somos nosotros o misma ID
-
-        // El bucket es log2(dist) para que B0 sea el más cercano (estándar Kademlia)
-        const bucketIndex = dist.toString(2).length - 1;
+        const bucketIndex = getKadBucket(localId, node.id);
         if (bucketIndex >= 0 && bucketIndex <= 127) {
-            bucketCounts[bucketIndex]++;
+            // No sumamos si la distancia es 0 (nosotros mismos)
+            if (localId !== node.id) {
+                bucketCounts[bucketIndex]++;
+            }
         }
     });
 
@@ -1108,6 +1327,38 @@ function makeDraggable(el, handle) {
         document.addEventListener('touchend', onMouseUp);
     }
 }
+
+// --- EVENT LISTENERS DEL BUSCADOR ---
+
+// 1. Escuchar escritura en el input
+elSearchInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim();
+    const results = filterNodes(query);
+    renderSearchResults(results);
+});
+
+// 2. Botón de limpiar búsqueda
+elClearSearch.addEventListener('click', () => {
+    elSearchInput.value = '';
+    elSearchResults.innerHTML = '';
+    elSearchResults.classList.add('hidden');
+    elSearchInput.focus();
+});
+
+// 3. Cerrar resultados al hacer click fuera
+document.addEventListener('click', (e) => {
+    if (!elSearchBar.contains(e.target)) {
+        elSearchResults.classList.add('hidden');
+    }
+});
+
+// 4. Abrir resultados si se vuelve a hacer foco con contenido
+elSearchInput.addEventListener('focus', () => {
+    if (elSearchInput.value.trim().length >= 3) {
+        const results = filterNodes(elSearchInput.value.trim());
+        renderSearchResults(results);
+    }
+});
 
 // 4. Ejecución inicial y Polling cíclico
 applyTranslations();
