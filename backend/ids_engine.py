@@ -38,6 +38,31 @@ class KadIDSEngine:
         self.cycle_count = 0
         self.deep_scan_interval = 10   # Ejecutar clustering pesado cada 10 ciclos (5 min)
 
+        # Reseteamos el archivo de alertas al inicio para evitar mostrar estados antiguos/obsoletos
+        self._reset_alerts_file()
+
+    def _reset_alerts_file(self):
+        """
+        Limpia el archivo de alertas al arrancar el motor para evitar que la UI 
+        muestre estados de advertencia/error de sesiones previas que ya no son válidos.
+        """
+        clean_state = {
+            "timestamp": datetime.now().isoformat(),
+            "global_severity": "ok",
+            "alerts": [],
+            "stats": {
+                "chi_squared_p_value": 1.0,
+                "contacts_cv": 0.0,
+                "overhead_rate": 0.0
+            }
+        }
+        try:
+            os.makedirs(os.path.dirname(self.alerts_path), exist_ok=True)
+            with open(self.alerts_path, "w", encoding="utf-8") as f:
+                json.dump(clean_state, f, indent=4, ensure_ascii=False)
+        except Exception:
+            pass # No bloqueamos el inicio si no se puede escribir el reset
+
     def _load_history(self):
         """
         Carga el historial persistente desde el disco para análisis de tendencias.
@@ -157,10 +182,10 @@ class KadIDSEngine:
 
         entry = {
             "timestamp": datetime.now().isoformat(), # Marca temporal del registro
-            "contacts": stats.get("contacts", 0), # Número de contactos
-            "overhead": self._parse_overhead(stats.get("kad_overhead_session_pkts", "0")), # Overhead (en bytes), es decir, tráfico de control de la red Kad
-            "active_searches": stats.get("active_searches", 0), # Número de búsquedas activas
-            "bucket_counts": bucket_counts or {} # Distribución de buckets (para detección de Poisoning)
+            "contacts": int(stats.get("contacts", 0)), # Aseguramos que sea entero
+            "overhead": self._parse_overhead(stats.get("kad_overhead_session_pkts", "0")), 
+            "active_searches": int(stats.get("active_searches", 0)), # Aseguramos que sea entero
+            "bucket_counts": bucket_counts or {} 
         }
         
         self.history.append(entry)
@@ -197,7 +222,7 @@ class KadIDSEngine:
         total_nodes = len(nodes) # Total de nodos 
 
         observed = {} # Diccionario para contar nodos observados en cada bucket
-        proximity_buckets = [117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127] # Zona de riesgo (ahora en índices altos)
+        proximity_buckets = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] # Zona de riesgo (ahora en índices bajos)
         proximity_count = 0 # Contador de nodos en buckets cercanos
 
         subnet_groups = {} # Diccionario para agrupar nodos por subred
@@ -221,8 +246,8 @@ class KadIDSEngine:
             if bucket in proximity_buckets:
                 proximity_count += 1
                 
-            # Agrupación por subred /24 en buckets cercanos (B117-B127)
-            if bucket >= 117 and node_ip:
+            # Agrupación por subred /24 en buckets cercanos (B0-B10)
+            if bucket <= 10 and node_ip:
 
                 """
                 La subred /24 es la "huella dactilar" de una ubicación física o un servidor específico. 
@@ -243,20 +268,18 @@ class KadIDSEngine:
         expected = {}
 
         """
-        Probabilidad de que un nodo caiga en cada bucket:
-        B0 (lejano) = 0.5 (50% de los nodos estarán en el bucket B0)
-        B1 (medio) = 0.25 (25% de los nodos estarán en el bucket B1)
-        B2 (medio-lejano) = 0.125 (12.5% de los nodos estarán en el bucket B2)
-        B3 (medio-lejano) = 0.0625 (6.25% de los nodos estarán en el bucket B3)
+        Probabilidad de que un nodo caiga en cada bucket (según distancia XOR):
+        B127 (lejano) = 0.5 (50% de los nodos estarán en el bucket B127)
+        B126 (medio) = 0.25 (25% de los nodos estarán en el bucket B126)
         ...
-        ...
-        B127 (cercano) ~ 0 (0% de los nodos estarán en el bucket B127)
+        B0 (cercano) = 1/2^128 (~0% de probabilidad de caer en el bucket exacto de proximidad)
         """
 
         # Recorre los 128 buckets y calcula la probabilidad de que cada uno tenga un nodo
         for i in range(128):
-            prob = 1.0 / (2**(i+1)) # Probabilidad teórica de que un nodo caiga en el bucket i
-            expected[i] = total_nodes * prob # Número esperado de nodos en el bucket i
+            # En el estándar: B127 (lejano) = 0.5, B126 = 0.25 ... B0 (cercano) = 1/2^128
+            prob = 1.0 / (2**(128-i)) 
+            expected[i] = total_nodes * prob
 
         # 3. Test Chi-cuadrado
 
@@ -274,7 +297,7 @@ class KadIDSEngine:
             Sigue siendo extremadamente sensible para detectar un ataque real, pero nos da un colchón de seguridad mucho mayor contra los falsos positivos.
         """
 
-        if chi_sq > 250.0:
+        if chi_sq > 300.0 and self.cycle_count > 2:
 
             alerts.append({
                 "type": "eclipse",
@@ -290,21 +313,21 @@ class KadIDSEngine:
 
         # 4. Alerta de Proximidad Crítica
 
-        if proximity_count > 5:
+        if proximity_count > 6 and self.cycle_count > 2:
 
             alerts.append({
                 "type": "eclipse",
                 "severity": "critical",
                 "title_es": "Ataque Eclipse Detectado",
                 "title_en": "Eclipse Attack Detected",
-                "detail_es": f"Se han detectado {proximity_count} nodos en buckets de proximidad crítica (B117-B127).",
-                "detail_en": f"Detected {proximity_count} nodes in critical proximity buckets (B117-B127).",
+                "detail_es": f"Se han detectado {proximity_count} nodos en buckets de proximidad crítica (B0-B10).",
+                "detail_en": f"Detected {proximity_count} nodes in critical proximity buckets (B0-B10).",
                 "indicator": {"proximity_count": proximity_count},
                 "recommendation_es": "¡Peligro! Tu nodo está rodeado. Considera reiniciar la red Kad.",
                 "recommendation_en": "Danger! Your node is surrounded. Consider restarting the Kad network."
             })
 
-        elif proximity_count > 3:
+        elif proximity_count > 4 and self.cycle_count > 2:
 
             alerts.append({
                 "type": "eclipse",
@@ -361,76 +384,56 @@ class KadIDSEngine:
         if not bucket_counts:
             return []
 
-        # 1. Análisis Local
-        # Compara el número de nodos en cada bucket contra la media y desviación del conjunto actual
+        # 1. Análisis de Distribución Relativa (Normalizado por Probabilidad)
+        # En Kademlia, la probabilidad de que un nodo caiga en el bucket i es 1/2^(i+1)
+
+        total_nodes = sum(bucket_counts.values())
         
-        counts = list(bucket_counts.values())
+        if total_nodes < 50: # Evitamos ruido en redes recién conectadas
+            return []
 
-        # Si hay al menos dos buckets
-        if len(counts) > 1:
+        for bucket_idx, count in bucket_counts.items():
+            try:
+                idx = int(bucket_idx)
+            except ValueError:
+                continue
 
-            # Calculamos la media y la desviación estándar de los nodos en los buckets
-            local_mean = statistics.mean(counts)
-            local_std = statistics.stdev(counts) if len(counts) > 1 else 0
+            # Calculamos la población esperada para este bucket específico
+            # Esperanza = Total * (1 / 2^(128 - idx))
+            expected = total_nodes * (1.0 / (2**(128 - idx)))
             
-            # Recorremos los buckets
-            for bucket_idx, count in bucket_counts.items():
+            # Suelo de esperanza para evitar divisiones por cero o Z-scores infinitos en buckets bajos
+            # En buckets bajos (vecindario), esperamos casi 0 nodos, así que cualquier valor > K (20) es ataque.
+            expected = max(expected, 0.5) 
+            
+            # Usamos el Poisson como aproximación para la desviación en distribuciones de conteo
+            # sigma = sqrt(expected)
+            sigma = (expected ** 0.5)
+            
+            # Z-score respecto a la distribución teórica
+            z_theoretical = (count - expected) / max(sigma, 0.5)
 
-                # Filtro de población mínima en el bucket
-                if count < 5: 
+            # 2. Evaluación de Severidad con Peso por Proximidad
+            # El poisoning es más peligroso cuanto más cerca está del nodo local (índice bajo)
+            if z_theoretical > 4.0:
+                # Si el bucket es lejano (B100-B127), solo alertamos si es una inundación MASIVA
+                if idx > 100 and count < 100:
                     continue
-                    
-                # Z-score local
-                z_local = kad_utils.z_score(count, local_mean, local_std)
-
-                # 2. Análisis Temporal
-                # Compara el número de nodos en este bucket contra su propio historial
-
-                historical_counts = []
-
-                for entry in self.history:
-
-                    # Notar que las claves en JSON son strings
-                    b_hist = entry.get("bucket_counts", {})
-
-                    # Obtenemos el conteo del bucket histórico
-                    historical_counts.append(b_hist.get(str(bucket_idx), b_hist.get(bucket_idx, 0)))
                 
-                z_temporal = 0
-
-                # Si hay al menos 8 muestras históricas para calcular la desviación
-                if len(historical_counts) > 8: 
-                    
-                    # Media y desviación estándar de la historia del bucket
-                    temp_mean = statistics.mean(historical_counts)
-
-                    # Usamos un floor de 0.5 para evitar el bloqueo por estabilidad perfecta
-                    temp_std = max(statistics.stdev(historical_counts), 0.5) if len(historical_counts) > 1 else 0.5
-                    
-                    # Z-score temporal
-                    z_temporal = kad_utils.z_score(count, temp_mean, temp_std)
+                # Definimos severidad: Crítica si es en el vecindario (idx < 10)
+                is_neighbor = idx < 10
+                severity = "critical" if (z_theoretical > 8.0 or is_neighbor) else "warning"
                 
-                # 3. Evaluación de Severidad
-
-                # Tomamos el máximo Z-score entre local y temporal
-                max_z = max(z_local, z_temporal)
-                
-                # Evaluamos si hay anomalía
-                if max_z > 2.0:
-                    # Definimos la severidad
-                    severity = "critical" if max_z > 4.0 else "warning"
-                    
-                    # Añadimos la alerta
-                    alerts.append({
-                        "type": "poisoning",
-                        "severity": severity,
-                        "title_es": "Envenenamiento de Bucket detectado" if severity == "critical" else "Población anómala en bucket",
-                        "title_en": "Bucket Poisoning detected" if severity == "critical" else "Anomalous bucket population",
-                        "detail_es": f"Bucket {bucket_idx} tiene {count} nodos (Z-Score: {max_z:.2f}).",
-                        "detail_en": f"Bucket {bucket_idx} has {count} nodes (Z-Score: {max_z:.2f}).",
-                        "indicator": {"bucket": bucket_idx, "count": count, "z_score": max_z},
-                        "recommendation_es": "Alerta de envenenamiento masivo. El tráfico de búsqueda hacia estos IDs podría estar siendo interceptado.",
-                    })
+                alerts.append({
+                    "type": "poisoning",
+                    "severity": severity,
+                    "title_es": "Envenenamiento de Vecindario" if is_neighbor else "Población anómala en bucket",
+                    "title_en": "Neighborhood Poisoning" if is_neighbor else "Anomalous bucket population",
+                    "detail_es": f"Bucket B{idx} tiene {count} nodos (Esperado: {expected:.1f}, Z-Score: {z_theoretical:.2f}).",
+                    "detail_en": f"Bucket B{idx} has {count} nodes (Expected: {expected:.1f}, Z-Score: {z_theoretical:.2f}).",
+                    "indicator": {"bucket": idx, "count": count, "z_score": z_theoretical},
+                    "recommendation_es": "Ataque dirigido al vecindario" if is_neighbor else "Inundación de IDs lejanos detectada.",
+                })
         
         return alerts
 
@@ -458,9 +461,6 @@ class KadIDSEngine:
         if not udp_nodes:
             return alerts
 
-        # Incrementamos contador de ciclos
-        self.cycle_count += 1
-        
         # 1. TRIAJE (Análisis por Subred /24)
 
         current_subnets = {}
@@ -486,7 +486,8 @@ class KadIDSEngine:
             # Recorremos el historial (excluyendo el último registro que es el actual)
             for h in self.history[:-1]:
                 sc = h.get("subnet_counts", {})
-                all_past_counts.extend(sc.values())
+                # Forzamos que los valores sean numéricos para evitar errores de tipo en statistics
+                all_past_counts.extend([float(v) for v in sc.values()])
             
             # Si hay datos históricos
             if all_past_counts:
@@ -551,7 +552,15 @@ class KadIDSEngine:
                     continue
                 
                 # Analizamos consistencia de RTT en el cluster
-                rtts = [n.get('rtt', 0) for n in cluster_nodes if n.get('rtt') is not None]
+                # Aseguramos que los RTT sean numéricos (float/int)
+                rtts = []
+                for n in cluster_nodes:
+                    rtt_val = n.get('rtt')
+                    if rtt_val is not None:
+                        try:
+                            rtts.append(float(rtt_val))
+                        except (ValueError, TypeError):
+                            continue
 
                 """
                 RRT (Round Trip Time) es la métrica que mide el tiempo que tarda un paquete en ir y volver a un servidor.
@@ -613,19 +622,28 @@ class KadIDSEngine:
 
         for i in range(1, len(self.history)):
             
-            prev = self.history[i-1].get("overhead", 0)
-            curr = self.history[i].get("overhead", 0)
+            try:
+                prev = float(self.history[i-1].get("overhead", 0))
+                curr = float(self.history[i].get("overhead", 0))
+            except (ValueError, TypeError):
+                prev = 0.0
+                curr = 0.0
             
             delta = curr - prev
             
             # Si el delta es negativo, asumimos reinicio de eMule y usamos 0
-            rates.append(max(delta, 0))
+            rates.append(max(delta, 0.0))
 
         if not rates:
             return []
 
         tasa_actual = rates[-1]
-        active_searches = self.history[-1].get("active_searches", 0)
+        active_searches = 0
+        if self.history:
+            try:
+                active_searches = int(self.history[-1].get("active_searches", 0))
+            except (ValueError, TypeError):
+                active_searches = 0
 
         # 2. Análisis de Tendencia (Media de las últimas 20 muestras)
         # Tomamos las últimas 20 tasas (sin contar la actual) para la referencia
@@ -729,8 +747,13 @@ class KadIDSEngine:
         # Ventana de Análisis: últimas 15 muestras (15 ciclos o ~7.5 minutos)
         window = self.history[-15:]
 
-        # Obtenemos el número de contactos en cada ciclo
-        contacts = [h.get("contacts", 0) for h in window]
+        # Obtenemos el número de contactos en cada ciclo, forzando tipo numérico
+        contacts = []
+        for h in window:
+            try:
+                contacts.append(int(h.get("contacts", 0)))
+            except (ValueError, TypeError):
+                contacts.append(0)
         
         # Si no hay suficientes datos para el análisis, retornamos
         if not contacts or len(contacts) < 2:
@@ -809,12 +832,27 @@ class KadIDSEngine:
             dict: Diccionario con las alertas y estadísticas actualizadas
         """
 
+        # Incrementamos el contador de ciclos (warm-up)
+        self.cycle_count += 1
+
         # Fase 1: Análisis de Sybil/Eclipse
         eclipse_alerts, chi_p, bucket_counts = self._detect_eclipse(stats, nodes)
 
-        alerts = []
+        # Pre-procesamiento de subredes para el historial
+        current_subnets = {}
 
-        # Fase 1: Alertas de Sybil/Eclipse
+        # Analizamos los nodos UDP responsive
+        for node in udp_nodes:
+            ip_parts = node['ip'].split('.')
+            if len(ip_parts) == 4:
+                s24 = ".".join(ip_parts[:3])
+                current_subnets[s24] = current_subnets.get(s24, 0) + 1
+
+        # Actualizamos las estadísticas y el historial antes de los detectores dependientes de historial
+        stats["subnet_counts"] = current_subnets
+        self._update_history(stats, bucket_counts)
+
+        alerts = []
         alerts.extend(eclipse_alerts)
 
         # Fase 2: Alertas de Poisoning
@@ -833,28 +871,6 @@ class KadIDSEngine:
         churn_alerts, current_cv = self._detect_churn()
         alerts.extend(churn_alerts)
 
-        # Pre-procesamiento de subredes para el historial
-        current_subnets = {}
-
-        # Analizamos las UDP nodes
-        for node in udp_nodes:
-
-            # Obtenemos la IP del nodo UDP (ej. 'xx.xx.xx.xx') y la separamos por octetos
-            ip_parts = node['ip'].split('.')
-
-            # Si es una IP válida (tiene 4 octetos)
-            if len(ip_parts) == 4:
-                # Obtenemos la subred /24
-                s24 = ".".join(ip_parts[:3])
-                # Contamos los nodos por subred
-                current_subnets[s24] = current_subnets.get(s24, 0) + 1
-
-        # Actualizamos las estadísticas
-        stats["subnet_counts"] = current_subnets
-
-        # Actualiza el historial con las estadísticas actuales y la distribución de buckets
-        self._update_history(stats, bucket_counts)
-        
         # Lógica de Severidad Global con Cooldown de 3 ciclos (90 segundos)
         current_max_severity = "ok"
 
@@ -869,22 +885,44 @@ class KadIDSEngine:
         elif "info" in severities:
             current_max_severity = "info"
 
-        # Mecanismo de persistencia de alerta (cooldown de 3 ciclos)
-
-        # Si la amenaza desaparece, mantenemos el estado de alerta ('warning') un tiempo prudencial
+        # Lógica de Hysteresis (Cooldown)
+        # Si el estado actual es 'ok' pero venimos de un estado de alerta,
+        # mantenemos el estado de alerta suave (warning) durante 3 ciclos
+        # para evitar que el badge de la UI parpadee ante amenazas intermitentes.
         if current_max_severity == "ok" and self.last_severity != "ok":
-
             if self.cooldown_cycles < 3:
                 current_max_severity = "warning" # Degradamos suavemente
                 self.cooldown_cycles += 1
+                
+                # Añadimos una alerta de sistema para explicar por qué el badge sigue en naranja
+                alerts.append({
+                    "type": "cooldown",
+                    "severity": "info",
+                    "title_es": "Sistema en recuperación",
+                    "title_en": "System stabilizing",
+                    "detail_es": "Amenazas previas resueltas. El sistema permanecerá en observación durante 90s.",
+                    "detail_en": "Previous threats resolved. System will remain under observation for 90s.",
+                    "recommendation_es": "No se requiere acción. La red parece haber recuperado la normalidad.",
+                    "recommendation_en": "No action required. The network appears to have returned to normal."
+                })
             else:
-                self.cooldown_cycles = 0
+                self.cooldown_cycles = 0 # Reset tras completar el cooldown
 
         # Si hay amenaza real, reiniciamos el contador de cooldown
         elif current_max_severity != "ok":
             self.cooldown_cycles = 0 
 
         self.last_severity = current_max_severity
+
+        # Calculamos la tasa de overhead de forma segura
+        overhead_rate = 0.0
+        if len(self.history) > 1:
+            try:
+                h_curr = float(self.history[-1].get("overhead", 0))
+                h_prev = float(self.history[-2].get("overhead", 0))
+                overhead_rate = h_curr - h_prev
+            except (ValueError, TypeError):
+                overhead_rate = 0.0
 
         # Empaquetado para el frontend (consumido por app.js)
         alerts_data = {
@@ -894,7 +932,7 @@ class KadIDSEngine:
             "stats": {
                 "chi_squared_p_value": chi_p,
                 "contacts_cv": current_cv,
-                "overhead_rate": self.history[-1].get("overhead", 0) - self.history[-2].get("overhead", 0) if len(self.history) > 1 else 0.0
+                "overhead_rate": overhead_rate
             }
         }
         

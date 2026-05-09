@@ -208,6 +208,7 @@ def run_backend_cronjob():
 
         try:
             success = True
+            stats = {} # Inicializamos para evitar NameError en caso de fallo temprano
             print("\n[i] Escaneando estadísticas en vivo del WebUI...")
             
             # Si la sesión se perdió o falló el login, reintentamos el login

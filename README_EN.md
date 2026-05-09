@@ -57,6 +57,8 @@ The project is built with a robust Python backend and a premium web-based fronte
 
 > White ⚪ (no response). 
 
+> Violet 🟣 (IDS Alert Target / Detected Threat). These nodes are also visually elevated with higher pillars.
+
 > Our own node is highlighted with a black pillar ⬛ on the globe.
 
 ![alt text](images/heatmap.png)
@@ -66,12 +68,12 @@ The project is built with a robust Python backend and a premium web-based fronte
 
 ![alt text](images/ranking.png)
 
-*   **K-Buckets Distribution**: A histogram showing how many contacts (nodes) you have in each routing "bucket" (XOR distance $0-127$). It is expected to see more contacts in far buckets ($B0$, $B1$, etc.) and very few in near ones ($B123$ to $B127$).
+*   **K-Buckets Distribution**: A histogram showing how many contacts (nodes) you have in each routing "bucket" (XOR distance $0-127$). It is expected to see more contacts in far buckets ($B127$, $B126$, etc.) and very few in near ones ($B0$ to $B10$).
 
 ![alt text](images/kbuckets.png)
 
-> Note: Keep in mind that the probability of a node falling into $B0$ is 50%, into $B1$ is 25%, into $B2$ is 12.5%, etc. Therefore, you will virtually never see nodes in the nearest buckets (the probability is infinitesimal). The formula is: 
-$$P(Bi) = \frac{1}{2^{i+1}}$$
+> Note: Keep in mind that the probability of a node falling into $B127$ is 50%, into $B126$ is 25%, into $B125$ is 12.5%, etc. Therefore, you will virtually never see nodes in the nearest buckets (the probability is infinitesimal). The formula is: 
+$$P(Bi) = \frac{1}{2^{128-i}}$$
 
 *   **Top 10 XOR Neighborhood**: Clicking a node calculates its 10 mathematically closest neighbors and traces golden connection arcs.
 
@@ -90,12 +92,17 @@ KadGlobe includes a specialized IDS engine (`backend/ids_engine.py`) that monito
 
 *   **Sybil/Eclipse Detection**: Analyzes the statistical distribution of buckets using the $\chi^2$ test. It alerts if an unusual number of nodes concentrate in specific buckets trying to surround your ID.
 
-*   **Poisoning Detection**: Uses dual _Z-Score_ analysis (Local and Temporal) to identify bucket poisoning. It detects when a bucket grows anomalously compared to others or its own history.
+*   **Poisoning Detection**: Uses a _Z-Score_ analysis normalized by Kademlia's theoretical distribution ($1/2^{128-i}$). It filters out natural noise in common distant buckets ($B127$, $B126$...) and prioritizes detecting suspicious clusters in the "XOR neighborhood" ($B0-B10$), where attacks are most critical.
 
 *   **Lookup DoS Monitor**: Monitors control traffic (_overhead_). It detects packet floods by analyzing traffic ratios and exponential growth curves, filtering legitimate spikes during your own searches.
 
 > [!TIP]
-> IDS alerts are classified as `INFO`, `WARNING`, and `CRITICAL`, and are designed to be integrated into the visual dashboard in future versions.
+> IDS alerts are classified as `INFO`, `WARNING`, and `CRITICAL`. Alerts are displayed in the UI panel.
+
+Some examples:
+![alt text](images/ids_safe.png)
+![alt text](images/ids_warning.png)
+![alt text](images/ids_critical.png)
 
 ### 5. Requirements and Setup
 To use KadGlobe, you must ensure the following requirements are met:
@@ -121,7 +128,7 @@ To use KadGlobe, you must ensure the following requirements are met:
 ![alt text](images/files.png)
 ![alt text](images/database.png)
 
-### 5. _Disclaimer: Data Latency and Persistence_
+### 6. _Disclaimer: Data Latency and Persistence_
 
 _KadGlobe retrieves node information from two complementary sources:_
 

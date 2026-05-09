@@ -770,26 +770,23 @@ function updateKBucketsChart(nodes, localId) {
         const dist = getKadDistance(localId, node.id);
         if (dist === 0n) return; // Somos nosotros o misma ID
 
-        // El bucket es (127 - log2(dist)) para que B0 sea el más lejano
-        const bucketIndex = 127 - (dist.toString(2).length - 1);
+        // El bucket es log2(dist) para que B0 sea el más cercano (estándar Kademlia)
+        const bucketIndex = dist.toString(2).length - 1;
         if (bucketIndex >= 0 && bucketIndex <= 127) {
             bucketCounts[bucketIndex]++;
         }
     });
 
-    // Filtramos para mostrar solo buckets que tengan algún nodo o un rango interesante (ej. últimos 32)
-    // Pero para eMule, los buckets importantes suelen ser los altos (lejanos)
-    // Mostraremos un histograma de los buckets 0 a 128, pero quizás agrupados o podados si están vacíos.
-    // Para simplificar, mostramos todos los buckets que tengan al menos 1 nodo.
-
+    // Filtramos para mostrar solo buckets que tengan algún nodo
     const labels = [];
     const dataValues = [];
     let validNodesCount = 0;
 
     for (let i = 0; i <= 127; i++) {
         if (bucketCounts[i] > 0) {
-            // Probabilidad invertida: B0 = 50%, B1 = 25%...
-            const probPct = (1 / Math.pow(2, i + 1)) * 100;
+            // Probabilidad teórica: P(i) = 1/2^(128-i)
+            // B127 (lejano) = 50%, B126 = 25%... B0 (cercano) = ~0%
+            const probPct = (1 / Math.pow(2, 128 - i)) * 100;
             let probStr = "<0.01%";
             if (probPct >= 1) {
                 probStr = `${Math.round(probPct)}%`;
@@ -828,11 +825,11 @@ function updateKBucketsChart(nodes, localId) {
                     if (!labelArr) return 'rgba(79, 172, 254, 0.6)';
 
                     const bucketName = labelArr[0]; // "B4"
-                    const bucketNum = parseInt(bucketName.substring(1));
+                    const bucketNum = Number.parseInt(bucketName.substring(1), 10);
 
                     // Si el IDS detecta envenenamiento en este bucket, pintar de ROJO
                     const isPoisoned = globalThis.activeIDSAlerts.some(a =>
-                        a.type === 'poisoning' && parseInt(a.target_bucket) === bucketNum
+                        a.type === 'poisoning' && Number.parseInt(a.target_bucket, 10) === bucketNum
                     );
                     return isPoisoned ? 'rgba(255, 23, 68, 0.8)' : 'rgba(79, 172, 254, 0.6)';
                 },
@@ -842,10 +839,10 @@ function updateKBucketsChart(nodes, localId) {
                     if (!labelArr) return '#4facfe';
 
                     const bucketName = labelArr[0];
-                    const bucketNum = parseInt(bucketName.substring(1));
+                    const bucketNum = Number.parseInt(bucketName.substring(1), 10);
 
                     const isPoisoned = globalThis.activeIDSAlerts.some(a =>
-                        a.type === 'poisoning' && parseInt(a.target_bucket) === bucketNum
+                        a.type === 'poisoning' && Number.parseInt(a.target_bucket, 10) === bucketNum
                     );
                     return isPoisoned ? '#ff1744' : '#4facfe';
                 },
@@ -1007,14 +1004,12 @@ function updateIDSOverlays() {
 
 // 5. Helper para hacer elementos arrastrables
 function makeDraggable(el, handle) {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
     handle.onmousedown = dragMouseDown;
     handle.ontouchstart = dragMouseDown;
 
     function dragMouseDown(e) {
-        e = e || window.event;
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+        const clientY = e.clientY ?? e.touches?.[0]?.clientY;
         
         const rect = el.getBoundingClientRect();
         const startX = clientX;
@@ -1030,8 +1025,8 @@ function makeDraggable(el, handle) {
 
         function onMouseMove(moveEvent) {
             moveEvent.preventDefault();
-            const curX = moveEvent.clientX || (moveEvent.touches && moveEvent.touches[0].clientX);
-            const curY = moveEvent.clientY || (moveEvent.touches && moveEvent.touches[0].clientY);
+            const curX = moveEvent.clientX ?? moveEvent.touches?.[0]?.clientX;
+            const curY = moveEvent.clientY ?? moveEvent.touches?.[0]?.clientY;
             
             const dx = curX - startX;
             const dy = curY - startY;
@@ -1057,10 +1052,19 @@ function makeDraggable(el, handle) {
 // 4. Ejecución inicial y Polling cíclico
 applyTranslations();
 
-// Llamadas iniciales no bloqueantes (Sin await en el flujo principal)
-updateKadStats().catch(e => console.warn("Initial stats fetch failed", e));
-updateKadNodes().catch(e => console.warn("Initial nodes fetch failed", e));
-initIDS();
+// Inicialización asíncrona
+try {
+    // Ejecutamos en paralelo para no retrasar el renderizado
+    await Promise.all([
+        updateKadStats(),
+        updateKadNodes()
+    ]);
+} catch (err) {
+    console.warn("Initial data fetch failed:", err);
+} finally {
+    // Iniciamos el IDS pase lo que pase
+    initIDS();
+}
 
 // Polling de 10s para datos generales
 setInterval(() => {

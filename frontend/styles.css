@@ -103,25 +103,28 @@ body {
 
 /* Modal interactivo */
 #nodeModal {
-    bottom: 30px; /* Esquina inferior derecha */
+    bottom: 30px;
+    /* Esquina inferior derecha */
     right: 30px;
     top: auto;
     left: auto;
-    width: 480px; /* Tamaño expandido */
+    width: 480px;
+    /* Tamaño expandido */
     z-index: 100;
 }
 
 .modal-hidden {
     opacity: 0;
     pointer-events: none;
-    transform: translateY(20px) scale(0.9); /* Aparece desde abajo */
+    transform: translateY(20px) scale(0.9);
+    /* Aparece desde abajo */
 }
 
 #nodeModal h2 {
     margin: 0 0 16px 0;
     font-size: 20px;
     color: #fff;
-    border-bottom: 2px solid rgba(255,255,255,0.1);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 10px;
 }
 
@@ -172,7 +175,8 @@ body {
     background: rgba(0, 0, 0, 0.3);
     padding: 6px 10px;
     border-radius: 4px;
-    color: #d6efff; /* Increased brightness for WCAG AA contrast */
+    color: #d6efff;
+    /* Increased brightness for WCAG AA contrast */
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -180,7 +184,8 @@ body {
 .right-panel {
     left: auto;
     right: 30px;
-    width: 320px; /* Incrementado para nombres de países largos */
+    width: 320px;
+    /* Incrementado para nombres de países largos */
     max-height: 60vh;
     overflow-y: auto;
     transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
@@ -212,10 +217,12 @@ body {
 .right-panel::-webkit-scrollbar {
     width: 6px;
 }
+
 .right-panel::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
 }
+
 .right-panel::-webkit-scrollbar-thumb {
     background: rgba(79, 172, 254, 0.5);
     border-radius: 10px;
@@ -267,7 +274,8 @@ body {
 }
 
 .lang-btn {
-    background: rgba(0, 0, 0, 0.4); /* Darker background for white text */
+    background: rgba(0, 0, 0, 0.4);
+    /* Darker background for white text */
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #fff;
     border-radius: 12px;
@@ -295,15 +303,16 @@ body {
 .tooltip-text {
     visibility: hidden;
     width: 200px;
-    background: rgba(10, 15, 30, 0.98); /* Un poco más opaco */
+    background: rgba(10, 15, 30, 0.98);
+    /* Un poco más opaco */
     backdrop-filter: blur(8px);
-    
+
     /* RESET DE HERENCIA DEL H1 */
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     background-clip: border-box !important;
     -webkit-background-clip: border-box !important;
-    
+
     text-align: left;
     border-radius: 10px;
     padding: 12px;
@@ -319,10 +328,11 @@ body {
     font-size: 11px;
     line-height: 1.5;
     pointer-events: none;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     font-weight: 400;
     text-transform: none;
-    white-space: pre-line; /* Permite que el legend de colores se vea en varias líneas */
+    white-space: pre-line;
+    /* Permite que el legend de colores se vea en varias líneas */
 }
 
 .tooltip-text b {
@@ -342,7 +352,8 @@ body {
 .tooltip-text::after {
     content: "";
     position: absolute;
-    bottom: 100%; /* Delante del tooltip */
+    bottom: 100%;
+    /* Delante del tooltip */
     left: 50%;
     margin-left: -5px;
     border-width: 5px;
@@ -357,12 +368,15 @@ body {
     left: 30px;
     background: #ffcc00;
     color: #000;
-    padding: 15px 25px; /* Más padding lateral */
+    padding: 15px 25px;
+    /* Más padding lateral */
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(255, 204, 0, 0.4);
     z-index: 100;
-    width: auto; /* Ancho automático basado en contenido */
-    min-width: 450px; /* Mínimo asegurado para IPs largas o nombres largos */
+    width: auto;
+    /* Ancho automático basado en contenido */
+    min-width: 450px;
+    /* Mínimo asegurado para IPs largas o nombres largos */
     transition: all 0.3s ease;
 }
 
@@ -393,12 +407,15 @@ body {
 
 .xor-list li {
     display: flex;
-    justify-content: flex-start; /* Alineación a la izquierda */
-    gap: 15px; /* Espacio fijo entre # y IP/Loc */
+    justify-content: flex-start;
+    /* Alineación a la izquierda */
+    gap: 15px;
+    /* Espacio fijo entre # y IP/Loc */
     font-size: 13px;
     font-family: 'Courier New', Courier, monospace;
     font-weight: 600;
-    white-space: nowrap; /* Evita saltos de línea */
+    white-space: nowrap;
+    /* Evita saltos de línea */
 }
 
 .xor-list li span:first-child {
@@ -450,34 +467,39 @@ body {
 }
 
 .ids-header:hover {
-    background: rgba(157, 0, 255, 0.15); /* Tinte violeta al hover */
+    background: rgba(157, 0, 255, 0.15);
+    /* Tinte violeta al hover */
 }
 
 .ids-badge {
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Colores de Severidad */
+/* Colores de Severidad con Contraste Máximo (WCAG AAA) */
 .severity-ok {
-    background: rgba(0, 230, 118, 0.2);
-    color: #00e676;
-    border: 1px solid rgba(0, 230, 118, 0.4);
+    background: rgba(0, 230, 118, 0.15);
+    color: #b9f6ca;
+    /* Verde muy claro para contraste */
+    border: 1px solid rgba(0, 230, 118, 0.3);
 }
 
 .severity-warning {
-    background: rgba(255, 171, 0, 0.2);
-    color: #ffab00;
-    border: 1px solid rgba(255, 171, 0, 0.4);
+    background: rgba(255, 171, 0, 0.15);
+    color: #fff9c4;
+    /* Amarillo crema muy claro para pasar WCAG AA */
+    border: 1px solid rgba(255, 171, 0, 0.3);
 }
 
 .severity-critical {
-    background: rgba(255, 23, 68, 0.2);
-    color: #ff1744;
-    border: 1px solid rgba(255, 23, 68, 0.4);
+    background: rgba(255, 23, 68, 0.15);
+    color: #ffcdd2;
+    /* Rojo mucho más claro para pasar WCAG AA */
+    border: 1px solid rgba(255, 23, 68, 0.3);
     animation: pulse-red 2s infinite;
 }
 
@@ -485,14 +507,15 @@ body {
 .ids-floating-panel {
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* Centrado por defecto */
+    transform: translate(-50%, -50%);
+    /* Centrado por defecto */
     width: 400px;
     max-height: 500px;
-    z-index: 200;
+    z-index: 2000;
     display: flex;
     flex-direction: column;
-    padding: 0 !important;    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 2000;
+    padding: 0 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .ids-floating-header {
@@ -578,15 +601,34 @@ body {
 
 /* Animaciones */
 @keyframes pulse-red {
-    0% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(255, 23, 68, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 23, 68, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 23, 68, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 23, 68, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 23, 68, 0);
+    }
 }
 
 @keyframes pulse-violet {
-    0% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.5); opacity: 0.4; }
-    100% { transform: scale(2); opacity: 0; }
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.5);
+        opacity: 0.4;
+    }
+
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
 }
 
 /* Clases para el Globo (inyectadas vía JS si es necesario, aunque Globe.gl usa sus propias fns) */

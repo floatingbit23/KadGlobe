@@ -49,7 +49,7 @@ To run the full system, use the orchestrators:
 - **Windows**: Run `Script.bat` (Launches the backend and opens the frontend).
 - **Linux**: Run `./launcher.sh` (**NEVER** as root/sudo to avoid conflicts with aMule/X11).
 
-### A. Automated Testing
+### Automated Testing
 To ensure system stability, run the categorized test suites:
 
 ```bash
@@ -59,9 +59,12 @@ python -m pytest tests/test_nodes_parser.py  # Binary nodes.dat parsing
 python -m pytest tests/test_geolocator.py    # IP to Geo mapping
 
 # 2. IDS Security Engine
-python -m pytest tests/test_ids_eclipse.py   # Sybil/Eclipse detection
-python -m pytest tests/test_ids_poisoning.py # Bucket poisoning detection
-python -m pytest tests/test_ids_dos.py       # Lookup DoS monitor
+python -m pytest tests/test_ids_eclipse.py     # Sybil/Eclipse detection
+python -m pytest tests/test_ids_poisoning.py   # Bucket poisoning detection
+python -m pytest tests/test_ids_dos.py         # Lookup DoS monitor
+python -m pytest tests/test_ids_sniffing.py    # Sniffing farm detection
+python -m pytest tests/test_ids_churn.py       # Network churn monitor
+python -m pytest tests/test_ids_integration.py # Full IDS cycle integration
 
 # 3. Scrapers & Telemetry
 python -m pytest tests/test_scrapers.py      # eMule WebUI scraping
@@ -96,3 +99,15 @@ python -m pytest tests/test_coverage_boost.py # Regression & Edge cases
 - Do not expose the `.env` file in commits.
 - The frontend is static; it does not require an independent Node.js server. It can be served using `python -m http.server`.
 - Respect UTF-8 encoding when scraping the WebUI to avoid special character parsing errors.
+
+## 8. Technical Conventions
+
+### A. K-Bucket Indexing
+KadGlobe follows the standard Kademlia convention where the bucket index corresponds to the bit position of the XOR distance:
+- **B0**: Closest neighborhood (distance $2^0$).
+- **B127**: Furthest possible distance (distance $2^{127}$).
+- **Theoretical Probability**: $P(Bi) = 1/2^{128-i}$.
+
+### B. IDS Lifecycle
+- **Cold Start**: On engine initialization, `ids_alerts.json` is automatically reset to an `ok` state to prevent displaying stale results from previous sessions.
+- **Analysis Cycle**: The engine waits for the first full telemetry cycle before publishing real-time threat scores.

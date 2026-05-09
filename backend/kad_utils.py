@@ -22,19 +22,11 @@ def get_kad_bucket(id1_hex, id2_hex):
     """
     distance = get_kad_distance(id1_hex, id2_hex)
 
-    # Si la distancia es None, retorna bucket B127 (corresponde a IDs casi iguales -> distancia = 0)
-    if distance is None:
-        return 127
+    if distance is None or distance == 0:
+        return 0
     
-    # Calcula la posición del bit más significativo del XOR
     bit_pos = distance.bit_length() - 1
-    
-    # Caso especial para distancia = 0
-    if bit_pos < 0: 
-        bit_pos = 0 
-
-    # Invierte la posición para obtener el índice del bucket (0-127)
-    return 127 - bit_pos
+    return bit_pos
 
 
 def chi_squared_buckets(observed, expected): 

@@ -58,6 +58,8 @@ El proyecto se divide en un backend de orquestación y un frontend de visualizac
 
 > Blanco ⚪ (sin respuesta). 
 
+> Violeta 🟣 (Objetivo de alerta IDS / Amenaza detectada). Estos nodos también se visualizan con pilares más altos.
+
 > Nuestro propio nodo se destaca con un pilar negro ⬛ en el globo.
 
 ![alt text](images/heatmap.png)
@@ -67,12 +69,12 @@ El proyecto se divide en un backend de orquestación y un frontend de visualizac
 
 ![alt text](images/ranking.png)
 
-*   **Distribución K-Buckets**: Un histograma que muestra cuántos "contactos" (nodos) tienes en cada "cubo" (_bucket_) de enrutamiento (distancia XOR $0-127$). Es normal ver más nodos en los buckets lejanos ($B0$, $B1$, etc.) y muy pocos en los cercanos ($B123$ a $B127$).
+*   **Distribución K-Buckets**: Un histograma que muestra cuántos "contactos" (nodos) tienes en cada "cubo" (_bucket_) de enrutamiento (distancia XOR $0-127$). Es normal ver más nodos en los buckets lejanos ($B127$, $B126$, etc.) y muy pocos en los cercanos ($B0$ a $B10$).
 
 ![alt text](images/kbuckets.png)
 
-> Nota: Ten en cuenta que la probabilidad de que un nodo caiga en $B0$ es 50%, en $B1$ es 25%, en $B2$ es 12.5%, etc. Por eso virtualmente no verás nodos en los buckets más cercanos (la probabilidad es ínfima). La fórmula es: 
-$$P(Bi) = \frac{1}{2^{i+1}}$$
+> Nota: Ten en cuenta que la probabilidad de que un nodo caiga en $B127$ es 50%, en $B126$ es 25%, en $B125$ es 12.5%, etc. Por eso virtualmente no verás nodos en los buckets más cercanos (la probabilidad es ínfima). La fórmula es: 
+$$P(Bi) = \frac{1}{2^{128-i}}$$
 
 *   **Top 10 Vecindario XOR**: Al hacer clic en un nodo, se muestra una ventana con su IP, su ubicación y  su Kad ID. También se se calculan sus 10 vecinos más cercanos criptográficamente (distancia XOR) y se trazan arcos dorados de conexión.
 
@@ -91,12 +93,18 @@ KadGlobe incluye un motor IDS especializado (`backend/ids_engine.py`) que monito
 
 *   **Detección de Sybil/Eclipse**: Analiza la distribución estadística de los buckets mediante la prueba de $\chi^2$ y alerta si un número inusual de nodos se concentra en buckets específicos intentando rodear tu ID.
 
-*   **Detección de Poisoning**: Utiliza un análisis _Z-Score_ dual (Local y Temporal) para identificar envenenamiento de buckets. Detecta cuando un bucket crece de forma anómala comparado con el resto o con su propio historial.
+*   **Detección de Poisoning**: Utiliza un análisis _Z-Score_ normalizado por la distribución teórica de Kademlia ($1/2^{128-i}$). Filtra el ruido natural en los buckets comunes ($B127$, $B126$...) y prioriza la detección de anomalías en el "vecindario XOR" cercano ($B0-B10$), donde los ataques son críticos para la salud del nodo.
 
 *   **Monitor de Lookup DoS**: Vigilancia del tráfico de control (_overhead_). Detecta inundaciones de paquetes mediante el análisis de _ratios_ de tráfico y curvas de crecimiento exponencial, filtrando picos legítimos durante tus propias búsquedas.
 
 > [!TIP]
-> Las alertas del IDS se clasifican en `INFO`, `WARNING` y `CRITICAL` y están diseñadas para integrarse en el panel visual en futuras versiones.
+> Las alertas del IDS se clasifican en `INFO`, `WARNING` y `CRITICAL`. Las alertas se muestran en el panel de la UI.
+
+Algunos ejemplos:
+
+![alt text](images/ids_safe.png)
+![alt text](images/ids_warning.png)
+![alt text](images/ids_critical.png)
 
 ### 5. Requisitos y Configuración
 Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos:
@@ -122,7 +130,7 @@ Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos
 ![alt text](images/files.png)
 ![alt text](images/database.png)
 
-### 5. _Aclaración sobre la Latencia y Persistencia de Datos_
+### 6. _Aclaración sobre la Latencia y Persistencia de Datos_
 
 _KadGlobe obtiene la información de los nodos de dos fuentes complementarias:_
 
