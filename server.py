@@ -129,8 +129,8 @@ class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header(
             'Content-Security-Policy',
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://unpkg.com https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline'; "
+            "script-src 'self' blob: https://unpkg.com https://cdn.jsdelivr.net; "
+            "style-src 'self'; "
             "img-src 'self' data: blob: https://unpkg.com https://cdn.jsdelivr.net https://flagcdn.com; "
             "connect-src 'self' https://unpkg.com; "
             "worker-src 'self' blob:; "

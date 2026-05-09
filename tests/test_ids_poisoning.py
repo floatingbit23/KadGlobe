@@ -7,7 +7,9 @@ from backend.ids_engine import KadIDSEngine
 def ids_engine(tmp_path):
     history_file = tmp_path / "ids_history.json"
     alerts_file = tmp_path / "ids_alerts.json"
-    return KadIDSEngine(history_path=str(history_file), alerts_path=str(alerts_file))
+    engine = KadIDSEngine(history_path=str(history_file), alerts_path=str(alerts_file))
+    engine.cycle_count = 10 # Pasamos el filtro de arranque frío
+    return engine
 
 def test_detect_poisoning_theoretical_normal(ids_engine):
     """Test que una distribución que sigue la ley de potencias NO genera alertas."""

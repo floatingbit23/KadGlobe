@@ -96,6 +96,9 @@ KadGlobe includes a specialized IDS engine (`backend/ids_engine.py`) that monito
 
 *   **Lookup DoS Monitor**: Monitors control traffic (_overhead_). It detects packet floods by analyzing traffic ratios and exponential growth curves, filtering legitimate spikes during your own searches.
 
+> [!IMPORTANT]
+> **Stabilization Period (_Warm-Up_)**: Upon starting KadGlobe (first 10 cycles / ~5 minutes), the IDS engine remains in "learning" mode and does not issue alerts. This allows network statistics and geolocation to stabilize, eliminating false positives caused by initial Kad network noise during connection.
+
 > [!TIP]
 > IDS alerts are classified as `INFO`, `WARNING`, and `CRITICAL`. Alerts are displayed in the UI panel.
 
@@ -103,6 +106,7 @@ Some examples:
 ![alt text](images/ids_safe.png)
 ![alt text](images/ids_warning.png)
 ![alt text](images/ids_critical.png)
+![alt text](images/ids_info.png)
 
 ### 5. Requirements and Setup
 To use KadGlobe, you must ensure the following requirements are met:

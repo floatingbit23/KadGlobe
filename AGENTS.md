@@ -110,4 +110,4 @@ KadGlobe follows the standard Kademlia convention where the bucket index corresp
 
 ### B. IDS Lifecycle
 - **Cold Start**: On engine initialization, `ids_alerts.json` is automatically reset to an `ok` state to prevent displaying stale results from previous sessions.
-- **Analysis Cycle**: The engine waits for the first full telemetry cycle before publishing real-time threat scores.
+- **Warm-up Period**: The engine requires a **10-cycle stabilization period** (~5 minutes) before active threat detection begins. This avoids false positives from initial network noise.

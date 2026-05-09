@@ -5,7 +5,9 @@ from backend.ids_engine import KadIDSEngine
 def ids_engine(tmp_path):
     history_file = tmp_path / "ids_history.json"
     alerts_file = tmp_path / "ids_alerts.json"
-    return KadIDSEngine(history_path=str(history_file), alerts_path=str(alerts_file))
+    engine = KadIDSEngine(history_path=str(history_file), alerts_path=str(alerts_file))
+    engine.cycle_count = 10 # Pasamos el filtro de arranque frío
+    return engine
 
 def test_detect_eclipse_critical(ids_engine):
     """Test de detección de ataque Eclipse crítico (>5 nodos en buckets cercanos)."""
@@ -25,9 +27,9 @@ def test_detect_eclipse_critical(ids_engine):
     nodes.append({"id": "C0000000000000000000000000000000", "ip": "3.3.3.3"})
     
     # Simular que han pasado los ciclos de warm-up
-    ids_engine.cycle_count = 3
+    ids_engine.cycle_count = 10
 
-    alerts, chi_p, bucket_counts = ids_engine._detect_eclipse(stats, nodes)
+    alerts, _, _ = ids_engine._detect_eclipse(stats, nodes)
     
     # Debería haber una alerta crítica de Eclipse
     eclipse_alerts = [a for a in alerts if a["type"] == "eclipse" and a["severity"] == "critical"]
@@ -47,9 +49,9 @@ def test_detect_sybil_concentration(ids_engine):
         nodes.append({"id": node_id, "ip": f"192.168.1.{i}"})
     
     # Simular que han pasado los ciclos de warm-up
-    ids_engine.cycle_count = 3
+    ids_engine.cycle_count = 10
 
-    alerts, chi_p, bucket_counts = ids_engine._detect_eclipse(stats, nodes)
+    alerts, _, _ = ids_engine._detect_eclipse(stats, nodes)
     
     # Debería haber una alerta de Sybil
     sybil_alerts = [a for a in alerts if a["type"] == "sybil"]
@@ -70,7 +72,7 @@ def test_analyze_integration_eclipse(ids_engine):
         nodes.append({"id": node_id, "ip": "1.1.1.1"})
         
     # Simular que han pasado los ciclos de warm-up
-    ids_engine.cycle_count = 3
+    ids_engine.cycle_count = 10
     result = ids_engine.analyze(stats, nodes, [])
     
     assert result["global_severity"] == "critical"

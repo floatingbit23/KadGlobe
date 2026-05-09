@@ -287,6 +287,10 @@ class KadIDSEngine:
         
         alerts = []
         
+        # Ignoramos alertas estructurales durante el periodo de estabilización (10 ciclos)
+        if self.cycle_count < 10:
+            return [], 1.0, observed
+
         """
         Como tenemos 128 buckets, los grados de libertad (GL) son 127.
         Un $p < 0.01$ significa que hay menos de un 1% de probabilidad de que la diferencia que estamos viendo sea por pura suerte o azar.
@@ -297,7 +301,7 @@ class KadIDSEngine:
             Sigue siendo extremadamente sensible para detectar un ataque real, pero nos da un colchón de seguridad mucho mayor contra los falsos positivos.
         """
 
-        if chi_sq > 300.0 and self.cycle_count > 2:
+        if chi_sq > 300.0:
 
             alerts.append({
                 "type": "eclipse",
@@ -313,7 +317,7 @@ class KadIDSEngine:
 
         # 4. Alerta de Proximidad Crítica
 
-        if proximity_count > 6 and self.cycle_count > 2:
+        if proximity_count > 6:
 
             alerts.append({
                 "type": "eclipse",
@@ -327,7 +331,7 @@ class KadIDSEngine:
                 "recommendation_en": "Danger! Your node is surrounded. Consider restarting the Kad network."
             })
 
-        elif proximity_count > 4 and self.cycle_count > 2:
+        elif proximity_count > 4:
 
             alerts.append({
                 "type": "eclipse",
@@ -389,6 +393,10 @@ class KadIDSEngine:
 
         total_nodes = sum(bucket_counts.values())
         
+        # 0. Período de Estabilización (Warm-up)
+        if self.cycle_count < 10:
+            return []
+
         if total_nodes < 50: # Evitamos ruido en redes recién conectadas
             return []
 
@@ -458,6 +466,10 @@ class KadIDSEngine:
 
         alerts = []
         
+        # 0. Período de Estabilización (Warm-up)
+        if self.cycle_count < 10:
+            return alerts
+
         if not udp_nodes:
             return alerts
 
@@ -613,6 +625,11 @@ class KadIDSEngine:
         
         alerts = []
         
+        # 0. Período de Estabilización (Warm-up)
+        # Ignoramos alertas de DoS durante los primeros 10 ciclos (~5 minutos) para que la media de overhead sea fiable.
+        if self.cycle_count < 10:
+            return []
+
         if len(self.history) < 3:
             return []
 
@@ -653,8 +670,9 @@ class KadIDSEngine:
 
             ref_mean = statistics.mean(ref_rates)
             
-            # Suelo de 100 bytes para evitar alertas por ruidos mínimos en redes muy inactivas
-            ref_mean = max(ref_mean, 100) 
+            # Suelo de 1024 bytes (1KB) para evitar alertas por ruidos mínimos en redes muy inactivas
+            # Una red Kad funcional suele tener un overhead base mayor a 100 bytes por ciclo.
+            ref_mean = max(ref_mean, 1024) 
             
             ratio = tasa_actual / ref_mean
 
@@ -741,6 +759,13 @@ class KadIDSEngine:
             return alerts, cv
 
         # Necesitamos una ventana mínima (al menos 5 ciclos o 2.5 minutos) para que el análisis sea estadísticamente relevante
+       
+        # 0. Período de Estabilización (Warm-up)
+        # Ignoramos alertas de Churn durante los primeros 10 ciclos (~5 minutos) 
+        # para que la media y desviación de contactos se estabilicen.
+        if self.cycle_count < 10:
+            return alerts, 0.0
+
         if len(self.history) < 5:
             return alerts, cv
 

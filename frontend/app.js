@@ -30,6 +30,21 @@ function secureRandom() {
     return array[0] / (0xffffffff + 1);
 }
 
+/**
+ * Escapa caracteres especiales de HTML para prevenir inyecciones XSS.
+ * @param {string} str Texto sin procesar.
+ * @returns {string} Texto escapado seguro para innerHTML.
+ */
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
 // --- DICCIONARIO i18n ---
 let currentLang = 'es';
 
@@ -179,9 +194,12 @@ function renderIDSAlerts(data) {
     const alerts = data.alerts || [];
 
     if (alerts.length === 0) {
-        elIdsAlertList.innerHTML = `<li style="color:rgba(255,255,255,0.4); font-size:12px; text-align:center;">
-            ${i18n[currentLang].ids_no_alerts}
-        </li>`;
+        const li = document.createElement('li');
+        li.style.color = 'rgba(255,255,255,0.4)';
+        li.style.fontSize = '12px';
+        li.style.textAlign = 'center';
+        li.textContent = i18n[currentLang].ids_no_alerts;
+        elIdsAlertList.appendChild(li);
         return;
     }
 
@@ -200,14 +218,35 @@ function renderIDSAlerts(data) {
         const detail = currentLang === 'es' ? alert.detail_es : alert.detail_en;
         const reco = currentLang === 'es' ? alert.recommendation_es : alert.recommendation_en;
 
-        li.innerHTML = `
-            <div class="alert-title">
-                <span>${icon} ${title}</span>
-                <span class="ids-badge severity-${alert.severity}">${alert.severity.toUpperCase()}</span>
-            </div>
-            <div class="alert-detail">${detail}</div>
-            <div class="alert-recommendation"><b>${i18n[currentLang].ids_reco_title}</b> ${reco}</div>
-        `;
+        // Secure DOM Construction (Anti-XSS)
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'alert-title';
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = `${icon} ${title}`;
+        
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = `ids-badge severity-${alert.severity}`;
+        badgeSpan.textContent = alert.severity.toUpperCase();
+        
+        headerDiv.appendChild(titleSpan);
+        headerDiv.appendChild(badgeSpan);
+        
+        const detailDiv = document.createElement('div');
+        detailDiv.className = 'alert-detail';
+        detailDiv.textContent = detail;
+        
+        const recoDiv = document.createElement('div');
+        recoDiv.className = 'alert-recommendation';
+        const recoB = document.createElement('b');
+        recoB.textContent = i18n[currentLang].ids_reco_title;
+        recoDiv.appendChild(recoB);
+        recoDiv.appendChild(document.createTextNode(' ' + reco));
+
+        li.appendChild(headerDiv);
+        li.appendChild(detailDiv);
+        li.appendChild(recoDiv);
+
         elIdsAlertList.appendChild(li);
     });
 }
@@ -367,11 +406,12 @@ const renderGlobe = Globe()
             countryLabel = d.country;
         }
 
+        // Usamos escapeHTML porque pointLabel requiere devolver una cadena HTML
         return `
-            <div style="background: rgba(10, 15, 30, 0.9); padding: 10px; border-radius: 8px; border: 1px solid #4facfe; color: white; font-family: Inter, sans-serif;">
-                <b style="font-size: 14px;">${title}</b><br/>
-                <i style="color: #ccc;">${countryLabel}</i><br/>
-                <small style="color: #666; margin-top: 4px; display: block;">ID: ${d.id.substring(0, 8)}...</small>
+            <div class="node-label-container">
+                <b class="node-label-title">${escapeHTML(title)}</b><br/>
+                <i class="node-label-country">${escapeHTML(countryLabel)}</i><br/>
+                <small class="node-label-id">${escapeHTML(d.id.substring(0, 8))}...</small>
             </div>
         `;
     })
@@ -429,7 +469,15 @@ function openNodeModal(node) {
         const li = document.createElement('li');
         const city = neighbor.obj.city && neighbor.obj.city !== "-" ? neighbor.obj.city : "?";
         const country = neighbor.obj.country && neighbor.obj.country !== "-" ? neighbor.obj.country : "?";
-        li.innerHTML = `<span>#${index + 1}</span> <span>${neighbor.obj.ip} (${city}, ${country})</span>`;
+        
+        const idxSpan = document.createElement('span');
+        idxSpan.textContent = `#${index + 1}`;
+        
+        const infoSpan = document.createElement('span');
+        infoSpan.textContent = ` ${neighbor.obj.ip} (${city}, ${country})`;
+        
+        li.appendChild(idxSpan);
+        li.appendChild(infoSpan);
         elXorNeighborsList.appendChild(li);
     });
 
@@ -721,20 +769,35 @@ async function updateKadNodes() {
             elCountryList.innerHTML = '';
             sortedCountries.forEach(([countryName, data]) => {
                 const li = document.createElement('li');
-                li.className = 'country-item';
+                li.classList.add('country-item');
+                
+                const leftSide = document.createElement('div');
+                leftSide.classList.add('country-item-left');
+                
+                if (data.code !== 'unknown' && data.code !== '-') {
+                    const flag = document.createElement('img');
+                    flag.src = `https://flagcdn.com/24x18/${data.code.toLowerCase()}.png`;
+                    flag.alt = countryName;
+                    flag.classList.add('country-flag');
+                    leftSide.appendChild(flag);
+                } else {
+                    const globeSpan = document.createElement('span');
+                    globeSpan.classList.add('country-globe-icon');
+                    globeSpan.textContent = '🌍';
+                    leftSide.appendChild(globeSpan);
+                }
 
-                // Petición visual por CDN del SVG de la bandera
-                const flagHtml = (data.code !== 'unknown' && data.code !== '-')
-                    ? `<img src="https://flagcdn.com/w20/${data.code}.png" alt="${data.code}" style="margin-right:8px; border-radius:2px;">`
-                    : `<span style="display:inline-block; width:20px; margin-right:8px; text-align:center;">🌍</span>`;
+                const nameSpan = document.createElement('span');
+                nameSpan.classList.add('country-name');
+                nameSpan.textContent = countryName;
+                leftSide.appendChild(nameSpan);
 
-                li.innerHTML = `
-                    <div style="display:flex; align-items:center;">
-                        ${flagHtml}
-                        <span class="country-name">${countryName}</span>
-                    </div>
-                    <span class="country-count">${data.count}</span>
-                `;
+                const countSpan = document.createElement('span');
+                countSpan.classList.add('country-count');
+                countSpan.textContent = data.count;
+
+                li.appendChild(leftSide);
+                li.appendChild(countSpan);
                 elCountryList.appendChild(li);
             });
             // ----------------------------------------------------------------------------------

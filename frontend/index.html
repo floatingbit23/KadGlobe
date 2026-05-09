@@ -22,14 +22,14 @@
 
     <!-- Panel flotante con Glassmorphism para mostrar las estadísticas en tiempo real -->
     <div id="statsPanel" class="glass-panel">
-        <h1 style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 class="flex-between-center">
             KadGlobe
-            <div style="display: flex; align-items: center; gap: 8px;">
+            <div class="flex-center-gap">
                 <div class="tooltip-container">
                     <button id="heatMapToggle" class="lang-btn" data-i18n="heatmap_btn">Mapa Térmico (UDP)</button>
                     <span class="tooltip-text" id="heatmapTooltip">
                         <b data-i18n="heatmap_tool_title">Salud de Red Kad (UDP)</b>
-                        <span data-i18n="heatmap_tool_desc" style="white-space: pre-wrap;">Mide la latencia real mediante ráfagas nativas Kademlia (UDP Ping). Colorea los nodos según su tiempo de respuesta:
+                        <span data-i18n="heatmap_tool_desc" class="pre-wrap">Mide la latencia real mediante ráfagas nativas Kademlia (UDP Ping). Colorea los nodos según su tiempo de respuesta:
 🟢: < 150ms (Excelente)
 🟡: < 500ms (Aceptable)
 🔴: > 500ms (Lento)
@@ -45,7 +45,7 @@
             <span class="stat-value" id="kadStatus">Cargando...</span>
         </div>
 
-        <div class="stat-item" id="kadIdRow" style="display: none;">
+        <div class="stat-item hidden" id="kadIdRow">
             <span class="stat-label" data-i18n="id_status">Estatus ID:</span>
             <span class="stat-value" id="kadId">-</span>
         </div>
@@ -54,7 +54,7 @@
             <span class="stat-label" data-i18n="contacts">Contactos Kad:</span>
             <div>
                 <span class="stat-value" id="kadContacts">-</span>
-                <span id="kadContactsDiff" style="font-size: 13px; margin-left: 6px; font-weight: bold;"></span>
+                <span id="kadContactsDiff" class="stat-diff"></span>
             </div>
         </div>
 
@@ -64,23 +64,23 @@
         </div>
 
         <!-- Métricas reales desde /stats -->
-        <div class="stat-item" id="kadOverheadRow" style="display: none;">
+        <div class="stat-item hidden" id="kadOverheadRow">
             <span class="stat-label" data-i18n="overhead">Tráfico Kad (session):</span>
             <span class="stat-value" id="kadOverhead">-</span>
         </div>
 
-        <div class="stat-item" id="kadFirewallRow" style="display: none;">
+        <div class="stat-item hidden" id="kadFirewallRow">
             <span class="stat-label" data-i18n="firewalled">Firewalled (UDP/TCP):</span>
             <div>
                 <span class="stat-value" id="kadFwUdp">-</span>
-                <span style="font-size: 10px; color: #aaa;">%</span>
-                <span style="margin: 0 5px; color: #4facfe;">/</span>
+                <span class="unit-label">%</span>
+                <span class="separator-text">/</span>
                 <span class="stat-value" id="kadFwTcp">-</span>
-                <span style="font-size: 10px; color: #aaa;">%</span>
+                <span class="unit-label">%</span>
             </div>
         </div>
 
-        <div class="stat-item" id="kadSourcesRow" style="display: none;">
+        <div class="stat-item hidden" id="kadSourcesRow">
             <span class="stat-label" data-i18n="kad_sources">Fuentes vía Kad:</span>
             <span class="stat-value" id="kadSources">-</span>
         </div>
@@ -94,7 +94,7 @@
         <div id="idsTab" class="ids-tab-compact">
             <div class="ids-header" id="idsHeaderToggle">
                 <span id="idsGlobalIcon">🛡️</span>
-                <span data-i18n="ids_title" style="font-weight: bold; flex-grow: 1; margin-left: 5px;">KadGlobe IDS</span>
+                <span data-i18n="ids_title" class="ids-title-text">KadGlobe IDS</span>
                 <span id="idsGlobalStatus" class="ids-badge severity-ok" data-i18n="ids_ok">OK</span>
             </div>
         </div>
@@ -103,7 +103,7 @@
     <!-- Panel IDS Flotante (Oculto por defecto, se activa al click) -->
     <div id="idsFloatingPanel" class="glass-panel ids-floating-panel modal-hidden">
         <div class="ids-floating-header" id="idsFloatingHeader">
-            <h3 style="margin:0;"><span id="idsModalIcon">🛡️</span> <span data-i18n="ids_title">KadGlobe IDS</span></h3>
+            <h3 class="m-0"><span id="idsModalIcon">🛡️</span> <span data-i18n="ids_title">KadGlobe IDS</span></h3>
             <button id="closeIdsModal" class="modal-close-btn">&times;</button>
         </div>
         <div class="ids-scroll-area">
@@ -118,7 +118,7 @@
 
     <!-- Panel flotante derecho: Ranking de Países -->
     <div id="countriesPanel" class="glass-panel right-panel panel-collapsed">
-        <h3 id="countriesToggle" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
+        <h3 id="countriesToggle" class="panel-header">
             <span data-i18n="ranking_title">Nodos por país</span>
             <span class="toggle-arrow">▼</span>
         </h3>
@@ -129,11 +129,11 @@
     
     <!-- Panel de K-Buckets (Histograma XOR) -->
     <div id="bucketsPanel" class="glass-panel right-panel buckets-panel">
-        <h3 style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="chart-container-header">
             <span data-i18n="buckets_title">Distribución K-Buckets</span>
-            <span id="bucketsSubtitle" style="font-size: 10px; color: #4facfe;">XOR Distance</span>
+            <span id="bucketsSubtitle" class="chart-subtitle">XOR Distance</span>
         </h3>
-        <div style="height: 180px; position: relative;">
+        <div class="chart-wrapper">
             <canvas id="bucketsChart"></canvas>
         </div>
     </div>
@@ -149,7 +149,7 @@
     <!-- Modal Interactivo del Nodo -->
     <div id="nodeModal" class="glass-panel modal-hidden">
         <button id="closeModal" class="modal-close-btn">&times;</button>
-        <h2 id="modalTitle" style="margin-bottom:5px;" data-i18n="modal_title">Información del Nodo</h2>
+        <h2 id="modalTitle" class="mb-5" data-i18n="modal_title">Información del Nodo</h2>
         <div class="stat-item">
             <span class="stat-label">IP:</span>
             <span class="stat-value" id="modalIp">-</span>

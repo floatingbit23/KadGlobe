@@ -97,6 +97,9 @@ KadGlobe incluye un motor IDS especializado (`backend/ids_engine.py`) que monito
 
 *   **Monitor de Lookup DoS**: Vigilancia del tráfico de control (_overhead_). Detecta inundaciones de paquetes mediante el análisis de _ratios_ de tráfico y curvas de crecimiento exponencial, filtrando picos legítimos durante tus propias búsquedas.
 
+> [!IMPORTANT]
+> **Periodo de Estabilización (_Warm-Up_)**: Al arrancar KadGlobe (primeros 10 ciclos / ~5 minutos), el motor IDS permanece en modo de "aprendizaje" y no emite alertas. Esto permite que las estadísticas de red y la geolocalización se estabilicen, eliminando falsos positivos causados por el ruido inicial de la red Kad al conectar.
+
 > [!TIP]
 > Las alertas del IDS se clasifican en `INFO`, `WARNING` y `CRITICAL`. Las alertas se muestran en el panel de la UI.
 
@@ -105,6 +108,7 @@ Algunos ejemplos:
 ![alt text](images/ids_safe.png)
 ![alt text](images/ids_warning.png)
 ![alt text](images/ids_critical.png)
+![alt text](images/ids_info.png)
 
 ### 5. Requisitos y Configuración
 Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos:

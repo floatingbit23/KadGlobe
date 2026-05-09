@@ -7,7 +7,9 @@ from backend.ids_engine import KadIDSEngine
 def ids_engine(tmp_path):
     history_file = tmp_path / "ids_history.json"
     alerts_file = tmp_path / "ids_alerts.json"
-    return KadIDSEngine(history_path=str(history_file), alerts_path=str(alerts_file))
+    engine = KadIDSEngine(history_path=str(history_file), alerts_path=str(alerts_file))
+    engine.cycle_count = 10 # Bypass warm-up for tests
+    return engine
 
 def test_analyze_generates_valid_json_schema(ids_engine):
     """

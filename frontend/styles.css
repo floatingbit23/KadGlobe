@@ -631,6 +631,43 @@ body {
     }
 }
 
+/* --- UTILITY CLASSES FOR CSP COMPLIANCE --- */
+.flex-between-center { display: flex; justify-content: space-between; align-items: center; }
+.flex-center-gap { display: flex; align-items: center; gap: 8px; }
+.pre-wrap { white-space: pre-wrap; }
+.hidden { display: none; }
+.stat-diff { font-size: 13px; margin-left: 6px; font-weight: bold; }
+.unit-label { font-size: 10px; color: #aaa; }
+.separator-text { margin: 0 5px; color: #4facfe; }
+.ids-title-text { font-weight: bold; flex-grow: 1; margin-left: 5px; }
+.m-0 { margin: 0; }
+.panel-header { cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; }
+.chart-container-header { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.chart-subtitle { font-size: 10px; color: #4facfe; }
+.chart-wrapper { height: 180px; position: relative; }
+.mb-5 { margin-bottom: 5px; }
+.text-center { text-align: center; }
+.text-muted-faint { color: rgba(255,255,255,0.4); }
+.fs-12 { font-size: 12px; }
+
+/* Tooltip (Globe Label) Styles */
+.node-label-container {
+    background: rgba(10, 15, 30, 0.9);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #4facfe;
+    color: white;
+    font-family: Inter, sans-serif;
+}
+.node-label-title { font-size: 14px; }
+.node-label-country { color: #ccc; }
+.node-label-id { color: #666; margin-top: 4px; display: block; }
+
+/* Country List Styles */
+.country-item-left { display: flex; align-items: center; }
+.country-flag { margin-right: 8px; border-radius: 2px; }
+.country-globe-icon { display: inline-block; width: 20px; margin-right: 8px; text-align: center; }
+
 /* Clases para el Globo (inyectadas vía JS si es necesario, aunque Globe.gl usa sus propias fns) */
 .violet-glow {
     filter: drop-shadow(0 0 8px #9d00ff);

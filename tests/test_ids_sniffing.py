@@ -7,6 +7,7 @@ def test_sniffing_triage_detection():
     Escenario A: Detectar un pico de nodos en una subred /24 (Z-Score).
     """
     ids = KadIDSEngine()
+    ids.cycle_count = 10 # Bypass warm-up
     
     # 1. Creamos un historial estable (5 ciclos con 1-2 nodos por subred)
     for _ in range(5):
@@ -39,7 +40,7 @@ def test_sniffing_farm_critical_detection():
     Escenario B: Detectar una granja profesional (Coordenadas idénticas + RTT estable).
     """
     ids = KadIDSEngine()
-    ids.cycle_count = 9 # Forzamos que el siguiente sea el ciclo 10 (Deep Scan)
+    ids.cycle_count = 10 # Forzamos Deep Scan (Warm-up superado)
     
     # 1. Historial estable
     for _ in range(5):
@@ -70,6 +71,7 @@ def test_sniffing_performance_impact():
     """
     import time
     ids = KadIDSEngine()
+    ids.cycle_count = 10 # Bypass warm-up
     
     # 1000 nodos simulados
     big_nodes = []
