@@ -89,6 +89,31 @@
             <span class="stat-label" data-i18n="mapped">Nodos Georreferenciados:</span>
             <span class="stat-value" id="kadMappedNodes">-</span>
         </div>
+
+        <!-- Fase 6: Pestaña IDS Integrada -->
+        <div id="idsTab" class="ids-tab-compact">
+            <div class="ids-header" id="idsHeaderToggle">
+                <span id="idsGlobalIcon">🛡️</span>
+                <span data-i18n="ids_title" style="font-weight: bold; flex-grow: 1; margin-left: 5px;">KadGlobe IDS</span>
+                <span id="idsGlobalStatus" class="ids-badge severity-ok" data-i18n="ids_ok">OK</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel IDS Flotante (Oculto por defecto, se activa al click) -->
+    <div id="idsFloatingPanel" class="glass-panel ids-floating-panel modal-hidden">
+        <div class="ids-floating-header" id="idsFloatingHeader">
+            <h3 style="margin:0;"><span id="idsModalIcon">🛡️</span> <span data-i18n="ids_title">KadGlobe IDS</span></h3>
+            <button id="closeIdsModal" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="ids-scroll-area">
+            <ul id="idsAlertList" class="ids-alert-list">
+                <!-- Inyectado visualmente por app.js -->
+            </ul>
+        </div>
+        <div class="ids-footer">
+            <span data-i18n="ids_last_update">Última actualización:</span> <span id="idsUpdateTime">--:--:--</span>
+        </div>
     </div>
 
     <!-- Panel flotante derecho: Ranking de Países -->

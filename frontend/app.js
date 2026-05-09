@@ -63,7 +63,14 @@ const i18n = {
         "firewalled": "Tras cortafuegos (UDP/TCP):",
         "kad_sources": "Fuentes vía Kad:",
         "buckets_title": "Distribución K-Buckets",
-        "self_node_label": "ESTE ERES TÚ (eMule)"
+        "self_node_label": "ESTE ERES TÚ (eMule)",
+        "ids_title": "KadGlobe IDS",
+        "ids_ok": "Sin amenazas",
+        "ids_warning": "ADVERTENCIA",
+        "ids_critical": "CRÍTICO",
+        "ids_last_update": "Última actualización:",
+        "ids_no_alerts": "No hay amenazas detectadas en este momento.",
+        "ids_reco_title": "Recomendación:"
     },
     en: {
         "net_status": "Kademlia Network Status:",
@@ -94,7 +101,14 @@ const i18n = {
         "firewalled": "Firewalled (UDP/TCP):",
         "kad_sources": "Sources via Kad:",
         "buckets_title": "K-Buckets Distribution",
-        "self_node_label": "THIS IS YOU (eMule)"
+        "self_node_label": "THIS IS YOU (eMule)",
+        "ids_title": "KadGlobe IDS",
+        "ids_ok": "No threats",
+        "ids_warning": "WARNING",
+        "ids_critical": "CRITICAL",
+        "ids_last_update": "Last update:",
+        "ids_no_alerts": "No threats detected at this time.",
+        "ids_reco_title": "Recommendation:"
     }
 };
 
@@ -131,6 +145,116 @@ if (langToggle) {
     });
 }
 
+// --- FASE 6: LÓGICA IDS ---
+
+// Referencias DOM IDS (Globales)
+let elIdsGlobalStatus, elIdsGlobalIcon, elIdsAlertList, elIdsUpdateTime;
+let elIdsFloating, elIdsClose;
+
+// Estado global de alertas para overlays
+globalThis.activeIDSAlerts = [];
+
+async function updateIDSAlerts() {
+    try {
+        const response = await fetch('/jsons/ids_alerts.json?t=' + Date.now());
+        if (!response.ok) return;
+
+        const data = await response.json();
+        globalThis.activeIDSAlerts = data.alerts || [];
+
+        renderIDSAlerts(data);
+        updateIDSBadge(data.global_severity || 'ok');
+        updateIDSOverlays();
+
+        if (elIdsUpdateTime) elIdsUpdateTime.textContent = new Date().toLocaleTimeString();
+    } catch (e) {
+        console.warn('[!] Error obteniendo ids_alerts.json:', e);
+    }
+}
+
+function renderIDSAlerts(data) {
+    if (!elIdsAlertList) return;
+    elIdsAlertList.innerHTML = '';
+
+    const alerts = data.alerts || [];
+
+    if (alerts.length === 0) {
+        elIdsAlertList.innerHTML = `<li style="color:rgba(255,255,255,0.4); font-size:12px; text-align:center;">
+            ${i18n[currentLang].ids_no_alerts}
+        </li>`;
+        return;
+    }
+
+    alerts.forEach(alert => {
+        const li = document.createElement('li');
+        li.className = 'ids-alert-item';
+
+        let icon = '🛡️';
+        if (alert.type === 'eclipse' || alert.type === 'sybil') icon = '⚠️';
+        if (alert.type === 'dos') icon = '💀';
+        if (alert.type === 'poisoning') icon = '🧪';
+        if (alert.type === 'sniffing') icon = '👁️';
+        if (alert.type === 'churn') icon = '🔄';
+
+        const title = currentLang === 'es' ? alert.title_es : alert.title_en;
+        const detail = currentLang === 'es' ? alert.detail_es : alert.detail_en;
+        const reco = currentLang === 'es' ? alert.recommendation_es : alert.recommendation_en;
+
+        li.innerHTML = `
+            <div class="alert-title">
+                <span>${icon} ${title}</span>
+                <span class="ids-badge severity-${alert.severity}">${alert.severity.toUpperCase()}</span>
+            </div>
+            <div class="alert-detail">${detail}</div>
+            <div class="alert-recommendation"><b>${i18n[currentLang].ids_reco_title}</b> ${reco}</div>
+        `;
+        elIdsAlertList.appendChild(li);
+    });
+}
+
+function updateIDSBadge(severity) {
+    if (!elIdsGlobalStatus) return;
+
+    elIdsGlobalStatus.className = `ids-badge severity-${severity}`;
+    elIdsGlobalStatus.textContent = severity === 'ok' ?
+        i18n[currentLang].ids_ok :
+        i18n[currentLang][`ids_${severity}`];
+
+    if (severity === 'critical') elIdsGlobalIcon.textContent = '🚨';
+    else if (severity === 'warning') elIdsGlobalIcon.textContent = '⚠️';
+    else elIdsGlobalIcon.textContent = '🛡️';
+}
+
+function initIDS() {
+    elIdsGlobalStatus = document.getElementById('idsGlobalStatus');
+    elIdsGlobalIcon = document.getElementById('idsGlobalIcon');
+    elIdsAlertList = document.getElementById('idsAlertList');
+    elIdsUpdateTime = document.getElementById('idsUpdateTime');
+    elIdsFloating = document.getElementById('idsFloatingPanel');
+    elIdsClose = document.getElementById('closeIdsModal');
+    const elIdsHeader = document.getElementById('idsHeaderToggle');
+
+    if (elIdsHeader) {
+        elIdsHeader.addEventListener('click', () => {
+            elIdsFloating.classList.remove('modal-hidden');
+        });
+    }
+
+    if (elIdsClose) {
+        elIdsClose.addEventListener('click', () => {
+            elIdsFloating.classList.add('modal-hidden');
+        });
+    }
+
+    const elIdsFloatingHeader = document.getElementById('idsFloatingHeader');
+    if (elIdsFloating && elIdsFloatingHeader) {
+        makeDraggable(elIdsFloating, elIdsFloatingHeader);
+    }
+
+    setInterval(updateIDSAlerts, 15000);
+    updateIDSAlerts();
+}
+
 const countriesToggle = document.getElementById('countriesToggle');
 if (countriesToggle) {
     countriesToggle.addEventListener('click', () => {
@@ -145,6 +269,12 @@ let latestUdpLatencies = {};
 
 function getPointColor(node) {
     if (node.is_self) return '#000000'; // Negro profundo para nosotros (tu cliente)
+
+    // RESALTADO IDS: Si el nodo está implicado en una alerta crítica/warning
+    const idsAlert = globalThis.activeIDSAlerts.find(a => a.target_ip === node.ip || a.target_id === node.id);
+    if (idsAlert) {
+        return '#9d00ff'; // VIOLETA IDS
+    }
 
     if (!heatMapMode) {
         return '#00f2fe'; // Azul brillante estático (Clásico)
@@ -163,6 +293,12 @@ function getPointColor(node) {
 
 function getPointAltitude(d) {
     if (d.is_self) return 0.05; // El pilar más alto para nosotros
+
+    // RESALTADO IDS: Los nodos sospechosos se elevan para ser visibles
+    const idsAlert = globalThis.activeIDSAlerts.find(a => a.target_ip === d.ip || a.target_id === d.id);
+    if (idsAlert) {
+        return idsAlert.severity === 'critical' ? 0.08 : 0.05;
+    }
 
     if (heatMapMode) {
         // En modo "Nodos Activos", destacamos los que tienen latencia medida o son frescos
@@ -673,55 +809,81 @@ function updateKBucketsChart(nodes, localId) {
         subtitleEl.textContent = `Total: ${validNodesCount} | XOR Distance`;
     }
 
-    if (bucketsChart) {
-        bucketsChart.data.labels = labels;
-        bucketsChart.data.datasets[0].data = dataValues;
-        bucketsChart.update();
-    } else {
-        bucketsChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Nodos',
-                    data: dataValues,
-                    backgroundColor: 'rgba(79, 172, 254, 0.6)',
-                    borderColor: '#4facfe',
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: (context) => {
-                                const item = context[0];
-                                const labelArr = item.chart.data.labels[item.dataIndex];
-                                return `Bucket ${labelArr[0]} (Prob: ${labelArr[1]})`;
-                            },
-                            label: (context) => ` Nodos: ${context.raw}`
-                        }
-                    }
+    // Limpieza preventiva para evitar errores de reutilización de canvas en Chart.js
+    const existingChart = Chart.getChart(ctx.canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+
+    bucketsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Nodos',
+                data: dataValues,
+                backgroundColor: context => {
+                    const index = context.dataIndex;
+                    const labelArr = context.chart.data.labels[index];
+                    if (!labelArr) return 'rgba(79, 172, 254, 0.6)';
+
+                    const bucketName = labelArr[0]; // "B4"
+                    const bucketNum = parseInt(bucketName.substring(1));
+
+                    // Si el IDS detecta envenenamiento en este bucket, pintar de ROJO
+                    const isPoisoned = globalThis.activeIDSAlerts.some(a =>
+                        a.type === 'poisoning' && parseInt(a.target_bucket) === bucketNum
+                    );
+                    return isPoisoned ? 'rgba(255, 23, 68, 0.8)' : 'rgba(79, 172, 254, 0.6)';
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
-                    },
-                    x: {
-                        ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 9 } },
-                        grid: { display: false }
+                borderColor: context => {
+                    const index = context.dataIndex;
+                    const labelArr = context.chart.data.labels[index];
+                    if (!labelArr) return '#4facfe';
+
+                    const bucketName = labelArr[0];
+                    const bucketNum = parseInt(bucketName.substring(1));
+
+                    const isPoisoned = globalThis.activeIDSAlerts.some(a =>
+                        a.type === 'poisoning' && parseInt(a.target_bucket) === bucketNum
+                    );
+                    return isPoisoned ? '#ff1744' : '#4facfe';
+                },
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: (context) => {
+                            const item = context[0];
+                            const labelArr = item.chart.data.labels[item.dataIndex];
+                            return `Bucket ${labelArr[0]} (Prob: ${labelArr[1]})`;
+                        },
+                        label: (context) => ` Nodos: ${context.raw}`
                     }
                 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 10 } },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                x: {
+                    ticks: { color: 'rgba(255,255,255,0.5)', font: { size: 9 } },
+                    grid: { display: false }
+                }
             }
-        });
-    }
+        }
+    });
 }
+
 
 // 3. Simulación visual de interactividad de red Kademlia (FIND_NODE y Respuestas)
 function simulateKadActivity(nodes) {
@@ -741,6 +903,25 @@ function simulateKadActivity(nodes) {
 
         const arcs = [];
         const rings = [];
+
+        // --- INTEGRACIÓN IDS EN SIMULACIÓN ---
+        const dangerAlerts = (globalThis.activeIDSAlerts || []).filter(a =>
+            ['eclipse', 'sybil', 'dos', 'poisoning'].includes(a.type) || a.severity === 'critical'
+        );
+
+        dangerAlerts.forEach(alert => {
+            const targetNode = nodes.find(n => n.ip === alert.target_ip || n.id === alert.target_id);
+            if (targetNode) {
+                rings.push({
+                    lat: targetNode.lat,
+                    lng: targetNode.lng,
+                    maxR: alert.severity === 'critical' ? 8 : 5,
+                    propagationSpeed: 2,
+                    repeatPeriod: 1000,
+                    isIDS: true // Flag para color
+                });
+            }
+        });
 
         // Simulo un máximo de 5-10 consultas concurrentes en la red
         const numQueries = Math.floor(secureRandom() * 5) + 5;
@@ -779,22 +960,109 @@ function simulateKadActivity(nodes) {
             .arcDashGap(0.2)
             .arcDashAnimateTime(1500) // 1.5s para cruzar el planeta resolviendo la latencia
             .ringsData(rings)
-            .ringColor(() => '#00e676') // Color verde esmeralda brillante para la respuesta exitosa
-            .ringMaxRadius('maxR')
-            .ringPropagationSpeed('propagationSpeed')
-            .ringRepeatPeriod('repeatPeriod');
+            .ringColor(d => d.isIDS ? '#9d00ff' : '#00e676') // Violeta para IDS, Verde para normal
+            .ringMaxRadius(d => d.maxR || 5)
+            .ringPropagationSpeed(d => d.propagationSpeed || 1)
+            .ringRepeatPeriod(d => d.repeatPeriod || 1000);
 
     }, 2000); // Se actualizan las ráfagas de paquetes cada 2 segundos
 }
 
-// 4. Ejecución inicial y Polling cíclico
-// Ejecuto ambas extracciones inmediatamente al cargar la página
-applyTranslations();
-await updateKadStats();
-await updateKadNodes();
+// 4. Función de actualización de Overlays IDS (Anillos Púrpuras)
+function updateIDSOverlays() {
+    if (!renderGlobe || !globalNodesArray.length) return;
 
-// Repito la extracción de ambos archivos locales cada 10 segundos
-// Así "simulo" reactividad cuando mi script Python los sobreescriba
+    // Solo si hay alertas críticas o de tipo ataque dirigido
+    const dangerAlerts = globalThis.activeIDSAlerts.filter(a =>
+        ['eclipse', 'sybil', 'dos', 'poisoning'].includes(a.type) || a.severity === 'critical'
+    );
+
+    if (dangerAlerts.length === 0) return;
+
+    const idsRings = [];
+    dangerAlerts.forEach(alert => {
+        // Buscar coordenadas del nodo objetivo
+        const targetNode = globalNodesArray.find(n => n.ip === alert.target_ip || n.id === alert.target_id);
+        if (targetNode) {
+            idsRings.push({
+                lat: targetNode.lat,
+                lng: targetNode.lng,
+                maxR: alert.severity === 'critical' ? 8 : 5,
+                propagationSpeed: 2,
+                repeatPeriod: 1000,
+                color: '#9d00ff' // Violeta IDS
+            });
+        }
+    });
+
+    // Inyectamos rings IDS (esto sobreescribe los de simulación temporalmente en el siguiente ciclo)
+    if (idsRings.length > 0) {
+        renderGlobe.ringsData(idsRings)
+            .ringColor(d => d.color || '#00e676');
+    }
+    // Forzar refresco de puntos para que cambien de color/altura si fueron marcados
+    renderGlobe.pointColor(getPointColor)
+        .pointAltitude(getPointAltitude);
+}
+
+// 5. Helper para hacer elementos arrastrables
+function makeDraggable(el, handle) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    handle.onmousedown = dragMouseDown;
+    handle.ontouchstart = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+        
+        const rect = el.getBoundingClientRect();
+        const startX = clientX;
+        const startY = clientY;
+        const initialTop = rect.top;
+        const initialLeft = rect.left;
+
+        // Desactivar transformaciones para control total por top/left
+        el.style.transform = 'none';
+        el.style.margin = '0';
+        el.style.top = initialTop + "px";
+        el.style.left = initialLeft + "px";
+
+        function onMouseMove(moveEvent) {
+            moveEvent.preventDefault();
+            const curX = moveEvent.clientX || (moveEvent.touches && moveEvent.touches[0].clientX);
+            const curY = moveEvent.clientY || (moveEvent.touches && moveEvent.touches[0].clientY);
+            
+            const dx = curX - startX;
+            const dy = curY - startY;
+            
+            el.style.top = (initialTop + dy) + "px";
+            el.style.left = (initialLeft + dx) + "px";
+        }
+
+        function onMouseUp() {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.removeEventListener('touchmove', onMouseMove);
+            document.removeEventListener('touchend', onMouseUp);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('touchmove', onMouseMove, { passive: false });
+        document.addEventListener('touchend', onMouseUp);
+    }
+}
+
+// 4. Ejecución inicial y Polling cíclico
+applyTranslations();
+
+// Llamadas iniciales no bloqueantes (Sin await en el flujo principal)
+updateKadStats().catch(e => console.warn("Initial stats fetch failed", e));
+updateKadNodes().catch(e => console.warn("Initial nodes fetch failed", e));
+initIDS();
+
+// Polling de 10s para datos generales
 setInterval(() => {
     updateKadStats();
     updateKadNodes();

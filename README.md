@@ -86,7 +86,19 @@ Por ejemplo, para un nodo cualquiera en Londres:
 ![alt text](images/status_firewalled.png)
 ![alt text](images/status_disconnected.png)
 
-### 4. Requisitos y Configuración
+### 4. Sistema de Detección de Intrusiones (IDS)
+KadGlobe incluye un motor IDS especializado (`backend/ids_engine.py`) que monitoriza anomalías en la red Kad para proteger tu nodo contra ataques comunes de redes DHT:
+
+*   **Detección de Sybil/Eclipse**: Analiza la distribución estadística de los buckets mediante la prueba de $\chi^2$ y alerta si un número inusual de nodos se concentra en buckets específicos intentando rodear tu ID.
+
+*   **Detección de Poisoning**: Utiliza un análisis _Z-Score_ dual (Local y Temporal) para identificar envenenamiento de buckets. Detecta cuando un bucket crece de forma anómala comparado con el resto o con su propio historial.
+
+*   **Monitor de Lookup DoS**: Vigilancia del tráfico de control (_overhead_). Detecta inundaciones de paquetes mediante el análisis de _ratios_ de tráfico y curvas de crecimiento exponencial, filtrando picos legítimos durante tus propias búsquedas.
+
+> [!TIP]
+> Las alertas del IDS se clasifican en `INFO`, `WARNING` y `CRITICAL` y están diseñadas para integrarse en el panel visual en futuras versiones.
+
+### 5. Requisitos y Configuración
 Para que KadGlobe funcione correctamente, debes configurar los siguientes puntos:
 
 1.  **eMule WebUI**: Debes tener activada la "Interfaz Web" en las opciones de eMule (Opciones -> Opciones Adicionales o Interfaz Web según versión) y establecer una contraseña de administrador.

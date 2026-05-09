@@ -50,9 +50,28 @@ To run the full system, use the orchestrators:
 - **Linux**: Run `./launcher.sh` (**NEVER** as root/sudo to avoid conflicts with aMule/X11).
 
 ### A. Automated Testing
-To verify XOR logic and parser integrity:
+To ensure system stability, run the categorized test suites:
+
 ```bash
-python -m pytest tests/test_kad_logic.py
+# 1. Core Logic & Parsers
+python -m pytest tests/test_kad_logic.py     # XOR distance and bucket math
+python -m pytest tests/test_nodes_parser.py  # Binary nodes.dat parsing
+python -m pytest tests/test_geolocator.py    # IP to Geo mapping
+
+# 2. IDS Security Engine
+python -m pytest tests/test_ids_eclipse.py   # Sybil/Eclipse detection
+python -m pytest tests/test_ids_poisoning.py # Bucket poisoning detection
+python -m pytest tests/test_ids_dos.py       # Lookup DoS monitor
+
+# 3. Scrapers & Telemetry
+python -m pytest tests/test_scrapers.py      # eMule WebUI scraping
+python -m pytest tests/test_amule_scraper_coverage.py # aMule specific coverage
+python -m pytest tests/test_pinger.py        # UDP probing & RTT measurement
+python -m pytest tests/test_smoke_server.py  # Orchestrator connectivity
+
+# 4. Coverage & CLI
+python -m pytest tests/test_cli.py           # Command line interface
+python -m pytest tests/test_coverage_boost.py # Regression & Edge cases
 ```
 
 > [!IMPORTANT]
@@ -66,8 +85,9 @@ python -m pytest tests/test_kad_logic.py
 | :--- | :--- |
 | `server.py` | Main orchestrator (scraper + parser). |
 | `backend/` | Scraping and IP geolocation logic. |
+| `backend/ids_engine.py` | Intrusion Detection System (IDS) core. |
 | `backend/kad_utils.py` | Core Kademlia math (XOR/Buckets). |
-| `tests/` | Unit testing suite for critical logic. |
+| `tests/` | Unit testing suite (Logic + IDS Security). |
 | `frontend/app.js` | Visualization logic (Three.js / Globe.gl). |
 | `jsons/` | Storage for dynamic telemetry (Modify here to update the UI). |
 | `data/` | Repository for binary databases (IP2Location). |

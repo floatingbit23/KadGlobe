@@ -34,6 +34,10 @@ class KadIDSEngine:
         self.cooldown_cycles = 0       # Contador para evitar cambios bruscos en la UI
         self.last_severity = "ok"      # Estado de la última ejecución
 
+        # Estado para detección de sniffing
+        self.cycle_count = 0
+        self.deep_scan_interval = 10   # Ejecutar clustering pesado cada 10 ciclos (5 min)
+
     def _load_history(self):
         """
         Carga el historial persistente desde el disco para análisis de tendencias.
@@ -426,8 +430,164 @@ class KadIDSEngine:
                         "detail_en": f"Bucket {bucket_idx} has {count} nodes (Z-Score: {max_z:.2f}).",
                         "indicator": {"bucket": bucket_idx, "count": count, "z_score": max_z},
                         "recommendation_es": "Alerta de envenenamiento masivo. El tráfico de búsqueda hacia estos IDs podría estar siendo interceptado.",
-                        "recommendation_en": "Massive poisoning alert. Search traffic towards these IDs might be intercepted."
                     })
+        
+        return alerts
+
+
+    def _detect_sniffing(self, udp_nodes):
+
+        """
+        Detector de Granjas de Sniffing.
+        
+        Arquitectura Híbrida:
+        1. Triage (Se ejecuta cada 1 ciclo): Cálculo de Z-Score sobre subredes /24 para detectar picos repentinos de nodos.
+        2. Deep Scan (Se ejecuta cada 10 ciclos): Clustering geoespacial (si está disponible) y de RTT para confirmar granjas.
+
+        (1 ciclo = 30 segundos)
+        
+        Args:
+            udp_nodes (list): Nodos frescos con datos de RTT y geolocalización.
+            
+        Returns:
+            list: Alertas de sniffing detectadas.
+        """
+
+        alerts = []
+        
+        if not udp_nodes:
+            return alerts
+
+        # Incrementamos contador de ciclos
+        self.cycle_count += 1
+        
+        # 1. TRIAJE (Análisis por Subred /24)
+
+        current_subnets = {}
+
+        # Agregamos los nodos a su respectiva subred
+        for node in udp_nodes:
+
+            # Dividimos la IP por puntos
+            ip_parts = node['ip'].split('.')
+
+            if len(ip_parts) == 4:
+                s24 = ".".join(ip_parts[:3]) # ej: 91.189.160.x -> 91.189.160
+                current_subnets[s24] = current_subnets.get(s24, 0) + 1 # ej: {"91.189.160": 100, "8.8.8.8": 50, ...}
+
+        # Análisis de Z-Score histórico por subred
+        suspicious_subnets = []
+
+        # Historial de al menos 5 ciclos
+        if len(self.history) >= 5:
+            # Consolidar estadísticas históricas de subredes
+            all_past_counts = []
+
+            # Recorremos el historial (excluyendo el último registro que es el actual)
+            for h in self.history[:-1]:
+                sc = h.get("subnet_counts", {})
+                all_past_counts.extend(sc.values())
+            
+            # Si hay datos históricos
+            if all_past_counts:
+                # Calculamos media (mean) y desviación estándar (std) de la población histórica (population)
+                mean_pop = statistics.mean(all_past_counts)
+                std_pop = statistics.stdev(all_past_counts) if len(all_past_counts) > 1 else 1
+                
+                # Comparamos cada subred con la media histórica
+                for s24, count in current_subnets.items():
+
+                    # Calculamos el Z-Score de la población de esta subred frente a la media global
+                    z = (count - mean_pop) / max(1, std_pop)
+
+                    # Umbral de Triage: 3 desviaciones estándar
+                    # (es decir, el 99.7% de los nodos deberian estar dentro de z <= 3 stddevs)
+                    if z > 3.0: 
+                        # Guardamos la subred sospechosa
+                        suspicious_subnets.append(s24)
+                        
+                        # Alerta preliminar (Ola 1: el "Sniffing Triage")
+                        alerts.append({
+                            "type": "sniffing_triage",
+                            "severity": "warning",
+                            "title_es": "Actividad sospechosa en subred",
+                            "title_en": "Suspicious subnet activity",
+                            "detail_es": f"Pico de nodos en subred {s24}.x (Z-Score: {z:.1f}).",
+                            "detail_en": f"Node spike in subnet {s24}.x (Z-Score: {z:.1f}).",
+                            "indicator": {"subnet": s24, "count": count, "z_score": z}
+                        })
+
+        """
+        Si el triaje ya nos dio suficientes sospechosos, nos saltamos el deep scan (ahorro de cómputo).
+        O si no hemos llegado al intervalo de deep scan (ej: es el ciclo 1, 2, etc.)
+        """    
+
+        # 2. DEEP SCAN (Clustering Pesado)
+
+        # Se ejecuta cada 10 ciclos O si el Sniffing Triage ha encontrado algo muy sospechoso
+        if self.cycle_count % self.deep_scan_interval == 0 or suspicious_subnets:
+
+            # Agrupamos nodos por Coordenadas (Heurística de Datacenter/Granja)
+            geo_clusters = {}
+
+            for node in udp_nodes:
+
+                # Redondeamos coordenadas para capturar nodos en el mismo edificio/rack
+                # 3 decimales = ~110 metros de precisión
+                coords = (round(node.get('lat', 0), 3), round(node.get('lng', 0), 3))
+
+                # Si no existe la clave con esas coordenadas, creamos una lista vacía
+                if coords not in geo_clusters:
+                    geo_clusters[coords] = []
+
+                geo_clusters[coords].append(node)
+
+
+            # Iteramos sobre los clústeres encontrados
+            for coords, cluster_nodes in geo_clusters.items():
+
+                # Una granja suele tener al menos 3 nodos coordinados
+                if len(cluster_nodes) < 3:
+                    continue
+                
+                # Analizamos consistencia de RTT en el cluster
+                rtts = [n.get('rtt', 0) for n in cluster_nodes if n.get('rtt') is not None]
+
+                """
+                RRT (Round Trip Time) es la métrica que mide el tiempo que tarda un paquete en ir y volver a un servidor.
+                En un ataque de sniffing, todos los nodos estarían en la misma red, por lo que
+                el RTT de todos los nodos sería muy similar.
+                """
+
+                # Nos aseguramos de tener al menos 3 mediciones válidas
+                if len(rtts) >= 3:
+                    rtt_std = statistics.stdev(rtts)
+                    rtt_avg = statistics.mean(rtts)
+                    
+                    # Heurística definitiva: Coordenadas idénticas + RTT extremadamente estable:
+
+                    # Si la desviación es menor a 5ms, es muy probable que sea una granja/cluster de nodos automatizado
+                    if rtt_std < 5:
+
+                        # Graduación de Severidad
+                        # Si hay muchos nodos (>5) o están en una subred de Triage (sospechosa) -> Severidad nivel 'Critical' (Datacenter/Professional)
+                        is_critical = len(cluster_nodes) > 5 or any(".".join(n['ip'].split('.')[:3]) in suspicious_subnets for n in cluster_nodes)
+                        
+                        # Asignamos el nivel de severidad
+                        severity = "critical" if is_critical else "warning"
+                        
+                        # Agregamos la alerta a la lista
+                        alerts.append({
+                            "type": "sniffing_farm",
+                            "severity": severity,
+                            "title_es": "Granja de Sniffing Detectada" if is_critical else "Cluster de nodos sospechoso",
+                            "title_en": "Sniffing Farm Detected" if is_critical else "Suspicious node cluster",
+                            "detail_es": f"Detectados {len(cluster_nodes)} nodos coordinados en {coords} (RTT={int(rtt_avg)}ms, σ={rtt_std:.1f}).",
+                            "detail_en": f"Detected {len(cluster_nodes)} coordinated nodes at {coords} (RTT={int(rtt_avg)}ms, σ={rtt_std:.1f}).",
+                            "indicator": {"coords": coords, "count": len(cluster_nodes), "rtt_std": rtt_std},
+                            "recommendation_es": "Posible monitorización masiva. Estos nodos podrían estar recolectando metadatos de tus búsquedas.",
+                            "recommendation_en": "Possible mass monitoring. These nodes might be collecting metadata from your searches."
+                        })
         
         return alerts
 
@@ -537,6 +697,100 @@ class KadIDSEngine:
         return alerts
 
 
+    def _detect_churn(self):
+
+        """
+        Monitor de Churn (Inestabilidad).
+        Analiza la estabilidad del nº de contactos Kad para detectar oscilaciones violentas o inestabilidad crónica.
+        
+        Returns:
+            tuple: (list de alertas, float cv_actual)
+        """
+
+        alerts = []
+        cv = 0.0 # Coeficiente de variación (CV)
+
+        """
+        El CV es la desviación estándar dividida por la media. 
+        Esta métrica nos indica el grado de dispersión de los datos en relación a su valor promedio.
+        Un CV de 0.50, por ejemplo, indica que la desviación estándar es el 50% de la media.
+        En redes estables, el CV suele estar por debajo de 0.20 (20%).
+        """
+
+        # Filtro de Arranque Frío (Cold Start al conectarme a la red Kad): 
+        # Ignoramos alertas en los primeros 5 minutos (10 ciclos)
+        if self.cycle_count < 10:
+            return alerts, cv
+
+        # Necesitamos una ventana mínima (al menos 5 ciclos o 2.5 minutos) para que el análisis sea estadísticamente relevante
+        if len(self.history) < 5:
+            return alerts, cv
+
+        # Ventana de Análisis: últimas 15 muestras (15 ciclos o ~7.5 minutos)
+        window = self.history[-15:]
+
+        # Obtenemos el número de contactos en cada ciclo
+        contacts = [h.get("contacts", 0) for h in window]
+        
+        # Si no hay suficientes datos para el análisis, retornamos
+        if not contacts or len(contacts) < 2:
+            return alerts, cv
+
+        # Cálculos estadísticos
+
+        # Media
+        mean_c = statistics.mean(contacts)
+
+        # Si la media es 0, no hay contactos
+        if mean_c <= 0:
+            return alerts, cv
+
+        # Desviación estándar
+        std_c = statistics.stdev(contacts)
+
+        # CV (desviación estándar / media)
+        cv = std_c / mean_c
+        
+        # Rango de oscilación -> (max - min) / media
+        c_min = min(contacts)
+        c_max = max(contacts)
+        oscillation_range = (c_max - c_min) / mean_c
+
+        # 1. Alerta por Churn Crítico (CV > 0.50)
+        if cv > 0.50:
+
+            alerts.append({
+                "type": "churn",
+                "severity": "critical",
+                "title_es": "Ataque de Churn detectado",
+                "title_en": "Churn Attack detected",
+                "detail_es": f"Inestabilidad extrema en los contactos (CV: {cv:.2f}).",
+                "detail_en": f"Extreme contact instability (CV: {cv:.2f}).",
+                "indicator": {"cv": cv, "mean": int(mean_c), "range": f"{c_min}-{c_max}"},
+                "recommendation_es": "Red altamente inestable. Si persiste, podría ser un ataque de Churn dirigido.",
+                "recommendation_en": "Highly unstable network. If it persists, it could be a targeted Churn attack."
+            })
+
+        # 2. Alerta por Inestabilidad o Oscilación Violenta
+        elif cv > 0.30 or oscillation_range > 0.40:
+
+            severity = "warning"
+
+            alerts.append({
+                "type": "churn",
+                "severity": severity,
+                "title_es": "Red Inestable (Churn)" if cv > 0.30 else "Oscilación violenta de contactos",
+                "title_en": "Unstable Network (Churn)" if cv > 0.30 else "Violent contact oscillation",
+                "detail_es": f"Variación significativa en el número de contactos (CV: {cv:.2f}, Rango: {oscillation_range:.2%}).",
+                "detail_en": f"Significant contact variation (CV: {cv:.2f}, Range: {oscillation_range:.2%}).",
+                "indicator": {"cv": cv, "range": f"{c_min}-{c_max}"},
+                "recommendation_es": "Comprueba tu conexión o cortafuegos inmediatamente.",
+                "recommendation_en": "Check your connection or firewall immediately."
+            })
+
+        return alerts, cv
+
+
     # Función principal
     def analyze(self, stats, nodes, udp_nodes):
 
@@ -559,15 +813,44 @@ class KadIDSEngine:
         eclipse_alerts, chi_p, bucket_counts = self._detect_eclipse(stats, nodes)
 
         alerts = []
-        alerts.extend(eclipse_alerts) # Agregamos las alertas de Sybil/Eclipse
 
-        # Fase 2: Detector de Poisoning
+        # Fase 1: Alertas de Sybil/Eclipse
+        alerts.extend(eclipse_alerts)
+
+        # Fase 2: Alertas de Poisoning
         poisoning_alerts = self._detect_poisoning(stats, bucket_counts)
         alerts.extend(poisoning_alerts)
 
         # Fase 3: Monitor de Lookup DoS
         dos_alerts = self._detect_dos()
         alerts.extend(dos_alerts)
+
+        # Fase 4: Detector de Sniffing Farms
+        sniff_alerts = self._detect_sniffing(udp_nodes)
+        alerts.extend(sniff_alerts)
+
+        # Fase 5: Monitor de Churn (Inestabilidad)
+        churn_alerts, current_cv = self._detect_churn()
+        alerts.extend(churn_alerts)
+
+        # Pre-procesamiento de subredes para el historial
+        current_subnets = {}
+
+        # Analizamos las UDP nodes
+        for node in udp_nodes:
+
+            # Obtenemos la IP del nodo UDP (ej. 'xx.xx.xx.xx') y la separamos por octetos
+            ip_parts = node['ip'].split('.')
+
+            # Si es una IP válida (tiene 4 octetos)
+            if len(ip_parts) == 4:
+                # Obtenemos la subred /24
+                s24 = ".".join(ip_parts[:3])
+                # Contamos los nodos por subred
+                current_subnets[s24] = current_subnets.get(s24, 0) + 1
+
+        # Actualizamos las estadísticas
+        stats["subnet_counts"] = current_subnets
 
         # Actualiza el historial con las estadísticas actuales y la distribución de buckets
         self._update_history(stats, bucket_counts)
@@ -610,7 +893,7 @@ class KadIDSEngine:
             "alerts": alerts,
             "stats": {
                 "chi_squared_p_value": chi_p,
-                "contacts_cv": 0.0,
+                "contacts_cv": current_cv,
                 "overhead_rate": self.history[-1].get("overhead", 0) - self.history[-2].get("overhead", 0) if len(self.history) > 1 else 0.0
             }
         }
