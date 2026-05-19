@@ -130,8 +130,8 @@ def run_backend_cronjob():
                 success = False
             
             print("\n[i] Ejecutando ICMP Ping Sweep sobre nodos Kademlia...")
-            # Nota: kad_pinger.py debe retornar un código de salida distinto de 0 en caso de fallo
-            pinger_proc = subprocess.run([python_exe, "kad_pinger.py"], cwd=backend_dir, check=False)
+            # Nota: kad_udp_pinger.py debe retornar un código de salida distinto de 0 en caso de fallo
+            pinger_proc = subprocess.run([python_exe, "kad_udp_pinger.py"], cwd=backend_dir, check=False)
             if pinger_proc.returncode != 0:
                 success = False
             

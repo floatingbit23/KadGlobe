@@ -82,8 +82,34 @@ KADEMLIA2_BOOTSTRAP_RES    = 0x09   # Respuesta con lista de contactos
 KADEMLIA2_PING             = 0x60   # Ping (sin payload, 2 bytes totales)
 KADEMLIA2_PONG             = 0x61   # Pong (respuesta esperada)
 
+def detect_local_udp_port():
+    # Primero miramos si está en el .env
+    env_port = os.getenv("EMULE_KAD_UDP_PORT")
+    if env_port:
+        try:
+            return int(env_port)
+        except ValueError:
+            pass
+
+    # Si no, e intentamos detectar en Linux ~/.aMule/amule.conf
+    if os.name != "nt":
+        conf_path = os.path.expanduser("~/.aMule/amule.conf")
+        if os.path.exists(conf_path):
+            try:
+                with open(conf_path, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        if line.startswith("UDPPort="):
+                            port_str = line.split("=")[1].strip()
+                            print(f"[+] Detectado puerto UDP de aMule automáticamente: {port_str}")
+                            return int(port_str)
+            except Exception as e:
+                print(f"[!] Error leyendo amule.conf para detectar puerto: {e}")
+
+    # Fallback por defecto
+    return 16005
+
 # Puerto UDP del eMule local (configurado en eMule -> Opciones -> Conexión)
-EMULE_LOCAL_UDP_PORT = int(os.getenv("EMULE_KAD_UDP_PORT", 16005))
+EMULE_LOCAL_UDP_PORT = detect_local_udp_port()
 
 # Tamaño de cada contacto en el BOOTSTRAP_RES: 16B KadID + 4B IP + 2B UDP + 2B TCP + 1B version = 25 bytes
 CONTACT_SIZE = 25

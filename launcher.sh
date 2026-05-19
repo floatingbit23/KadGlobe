@@ -58,7 +58,7 @@ ADMIN_PASS=$(grep -oP "ADMIN_PASS='?\K[^']*" .env 2>/dev/null)
 # 4. Lanzar el cliente
 if command -v amule &> /dev/null; then
     echo "[*] Iniciando aMule nativo..."
-    amule &
+    GDK_BACKEND=x11 amule &
 elif command -v wine &> /dev/null && [ -f "$HOME/.wine/drive_c/Program Files (x86)/eMule/emule.exe" ]; then
     echo "[*] Iniciando eMule via Wine..."
     wine "$HOME/.wine/drive_c/Program Files (x86)/eMule/emule.exe" &
